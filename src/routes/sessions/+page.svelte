@@ -1,0 +1,78 @@
+<script lang="ts">
+	import type { PageData } from './$types';
+	let { data }: { data: PageData } = $props();
+	let expanded = $state<string | null>(null);
+</script>
+
+<div class="container">
+	<div class="page-header">
+		<h1>Sessions</h1>
+		<p class="subtitle">{data.sessions.length} session{data.sessions.length > 1 ? 's' : ''} jouée{data.sessions.length > 1 ? 's' : ''}</p>
+	</div>
+
+	<div class="sessions-list">
+		{#each data.sessions as s}
+			<div class="session-card card" class:open={expanded === s.id}>
+				<button class="session-header" onclick={() => expanded = expanded === s.id ? null : s.id}>
+					<div class="session-num">Session {s.number}</div>
+					<div class="session-info">
+						<h2 class="session-title">{s.title}</h2>
+						{#if s.date_played}
+							<span class="session-date">{new Date(s.date_played).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+						{/if}
+					</div>
+					<div class="session-meta">
+						{#if s.xp_awarded}
+							<span class="xp-badge">+{s.xp_awarded} XP</span>
+						{/if}
+						{#if data.isDM}
+							<span class="visibility-badge vis-{s.visibility === 'dm_only' ? 'dm' : s.visibility}">
+								{s.visibility === 'dm_only' ? '🔒' : s.visibility === 'players' ? '👥' : '🌐'}
+							</span>
+						{/if}
+						<span class="chevron">{expanded === s.id ? '▲' : '▼'}</span>
+					</div>
+				</button>
+
+				{#if expanded === s.id}
+					<div class="session-body">
+						<p class="summary">{s.summary}</p>
+						{#if data.isDM && s.dm_notes}
+							<div class="dm-notes">
+								<span class="dm-label">🎲 Notes MJ</span>
+								<p>{s.dm_notes}</p>
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
+		{/each}
+	</div>
+</div>
+
+<style>
+	.subtitle { font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 0.06em; color: rgba(240,237,234,0.4); margin-top: 0.5rem; }
+	.sessions-list { display: flex; flex-direction: column; gap: 0.75rem; }
+	.session-card { padding: 0; overflow: hidden; }
+	.session-header {
+		width: 100%; background: none; border: none; color: inherit;
+		display: flex; align-items: center; gap: 1.25rem;
+		padding: 1.25rem 1.5rem; cursor: pointer; text-align: left;
+		transition: background 0.15s;
+	}
+	.session-header:hover { background: rgba(255,255,255,0.02); }
+	.session-num {
+		font-family: 'Cinzel Decorative', serif; font-size: 1.5rem; font-weight: 900;
+		color: #C2374A; min-width: 2.5rem; line-height: 1;
+	}
+	.session-info { flex: 1; min-width: 0; }
+	.session-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+	.session-date { font-size: 0.82rem; color: rgba(240,237,234,0.4); font-family: 'Cinzel', serif; }
+	.session-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+	.xp-badge { background: #0A2A12; color: #5CB85C; border: 1px solid #5CB85C44; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; }
+	.chevron { color: rgba(240,237,234,0.3); font-size: 0.75rem; }
+	.session-body { padding: 0 1.5rem 1.5rem; border-top: 1px solid #1A1A1A; padding-top: 1.25rem; }
+	.summary { font-size: 1rem; color: rgba(240,237,234,0.75); line-height: 1.7; }
+	.dm-notes { margin-top: 1rem; background: #0A0508; border: 1px solid #C2374A33; border-radius: 3px; padding: 0.75rem; }
+	.dm-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C2374A; display: block; margin-bottom: 0.35rem; }
+</style>
