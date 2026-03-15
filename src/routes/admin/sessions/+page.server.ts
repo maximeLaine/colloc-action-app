@@ -26,6 +26,12 @@ export const actions: Actions = {
 
 		const dateRaw = (form.get('date_played') as string)?.trim();
 
+		let attachments = [];
+		try {
+			const raw = (form.get('attachments') as string)?.trim();
+			if (raw) attachments = JSON.parse(raw);
+		} catch { /* ignore */ }
+
 		const { error } = await locals.supabase.rpc('admin_upsert_session', {
 			p_user_id: user.id,
 			p_id: id || null,
@@ -35,7 +41,8 @@ export const actions: Actions = {
 			p_dm_notes: (form.get('dm_notes') as string)?.trim() || null,
 			p_date_played: dateRaw || null,
 			p_xp_awarded: parseInt(form.get('xp_awarded') as string) || 0,
-			p_visibility: (form.get('visibility') as string) || 'players'
+			p_visibility: (form.get('visibility') as string) || 'players',
+			p_attachments: attachments
 		});
 
 		if (error) return fail(500, { error: error.message });

@@ -1,8 +1,12 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-	let { data }: { data: PageData } = $props();
+	import { enhance } from '$app/forms';
+	import ImageUpload from '$lib/components/ImageUpload.svelte';
+	import type { PageData, ActionData } from './$types';
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let selected = $state<typeof data.characters[0] | null>(null);
+	type Character = typeof data.characters[0];
+	let selected = $state<Character | null>(null);
+	let editOwn = $state<Character | null>(null);
 
 	const statNames: Record<string, string> = {
 		for: 'FOR', dex: 'DEX', con: 'CON', int: 'INT', sag: 'SAG', cha: 'CHA'
@@ -14,7 +18,10 @@
 	}
 
 	function closeOnBackdrop(e: MouseEvent) {
-		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) selected = null;
+		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) {
+			selected = null;
+			editOwn = null;
+		}
 	}
 </script>
 
@@ -39,24 +46,29 @@
 	{:else}
 		<div class="char-grid">
 			{#each data.characters as c}
-				<button class="char-card" onclick={() => (selected = c)}>
-					<div class="char-portrait">
-						{#if c.image_url}
-							<img src={c.image_url} alt={c.name} />
-						{:else}
-							<div class="portrait-placeholder">⚔️</div>
-						{/if}
-						<div class="char-level">Niv. {c.level}</div>
-					</div>
-					<div class="char-footer">
-						<span class="char-name">{c.name}</span>
-						<span class="char-meta">{c.race} · {c.class}</span>
-						<div class="char-stats">
-							<span>❤️ {c.hp_current}/{c.hp_max}</span>
-							<span>🛡️ {c.ac}</span>
+				<div class="char-card-wrap">
+					<button class="char-card" onclick={() => (selected = c)}>
+						<div class="char-portrait">
+							{#if c.image_url}
+								<img src={c.image_url} alt={c.name} />
+							{:else}
+								<div class="portrait-placeholder">⚔️</div>
+							{/if}
+							<div class="char-level">Niv. {c.level}</div>
 						</div>
-					</div>
-				</button>
+						<div class="char-footer">
+							<span class="char-name">{c.name}</span>
+							<span class="char-meta">{c.race} · {c.class}</span>
+							<div class="char-stats">
+								<span>❤️ {c.hp_current}/{c.hp_max}</span>
+								<span>🛡️ {c.ac}</span>
+							</div>
+						</div>
+					</button>
+					{#if c.player_id === data.userId || data.isDM}
+						<button class="btn-edit-own" onclick={() => (editOwn = c)}>✏️ Modifier</button>
+					{/if}
+				</div>
 			{/each}
 		</div>
 	{/if}
@@ -136,6 +148,56 @@
 					{/if}
 				</div>
 			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Modal modification propre personnage -->
+{#if editOwn}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="modal-backdrop" onclick={closeOnBackdrop}>
+		<div class="modal">
+			<button class="modal-close" onclick={() => (editOwn = null)}>✕</button>
+			<h2>Modifier — {editOwn.name}</h2>
+			{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+			<form method="POST" action="?/updateOwn" use:enhance={() => ({ result, update }) => {
+				if (result.type === 'success') editOwn = null;
+				update();
+			}}>
+				<input type="hidden" name="char_id" value={editOwn.id} />
+				<div class="edit-form-grid">
+					<div class="field">
+						<label>Image</label>
+						<ImageUpload name="image_url" value={editOwn.image_url ?? ''} placeholder="URL ou upload" />
+					</div>
+					<div class="field-group">
+						<div class="field">
+							<label>Niveau</label>
+							<input name="level" type="number" min="1" max="20" value={editOwn.level} />
+						</div>
+						<div class="field">
+							<label>PV max</label>
+							<input name="hp_max" type="number" min="1" value={editOwn.hp_max} />
+						</div>
+						<div class="field">
+							<label>PV actuels</label>
+							<input name="hp_current" type="number" value={editOwn.hp_current} />
+						</div>
+						<div class="field">
+							<label>CA</label>
+							<input name="ac" type="number" min="1" value={editOwn.ac} />
+						</div>
+					</div>
+					<div class="field full">
+						<label>Historique / Backstory</label>
+						<textarea name="backstory" rows="5">{editOwn.backstory ?? ''}</textarea>
+					</div>
+				</div>
+				<div class="form-actions">
+					<button type="button" class="btn-secondary" onclick={() => (editOwn = null)}>Annuler</button>
+					<button type="submit" class="btn-primary">Enregistrer</button>
+				</div>
+			</form>
 		</div>
 	</div>
 {/if}
@@ -252,6 +314,23 @@
 
 	.empty { text-align: center; padding: 4rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
 	.empty-hint { font-size: 0.8rem; margin-top: 0.5rem; color: rgba(240,237,234,0.2); }
+
+	.char-card-wrap { display: flex; flex-direction: column; gap: 0.4rem; }
+	.btn-edit-own { background: transparent; border: 1px solid rgba(194,55,74,0.3); color: #C2374A; padding: 0.3rem 0.5rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; width: 100%; }
+	.btn-edit-own:hover { background: rgba(194,55,74,0.1); border-color: #C2374A; }
+
+	/* Edit modal */
+	.edit-form-grid { display: flex; flex-direction: column; gap: 1rem; }
+	.field-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+	.field { display: flex; flex-direction: column; gap: 0.35rem; }
+	.field.full { grid-column: 1 / -1; }
+	label { font-family: 'Cinzel', serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.55); }
+	input[type="number"], textarea { background: #0A0A0A; border: 1px solid #2A2A2A; color: #F0EDEA; padding: 0.55rem 0.75rem; border-radius: 3px; font-family: 'Crimson Text', serif; font-size: 1rem; width: 100%; }
+	input[type="number"]:focus, textarea:focus { outline: none; border-color: #C2374A; }
+	textarea { resize: vertical; }
+	.form-actions { margin-top: 1.25rem; display: flex; gap: 0.75rem; justify-content: flex-end; }
+	.error-msg { background: #1A0508; border: 1px solid #C2374A44; color: #E05060; padding: 0.6rem 0.85rem; border-radius: 3px; font-size: 0.9rem; margin-bottom: 1rem; }
+	.modal h2 { font-size: 1rem; font-weight: 900; color: #C2374A; margin-bottom: 1.25rem; letter-spacing: 0.05em; text-transform: uppercase; }
 
 	@media (max-width: 600px) {
 		.modal-layout { flex-direction: column; }

@@ -1,14 +1,21 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import FileAttachments from '$lib/components/FileAttachments.svelte';
 	import type { PageData, ActionData } from './$types';
 
+	interface Attachment { name: string; url: string; type: 'image' | 'pdf'; }
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let editing = $state<typeof data.sessions[0] | null>(null);
 	let showModal = $state(false);
+	let attachments = $state<Attachment[]>([]);
 
-	function openNew() { editing = null; showModal = true; }
-	function openEdit(s: typeof data.sessions[0]) { editing = s; showModal = true; }
+	function openNew() { editing = null; attachments = []; showModal = true; }
+	function openEdit(s: typeof data.sessions[0]) {
+		editing = s;
+		attachments = (s.attachments as Attachment[]) ?? [];
+		showModal = true;
+	}
 	function closeForm() { editing = null; showModal = false; }
 
 	function closeOnBackdrop(e: MouseEvent) {
@@ -136,6 +143,10 @@
 							<option value="players" selected={!editing || editing.visibility === 'players'}>👥 Joueurs</option>
 							<option value="public" selected={editing?.visibility === 'public'}>🌐 Public</option>
 						</select>
+					</div>
+					<div class="field full">
+						<label>Images & Documents</label>
+						<FileAttachments bind:value={attachments} uploadUrl="/api/upload/session" />
 					</div>
 				</div>
 

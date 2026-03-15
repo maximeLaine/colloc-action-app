@@ -42,8 +42,28 @@
 								<p>{entry.content}</p>
 								{#if data.isDM && entry.dm_notes}
 									<div class="dm-notes">
-										<span class="dm-label">🎲 Notes MJ</span>
+										<span class="dm-label">Notes MJ</span>
 										<p>{entry.dm_notes}</p>
+									</div>
+								{/if}
+								{#if entry.attachments?.length}
+									<div class="attachments">
+										<span class="att-label">Documents & Images</span>
+										<div class="att-list">
+											{#each entry.attachments as att}
+												{#if att.type === 'image'}
+													<a href={att.url} target="_blank" class="att-img-link">
+														<img src={att.url} alt={att.name} class="att-img" />
+														<span class="att-caption">{att.name}</span>
+													</a>
+												{:else}
+													<a href={att.url} target="_blank" class="att-pdf-link">
+														<span>📄</span>
+														<span class="att-pdf-name">{att.name}</span>
+													</a>
+												{/if}
+											{/each}
+										</div>
 									</div>
 								{/if}
 							</div>
@@ -72,4 +92,16 @@
 	.dm-notes { margin-top: 1rem; background: #0A0508; border: 1px solid #C2374A33; border-radius: 3px; padding: 0.75rem; }
 	.dm-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C2374A; display: block; margin-bottom: 0.35rem; }
 	.empty { text-align: center; padding: 4rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+	/* Attachments */
+	.attachments { margin-top: 1.25rem; }
+	.att-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.4); display: block; margin-bottom: 0.6rem; }
+	.att-list { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+	.att-img-link { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-decoration: none; }
+	.att-img { width: 120px; height: 90px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); transition: border-color 0.2s; }
+	.att-img-link:hover .att-img { border-color: #C2374A; }
+	.att-caption { font-size: 0.72rem; color: rgba(240,237,234,0.4); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.att-pdf-link { display: flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 0.5rem 0.75rem; text-decoration: none; transition: border-color 0.2s; }
+	.att-pdf-link:hover { border-color: #C2374A; }
+	.att-pdf-name { font-size: 0.8rem; color: rgba(240,237,234,0.6); }
 </style>

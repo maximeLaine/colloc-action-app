@@ -43,6 +43,26 @@
 								<p>{s.dm_notes}</p>
 							</div>
 						{/if}
+						{#if s.attachments?.length}
+							<div class="attachments">
+								<span class="att-label">📎 Documents & Images</span>
+								<div class="att-list">
+									{#each s.attachments as att}
+										{#if att.type === 'image'}
+											<a href={att.url} target="_blank" class="att-img-link">
+												<img src={att.url} alt={att.name} class="att-img" />
+												<span class="att-caption">{att.name}</span>
+											</a>
+										{:else}
+											<a href={att.url} target="_blank" class="att-pdf-link">
+												<span class="att-pdf-icon">📄</span>
+												<span class="att-pdf-name">{att.name}</span>
+											</a>
+										{/if}
+									{/each}
+								</div>
+							</div>
+						{/if}
 					</div>
 				{/if}
 			</div>
@@ -71,8 +91,21 @@
 	.session-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
 	.xp-badge { background: #0A2A12; color: #5CB85C; border: 1px solid #5CB85C44; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; }
 	.chevron { color: rgba(240,237,234,0.3); font-size: 0.75rem; }
-	.session-body { padding: 0 1.5rem 1.5rem; border-top: 1px solid #1A1A1A; padding-top: 1.25rem; }
-	.summary { font-size: 1rem; color: rgba(240,237,234,0.75); line-height: 1.7; }
+	.session-body { padding: 1.25rem 1.5rem 1.5rem; border-top: 1px solid #1A1A1A; }
+	.summary { font-size: 1rem; color: rgba(240,237,234,0.75); line-height: 1.7; white-space: pre-line; }
 	.dm-notes { margin-top: 1rem; background: #0A0508; border: 1px solid #C2374A33; border-radius: 3px; padding: 0.75rem; }
 	.dm-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C2374A; display: block; margin-bottom: 0.35rem; }
+
+	/* Attachments */
+	.attachments { margin-top: 1.25rem; }
+	.att-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.4); display: block; margin-bottom: 0.6rem; }
+	.att-list { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+	.att-img-link { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-decoration: none; }
+	.att-img { width: 120px; height: 90px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); transition: border-color 0.2s; }
+	.att-img-link:hover .att-img { border-color: #C2374A; }
+	.att-caption { font-size: 0.72rem; color: rgba(240,237,234,0.4); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.att-pdf-link { display: flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 0.5rem 0.75rem; text-decoration: none; transition: border-color 0.2s; }
+	.att-pdf-link:hover { border-color: #C2374A; }
+	.att-pdf-icon { font-size: 1.2rem; }
+	.att-pdf-name { font-size: 0.8rem; color: rgba(240,237,234,0.6); }
 </style>

@@ -1,14 +1,18 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import FileAttachments from '$lib/components/FileAttachments.svelte';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	interface LoreEntry { id: string; title: string; category: string; content: string; dm_notes: string | null; visibility: string; }
+	interface Attachment { name: string; url: string; type: 'image' | 'pdf'; }
+	interface LoreEntry { id: string; title: string; category: string; content: string; dm_notes: string | null; visibility: string; attachments?: Attachment[]; }
 
 	let showForm = $state(false);
 	let editEntry = $state<LoreEntry | null>(null);
 	let search = $state('');
+	let newAttachments = $state<Attachment[]>([]);
+	let editAttachments = $state<Attachment[]>([]);
 
 	const CATEGORIES = ['Géographie', 'Histoire', 'Factions', 'Religion', 'Personnages', 'Magie', 'Divers'];
 
@@ -24,6 +28,11 @@
 	function closeOnBackdrop(e: MouseEvent) {
 		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) editEntry = null;
 	}
+
+	function openEdit(entry: LoreEntry) {
+		editEntry = entry;
+		editAttachments = (entry.attachments ?? []) as Attachment[];
+	}
 </script>
 
 <div class="container">
@@ -35,7 +44,7 @@
 			</div>
 			<div class="header-btns">
 				<a href="/admin" class="btn-secondary">← Admin</a>
-				<button class="btn-primary" onclick={() => (showForm = !showForm)}>
+				<button class="btn-primary" onclick={() => { showForm = !showForm; newAttachments = []; }}>
 					{showForm ? 'Annuler' : '+ Nouvelle entrée'}
 				</button>
 			</div>
@@ -75,6 +84,10 @@
 						<label for="dm_notes">Notes MJ (privées)</label>
 						<textarea id="dm_notes" name="dm_notes" rows="3" placeholder="Notes secrètes, contexte caché..."></textarea>
 					</div>
+					<div class="field full">
+						<label>Images & Documents</label>
+						<FileAttachments bind:value={newAttachments} uploadUrl="/api/upload/lore" />
+					</div>
 				</div>
 				<div class="form-actions">
 					<button type="submit" class="btn-primary">Créer l'entrée</button>
@@ -105,7 +118,7 @@
 						{#if entry.content}<p class="lore-preview">{entry.content.slice(0, 120)}{entry.content.length > 120 ? '…' : ''}</p>{/if}
 					</div>
 					<div class="row-actions">
-						<button class="btn-edit" onclick={() => (editEntry = entry as LoreEntry)}>Modifier</button>
+						<button class="btn-edit" onclick={() => openEdit(entry as LoreEntry)}>Modifier</button>
 						<form method="POST" action="?/delete" use:enhance>
 							<input type="hidden" name="id" value={entry.id} />
 							<button type="submit" class="btn-delete"
@@ -155,6 +168,10 @@
 					<div class="field full">
 						<label>Notes MJ (privées)</label>
 						<textarea name="dm_notes" rows="3">{editEntry.dm_notes ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Images & Documents</label>
+						<FileAttachments bind:value={editAttachments} uploadUrl="/api/upload/lore" />
 					</div>
 				</div>
 				<div class="form-actions">
