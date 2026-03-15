@@ -31,7 +31,7 @@
 <div class="login-page">
 	<div class="login-box">
 		<div class="login-logo">
-			<img src="/logo.png" alt="Kolok-Action" />
+			<img src="/logo-kolok-action.jpg" alt="Kolok-Action" />
 		</div>
 		<h1>Connexion</h1>
 		<p class="subtitle">La Kolok-Action — Campagne D&D 5e</p>

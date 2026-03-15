@@ -38,7 +38,7 @@
 	<header class="site-header">
 		<div class="header-inner">
 			<a href="/" class="logo">
-				<img src="/logo.png" alt="Kolok-Action" />
+				<img src="/logo-kolok-action.jpg" alt="Kolok-Action" />
 				<span>La Kolok-Action</span>
 			</a>
 
