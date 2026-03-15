@@ -31,10 +31,10 @@
 <div class="login-page">
 	<div class="login-box">
 		<div class="login-logo">
-			<img src="/logo.png" alt="Colloc-Action" />
+			<img src="/logo.png" alt="Collok-Action" />
 		</div>
 		<h1>Connexion</h1>
-		<p class="subtitle">La Colloc-Action — Campagne D&D 5e</p>
+		<p class="subtitle">La Collok-Action — Campagne D&D 5e</p>
 
 		<form onsubmit={handleLogin}>
 			<div class="field">

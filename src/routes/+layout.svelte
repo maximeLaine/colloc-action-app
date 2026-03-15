@@ -31,15 +31,15 @@
 </script>
 
 <svelte:head>
-	<title>La Colloc-Action</title>
+	<title>La Collok-Action</title>
 </svelte:head>
 
 <div class="app">
 	<header class="site-header">
 		<div class="header-inner">
 			<a href="/" class="logo">
-				<img src="/logo.png" alt="Colloc-Action" />
-				<span>La Colloc-Action</span>
+				<img src="/logo.png" alt="Collok-Action" />
+				<span>La Collok-Action</span>
 			</a>
 
 			{#if isLoggedIn}
@@ -76,7 +76,7 @@
 	</main>
 
 	<footer class="site-footer">
-		<p>⚔️ La Colloc-Action — Campagne D&D 5e</p>
+		<p>⚔️ La Collok-Action — Campagne D&D 5e</p>
 	</footer>
 </div>
 
