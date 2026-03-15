@@ -9,7 +9,7 @@
 	<div class="hero-content container">
 		<div class="hero-text">
 			<p class="campaign-label">Campagne D&D 5e</p>
-			<h1>La Collok-Action</h1>
+			<h1>La Kolok-Action</h1>
 			<p class="welcome">
 				{#if data.user}
 					Bienvenue, <strong>{name}</strong>.
