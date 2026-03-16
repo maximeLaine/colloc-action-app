@@ -42,7 +42,8 @@ export const actions: Actions = {
 			p_date_played: dateRaw || null,
 			p_xp_awarded: parseInt(form.get('xp_awarded') as string) || 0,
 			p_visibility: (form.get('visibility') as string) || 'players',
-			p_attachments: attachments
+			p_attachments: attachments,
+		p_campaign: (form.get('campaign') as string)?.trim() || 'Colloc-Action'
 		});
 
 		if (error) return fail(500, { error: error.message });

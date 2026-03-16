@@ -2,6 +2,17 @@
 	import type { PageData } from './$types';
 	let { data }: { data: PageData } = $props();
 	let expanded = $state<string | null>(null);
+
+	const grouped = $derived(() => {
+		const map: Record<string, typeof data.sessions> = {};
+		for (const s of data.sessions) {
+			const key = (s as any).campaign ?? 'Colloc-Action';
+			if (!map[key]) map[key] = [];
+			map[key].push(s);
+		}
+		return map;
+	});
+	const campaigns = $derived(Object.keys(grouped()));
 </script>
 
 <div class="container">
@@ -10,69 +21,75 @@
 		<p class="subtitle">{data.sessions.length} session{data.sessions.length > 1 ? 's' : ''} jouée{data.sessions.length > 1 ? 's' : ''}</p>
 	</div>
 
-	<div class="sessions-list">
-		{#each data.sessions as s}
-			<div class="session-card card" class:open={expanded === s.id}>
-				<button class="session-header" onclick={() => expanded = expanded === s.id ? null : s.id}>
-					<div class="session-num">Session {s.number}</div>
-					<div class="session-info">
-						<h2 class="session-title">{s.title}</h2>
-						{#if s.date_played}
-							<span class="session-date">{new Date(s.date_played).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-						{/if}
-					</div>
-					<div class="session-meta">
-						{#if s.xp_awarded}
-							<span class="xp-badge">+{s.xp_awarded} XP</span>
-						{/if}
-						{#if data.isDM}
-							<span class="visibility-badge vis-{s.visibility === 'dm_only' ? 'dm' : s.visibility}">
-								{s.visibility === 'dm_only' ? '🔒' : s.visibility === 'players' ? '👥' : '🌐'}
-							</span>
-						{/if}
-						<span class="chevron">{expanded === s.id ? '▲' : '▼'}</span>
-					</div>
-				</button>
+	{#each campaigns as campaign}
+		{#if campaigns.length > 1}
+			<h2 class="campaign-title">{campaign}</h2>
+		{/if}
+		<div class="sessions-list">
+			{#each grouped()[campaign] as s}
+				<div class="session-card card" class:open={expanded === s.id}>
+					<button class="session-header" onclick={() => expanded = expanded === s.id ? null : s.id}>
+						<div class="session-num">Session {s.number}</div>
+						<div class="session-info">
+							<h2 class="session-title">{s.title}</h2>
+							{#if s.date_played}
+								<span class="session-date">{new Date(s.date_played).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+							{/if}
+						</div>
+						<div class="session-meta">
+							{#if s.xp_awarded}
+								<span class="xp-badge">+{s.xp_awarded} XP</span>
+							{/if}
+							{#if data.isDM}
+								<span class="visibility-badge vis-{s.visibility === 'dm_only' ? 'dm' : s.visibility}">
+									{s.visibility === 'dm_only' ? '🔒' : s.visibility === 'players' ? '👥' : '🌐'}
+								</span>
+							{/if}
+							<span class="chevron">{expanded === s.id ? '▲' : '▼'}</span>
+						</div>
+					</button>
 
-				{#if expanded === s.id}
-					<div class="session-body">
-						<p class="summary">{s.summary}</p>
-						{#if data.isDM && s.dm_notes}
-							<div class="dm-notes">
-								<span class="dm-label">🎲 Notes MJ</span>
-								<p>{s.dm_notes}</p>
-							</div>
-						{/if}
-						{#if s.attachments?.length}
-							<div class="attachments">
-								<span class="att-label">📎 Documents & Images</span>
-								<div class="att-list">
-									{#each s.attachments as att}
-										{#if att.type === 'image'}
-											<a href={att.url} target="_blank" class="att-img-link">
-												<img src={att.url} alt={att.name} class="att-img" />
-												<span class="att-caption">{att.name}</span>
-											</a>
-										{:else}
-											<a href={att.url} target="_blank" class="att-pdf-link">
-												<span class="att-pdf-icon">📄</span>
-												<span class="att-pdf-name">{att.name}</span>
-											</a>
-										{/if}
-									{/each}
+					{#if expanded === s.id}
+						<div class="session-body">
+							<p class="summary">{s.summary}</p>
+							{#if data.isDM && s.dm_notes}
+								<div class="dm-notes">
+									<span class="dm-label">🎲 Notes MJ</span>
+									<p>{s.dm_notes}</p>
 								</div>
-							</div>
-						{/if}
-					</div>
-				{/if}
-			</div>
-		{/each}
-	</div>
+							{/if}
+							{#if s.attachments?.length}
+								<div class="attachments">
+									<span class="att-label">📎 Documents & Images</span>
+									<div class="att-list">
+										{#each s.attachments as att}
+											{#if att.type === 'image'}
+												<a href={att.url} target="_blank" class="att-img-link">
+													<img src={att.url} alt={att.name} class="att-img" />
+													<span class="att-caption">{att.name}</span>
+												</a>
+											{:else}
+												<a href={att.url} target="_blank" class="att-pdf-link">
+													<span class="att-pdf-icon">📄</span>
+													<span class="att-pdf-name">{att.name}</span>
+												</a>
+											{/if}
+										{/each}
+									</div>
+								</div>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{/each}
+		</div>
+	{/each}
 </div>
 
 <style>
 	.subtitle { font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 0.06em; color: rgba(240,237,234,0.4); margin-top: 0.5rem; }
-	.sessions-list { display: flex; flex-direction: column; gap: 0.75rem; }
+	.campaign-title { font-size: 1rem; letter-spacing: 0.1em; color: #C2374A; margin: 2rem 0 1rem; padding-left: 0.75rem; border-left: 3px solid #C2374A; font-family: 'Cinzel', serif; text-transform: uppercase; }
+	.sessions-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; }
 	.session-card { padding: 0; overflow: hidden; }
 	.session-header {
 		width: 100%; background: none; border: none; color: inherit;

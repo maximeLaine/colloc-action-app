@@ -120,6 +120,10 @@
 						<label for="m-date">Date jouée</label>
 						<input id="m-date" name="date_played" type="date" value={toInputDate(editing?.date_played ?? null)} />
 					</div>
+					<div class="field full">
+						<label for="m-campaign">Campagne</label>
+						<input id="m-campaign" name="campaign" type="text" value={(editing as any)?.campaign ?? 'Colloc-Action'} placeholder="Ex: Colloc-Action, Arc 2..." />
+					</div>
 					<div class="field full required">
 						<label for="m-title">Titre</label>
 						<input id="m-title" name="title" type="text" required value={editing?.title ?? ''} placeholder="Ex: L'Attaque dans la Forêt" />
