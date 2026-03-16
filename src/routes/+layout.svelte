@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { createClient } from '$lib/supabase';
 	import type { LayoutData } from './$types';
@@ -7,6 +8,7 @@
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
 	const supabase = createClient();
+	let menuOpen = $state(false);
 
 	onMount(() => {
 		const { data: sub } = supabase.auth.onAuthStateChange((_, newSession) => {
@@ -26,8 +28,14 @@
 		{ href: '/pnj', label: '🎭 PNJ', show: true },
 		{ href: '/sessions', label: '📜 Sessions', show: true },
 		{ href: '/lore', label: '📚 Lore', show: true },
-{ href: '/combat', label: '⚔️ Combat', show: true },
+		{ href: '/combat', label: '⚔️ Combat', show: true },
 	].filter(i => i.show));
+
+	// Ferme le menu quand on change de page
+	$effect(() => {
+		$page.url.pathname;
+		menuOpen = false;
+	});
 </script>
 
 <svelte:head>
@@ -61,15 +69,41 @@
 					{:else}
 						<span class="role-badge player">Joueur</span>
 					{/if}
-					<form method="POST" action="/auth?/logout">
+					<form method="POST" action="/auth?/logout" class="logout-form">
 						<button type="submit" class="btn-logout">Déconnexion</button>
 					</form>
+					<button class="burger" onclick={() => menuOpen = !menuOpen} aria-label="Menu">
+						<span class:open={menuOpen}></span>
+						<span class:open={menuOpen}></span>
+						<span class:open={menuOpen}></span>
+					</button>
 				{:else}
 					<a href="/login" class="btn-login">Connexion</a>
 				{/if}
 			</div>
 		</div>
 	</header>
+
+	{#if menuOpen && isLoggedIn}
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div class="mobile-overlay" onclick={() => menuOpen = false}>
+			<nav class="mobile-nav" onclick={(e) => e.stopPropagation()}>
+				{#each navItems as item}
+					<a href={item.href} class="mobile-nav-link">{item.label}</a>
+				{/each}
+				{#if isDM}
+					<a href="/admin" class="mobile-nav-link dm">🎲 Admin MJ</a>
+				{/if}
+				<div class="mobile-nav-separator"></div>
+				<div class="mobile-user">
+					<span class="mobile-user-name">{data.profile?.display_name ?? data.user?.email}</span>
+					<form method="POST" action="/auth?/logout">
+						<button type="submit" class="btn-logout">Déconnexion</button>
+					</form>
+				</div>
+			</nav>
+		</div>
+	{/if}
 
 	<main class="main-content">
 		{@render children()}
@@ -400,10 +434,78 @@
 		text-transform: uppercase;
 	}
 
+	/* Burger button */
+	.burger {
+		display: none;
+		flex-direction: column;
+		justify-content: center;
+		gap: 5px;
+		background: transparent;
+		border: 1px solid rgba(255,255,255,0.15);
+		border-radius: 3px;
+		padding: 0.4rem 0.5rem;
+		cursor: pointer;
+		width: 2.2rem;
+		height: 2.2rem;
+	}
+	.burger span {
+		display: block;
+		height: 2px;
+		background: rgba(240,237,234,0.7);
+		border-radius: 2px;
+		transition: transform 0.2s, opacity 0.2s;
+		transform-origin: center;
+	}
+	.burger span.open:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+	.burger span.open:nth-child(2) { opacity: 0; }
+	.burger span.open:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+	/* Mobile overlay */
+	.mobile-overlay {
+		display: none;
+		position: fixed;
+		inset: 0;
+		background: rgba(0,0,0,0.6);
+		backdrop-filter: blur(4px);
+		z-index: 99;
+		align-items: flex-start;
+		justify-content: flex-end;
+	}
+	.mobile-nav {
+		background: rgba(8,8,8,0.98);
+		border-left: 1px solid rgba(255,255,255,0.08);
+		width: min(300px, 85vw);
+		height: 100%;
+		padding: 5rem 1.5rem 2rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		overflow-y: auto;
+	}
+	.mobile-nav-link {
+		display: block;
+		padding: 0.85rem 1rem;
+		font-family: 'Cinzel', serif;
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: rgba(240,237,234,0.7);
+		border-radius: 3px;
+		transition: background 0.15s, color 0.15s;
+		border-bottom: 1px solid rgba(255,255,255,0.04);
+	}
+	.mobile-nav-link:hover { background: rgba(194,55,74,0.15); color: #FFF; }
+	.mobile-nav-link.dm { color: #C2374A; }
+	.mobile-nav-separator { height: 1px; background: rgba(255,255,255,0.08); margin: 1rem 0; }
+	.mobile-user { display: flex; flex-direction: column; gap: 0.75rem; }
+	.mobile-user-name { font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(240,237,234,0.5); }
+
 	@media (max-width: 768px) {
-		.logo span { display: none; }
-		.main-nav { gap: 0; }
-		.nav-link { padding: 0.25rem 0.4rem; font-size: 0.65rem; }
+		.main-nav { display: none; }
 		.user-name { display: none; }
+		.logout-form { display: none; }
+		.burger { display: flex; }
+		.mobile-overlay { display: flex; }
 	}
 </style>
