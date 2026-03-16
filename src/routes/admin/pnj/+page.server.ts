@@ -38,6 +38,33 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	update: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+
+		const form = await request.formData();
+		const id = (form.get('id') as string)?.trim();
+		const name = (form.get('name') as string)?.trim();
+		const role = (form.get('role') as string)?.trim();
+		if (!id || !name || !role) return fail(400, { error: 'Données manquantes' });
+
+		const { error } = await locals.supabase.rpc('admin_update_npc', {
+			p_user_id: user.id,
+			p_npc_id: id,
+			p_name: name,
+			p_role: role,
+			p_affiliation: (form.get('affiliation') as string)?.trim() || null,
+			p_status: (form.get('status') as string)?.trim() || 'Vivant',
+			p_description: (form.get('description') as string)?.trim() || null,
+			p_dm_notes: (form.get('dm_notes') as string)?.trim() || null,
+			p_image_url: (form.get('image_url') as string)?.trim() || null,
+			p_visibility: (form.get('visibility') as string) || 'dm_only'
+		});
+
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
 	share: async ({ request, locals }) => {
 		const { user } = await locals.safeGetSession();
 		if (!user) redirect(303, '/login');

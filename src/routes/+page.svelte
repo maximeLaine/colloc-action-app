@@ -49,12 +49,7 @@
 				<h2>Lore</h2>
 				<p>Histoire du monde, royaumes, factions et mystères</p>
 			</a>
-			<a href="/carte" class="section-card">
-				<div class="section-icon">🗺️</div>
-				<h2>Carte</h2>
-				<p>Le monde d'Aerendor et ses territoires</p>
-			</a>
-			<a href="/combat" class="section-card highlight">
+<a href="/combat" class="section-card highlight">
 				<div class="section-icon">🎲</div>
 				<h2>Combat</h2>
 				<p>Tracker d'initiative, PV, monstres et alliés</p>

@@ -3,14 +3,21 @@
 	import type { PageData, ActionData } from './$types';
 	import ImageUpload from '$lib/components/ImageUpload.svelte';
 
+	interface Npc { id: string; name: string; role: string; affiliation: string | null; status: string; description: string | null; dm_notes: string | null; image_url: string | null; visibility: string; }
+
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let showForm = $state(false);
+	let editNpc = $state<Npc | null>(null);
 	const visLabels: Record<string, string> = {
 		dm_only: '🔒 MJ',
 		players: '👥 Joueurs',
 		public: '🌐 Public'
 	};
+
+	function closeOnBackdrop(e: MouseEvent) {
+		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) editNpc = null;
+	}
 </script>
 
 <div class="container">
@@ -133,6 +140,7 @@
 								<button type="submit" class="btn-unshare">🔒 Masquer</button>
 							</form>
 						{/if}
+						<button class="btn-edit" onclick={() => editNpc = npc as Npc}>Modifier</button>
 						<form method="POST" action="?/delete" use:enhance>
 							<input type="hidden" name="id" value={npc.id} />
 							<button type="submit" class="btn-delete" onclick={(e) => {
@@ -145,6 +153,65 @@
 		{/if}
 	</div>
 </div>
+
+{#if editNpc}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="modal-backdrop" onclick={closeOnBackdrop}>
+		<div class="modal">
+			<button class="modal-close" onclick={() => editNpc = null}>✕</button>
+			<h2>Modifier — {editNpc.name}</h2>
+			{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+			<form method="POST" action="?/update" use:enhance={() => ({ result, update }) => {
+				if (result.type === 'success') editNpc = null;
+				update();
+			}}>
+				<input type="hidden" name="id" value={editNpc.id} />
+				<div class="form-grid">
+					<div class="field required">
+						<label>Nom</label>
+						<input name="name" type="text" required value={editNpc.name} />
+					</div>
+					<div class="field required">
+						<label>Rôle / Titre</label>
+						<input name="role" type="text" required value={editNpc.role} />
+					</div>
+					<div class="field">
+						<label>Affiliation</label>
+						<input name="affiliation" type="text" value={editNpc.affiliation ?? ''} />
+					</div>
+					<div class="field">
+						<label>Statut</label>
+						<input name="status" type="text" value={editNpc.status} />
+					</div>
+					<div class="field">
+						<label>Visibilité</label>
+						<select name="visibility">
+							<option value="dm_only" selected={editNpc.visibility === 'dm_only'}>🔒 MJ uniquement</option>
+							<option value="players" selected={editNpc.visibility === 'players'}>👥 Joueurs</option>
+							<option value="public" selected={editNpc.visibility === 'public'}>🌐 Public</option>
+						</select>
+					</div>
+					<div class="field">
+						<label>Image</label>
+						<ImageUpload name="image_url" placeholder="/img/pnj/nom.png" value={editNpc.image_url ?? ''} />
+					</div>
+					<div class="field full">
+						<label>Description (visible joueurs)</label>
+						<textarea name="description" rows="3">{editNpc.description ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Notes MJ (privées)</label>
+						<textarea name="dm_notes" rows="3">{editNpc.dm_notes ?? ''}</textarea>
+					</div>
+				</div>
+				<div class="form-actions">
+					<button type="button" class="btn-secondary" onclick={() => editNpc = null}>Annuler</button>
+					<button type="submit" class="btn-primary">Enregistrer</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.header-row { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -231,7 +298,17 @@
 	}
 	.btn-delete:hover { border-color: #C2374A; color: #E05060; }
 
+	.btn-edit { background: transparent; border: 1px solid #2A3A4A; color: rgba(240,237,234,0.5); padding: 0.25rem 0.6rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+	.btn-edit:hover { border-color: #2B8FD4; color: #2B8FD4; }
+
 	.empty { text-align: center; padding: 3rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+	.modal { background: rgba(12,12,12,0.98); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; padding: 2rem; }
+	.modal h2 { font-size: 1rem; font-weight: 900; color: #C2374A; margin-bottom: 1.5rem; letter-spacing: 0.05em; text-transform: uppercase; padding-right: 2rem; }
+	.modal-close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: rgba(240,237,234,0.5); width: 2rem; height: 2rem; border-radius: 50%; cursor: pointer; font-size: 0.75rem; }
+	.modal-close:hover { color: #FFF; border-color: #C2374A; }
+	.form-actions { margin-top: 1.25rem; display: flex; gap: 0.75rem; justify-content: flex-end; }
 
 	@media (max-width: 600px) {
 		.form-grid { grid-template-columns: 1fr; }
