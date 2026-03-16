@@ -9,7 +9,7 @@
 		id: string; player_id: string | null; player_name: string | null;
 		name: string; race: string; class: string; level: number;
 		hp_max: number; hp_current: number; ac: number; image_url: string | null;
-		visibility: string;
+		visibility: string; backstory: string | null; dm_backstory: string | null;
 	}
 
 	let showForm = $state(false);
@@ -98,8 +98,12 @@
 						<ImageUpload name="image_url" placeholder="/img/pj/nom.png" />
 					</div>
 					<div class="field full">
-						<label for="backstory">Historique</label>
+						<label for="backstory">Historique (partagé avec le groupe)</label>
 						<textarea id="backstory" name="backstory" rows="4" placeholder="Origine, motivations, personnalité..."></textarea>
+					</div>
+					<div class="field full">
+						<label for="dm_backstory">Notes MJ (privées)</label>
+						<textarea id="dm_backstory" name="dm_backstory" rows="3" placeholder="Éléments cachés, secrets..."></textarea>
 					</div>
 				</div>
 				<div class="form-actions">
@@ -226,6 +230,14 @@
 					<div class="field full">
 						<label>Image</label>
 						<ImageUpload name="image_url" value={editChar.image_url ?? ''} placeholder="/img/pj/nom.png" />
+					</div>
+					<div class="field full">
+						<label for="e-backstory">Historique (partagé avec le groupe)</label>
+						<textarea id="e-backstory" name="backstory" rows="4">{editChar.backstory ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label for="e-dm-backstory">Notes MJ (privées)</label>
+						<textarea id="e-dm-backstory" name="dm_backstory" rows="3">{editChar.dm_backstory ?? ''}</textarea>
 					</div>
 				</div>
 				<div class="form-actions">

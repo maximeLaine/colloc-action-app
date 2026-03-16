@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { formatText } from '$lib/utils/format';
 	import type { PageData } from './$types';
 	let { data }: { data: PageData } = $props();
 
@@ -95,7 +96,7 @@
 					{/if}
 
 					{#if selected.description}
-						<p class="modal-desc">{selected.description}</p>
+						<p class="modal-desc">{@html formatText(selected.description)}</p>
 					{/if}
 
 					{#if selected.abilities?.length}
@@ -109,7 +110,7 @@
 					{#if data.isDM && selected.dm_notes}
 						<div class="dm-notes">
 							<span class="dm-label">🎲 Notes MJ</span>
-							<p>{selected.dm_notes}</p>
+							<p>{@html formatText(selected.dm_notes)}</p>
 						</div>
 					{/if}
 				</div>

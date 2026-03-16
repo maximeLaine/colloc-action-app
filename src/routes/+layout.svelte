@@ -121,6 +121,9 @@
 		padding: 0;
 	}
 
+	:global(strong) { font-weight: 600; }
+	:global(em) { font-style: italic; }
+
 	:global(body) {
 		background:
 			linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.55) 100%),
