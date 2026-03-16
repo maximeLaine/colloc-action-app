@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { formatText } from '$lib/utils/format';
 	let { data }: { data: PageData } = $props();
 	let expanded = $state<string | null>(null);
 
@@ -51,11 +52,11 @@
 
 					{#if expanded === s.id}
 						<div class="session-body">
-							<p class="summary">{s.summary}</p>
+							<p class="summary">{@html formatText(s.summary)}</p>
 							{#if data.isDM && s.dm_notes}
 								<div class="dm-notes">
 									<span class="dm-label">🎲 Notes MJ</span>
-									<p>{s.dm_notes}</p>
+									<p>{@html formatText(s.dm_notes)}</p>
 								</div>
 							{/if}
 							{#if s.attachments?.length}
@@ -109,7 +110,8 @@
 	.xp-badge { background: #0A2A12; color: #5CB85C; border: 1px solid #5CB85C44; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; }
 	.chevron { color: rgba(240,237,234,0.3); font-size: 0.75rem; }
 	.session-body { padding: 1.25rem 1.5rem 1.5rem; border-top: 1px solid #1A1A1A; }
-	.summary { font-size: 1rem; color: rgba(240,237,234,0.75); line-height: 1.7; white-space: pre-line; }
+	.summary { font-size: 1rem; color: rgba(240,237,234,0.75); line-height: 1.7; }
+	.summary :global(.magic-text) { font-family: 'Cinzel', serif; color: #C2374A; letter-spacing: 0.05em; }
 	.dm-notes { margin-top: 1rem; background: #0A0508; border: 1px solid #C2374A33; border-radius: 3px; padding: 0.75rem; }
 	.dm-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C2374A; display: block; margin-bottom: 0.35rem; }
 
