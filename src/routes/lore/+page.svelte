@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { formatText } from '$lib/utils/format';
 	let { data }: { data: PageData } = $props();
 	let expanded = $state<string | null>(null);
 	const categories = $derived(Object.keys(data.grouped));
@@ -39,11 +40,11 @@
 						</button>
 						{#if expanded === entry.id}
 							<div class="lore-body">
-								<p>{entry.content}</p>
+								<p>{@html formatText(entry.content)}</p>
 								{#if data.isDM && entry.dm_notes}
 									<div class="dm-notes">
 										<span class="dm-label">Notes MJ</span>
-										<p>{entry.dm_notes}</p>
+										<p>{@html formatText(entry.dm_notes)}</p>
 									</div>
 								{/if}
 								{#if entry.attachments?.length}
@@ -89,6 +90,7 @@
 	.entry-meta { display: flex; align-items: center; gap: 0.5rem; }
 	.chevron { color: rgba(240,237,234,0.3); font-size: 0.75rem; }
 	.lore-body { padding: 0 1.25rem 1.25rem; border-top: 1px solid #1A1A1A; padding-top: 1rem; font-size: 1rem; color: rgba(240,237,234,0.75); line-height: 1.7; }
+	.lore-body :global(.magic-text) { font-family: 'Cinzel', serif; color: #C2374A; letter-spacing: 0.05em; }
 	.dm-notes { margin-top: 1rem; background: #0A0508; border: 1px solid #C2374A33; border-radius: 3px; padding: 0.75rem; }
 	.dm-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C2374A; display: block; margin-bottom: 0.35rem; }
 	.empty { text-align: center; padding: 4rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
