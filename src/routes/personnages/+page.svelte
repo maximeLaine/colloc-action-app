@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import ImageUpload from '$lib/components/ImageUpload.svelte';
+	import { formatText } from '$lib/utils/format';
 	import type { PageData, ActionData } from './$types';
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -143,7 +144,13 @@
 					{#if selected.backstory}
 						<div class="backstory">
 							<span class="bs-label">Historique</span>
-							<p>{selected.backstory}</p>
+							<p>{@html formatText(selected.backstory)}</p>
+						</div>
+					{/if}
+					{#if data.isDM && (selected as any).dm_backstory}
+						<div class="backstory dm-backstory">
+							<span class="bs-label dm-bs-label">🎲 Notes MJ (secret)</span>
+							<p>{@html formatText((selected as any).dm_backstory)}</p>
 						</div>
 					{/if}
 				</div>
@@ -308,9 +315,12 @@
 	.abilities { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
 	.ability-tag { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(240,237,234,0.7); padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.8rem; }
 
-	.backstory { border-top: 1px solid rgba(255,255,255,0.07); padding-top: 1rem; }
+	.backstory { border-top: 1px solid rgba(255,255,255,0.07); padding-top: 1rem; margin-top: 1rem; }
 	.bs-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.4); display: block; margin-bottom: 0.4rem; }
 	.backstory p { font-size: 0.95rem; color: rgba(240,237,234,0.7); line-height: 1.7; }
+	.backstory :global(strong) { font-weight: 600; }
+	.dm-backstory { background: #0A0508; border: 1px solid #C2374A33; border-radius: 3px; padding: 0.75rem; border-top: none; }
+	.dm-bs-label { color: #C2374A !important; }
 
 	.empty { text-align: center; padding: 4rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
 	.empty-hint { font-size: 0.8rem; margin-top: 0.5rem; color: rgba(240,237,234,0.2); }

@@ -5,11 +5,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const { user } = await locals.safeGetSession();
 	if (!user) redirect(303, '/login');
 
-	const { data: players, error } = await locals.supabase
-		.rpc('admin_get_all_players', { p_user_id: user.id });
+	const [{ data: players, error }, { data: invitations }] = await Promise.all([
+		locals.supabase.rpc('admin_get_all_players', { p_user_id: user.id }),
+		locals.supabase.rpc('admin_list_invitations', { p_user_id: user.id })
+	]);
 
 	if (error) console.error('[admin/joueurs] load error:', error.message);
-	return { players: players ?? [] };
+	return { players: players ?? [], invitations: invitations ?? [] };
 };
 
 export const actions: Actions = {
@@ -30,5 +32,24 @@ export const actions: Actions = {
 
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
+	},
+
+	invite: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+
+		const form = await request.formData();
+		const email = (form.get('email') as string)?.trim();
+		const role = (form.get('role') as string) || 'player';
+		if (!email) return fail(400, { error: 'Email requis' });
+
+		const { data: token, error } = await locals.supabase.rpc('admin_create_invitation', {
+			p_user_id: user.id,
+			p_email: email,
+			p_role: role
+		});
+
+		if (error) return fail(500, { error: error.message });
+		return { success: true, inviteToken: token };
 	}
 };

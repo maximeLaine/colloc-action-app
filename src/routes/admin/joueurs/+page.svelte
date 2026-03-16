@@ -6,10 +6,19 @@
 
 	interface Player { id: string; email: string; display_name: string; role: string; created_at: string; }
 	let editPlayer = $state<Player | null>(null);
+	let showInvite = $state(false);
+	let inviteLink = $state<string | null>(null);
 
 	function closeOnBackdrop(e: MouseEvent) {
 		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) editPlayer = null;
 	}
+
+	$effect(() => {
+		if (form?.inviteToken) {
+			inviteLink = `${window.location.origin}/invite/${form.inviteToken}`;
+			showInvite = false;
+		}
+	});
 </script>
 
 <div class="container">
@@ -19,11 +28,66 @@
 				<h1>Gérer les Joueurs</h1>
 				<p class="subtitle">Comptes joueurs et rôles</p>
 			</div>
-			<a href="/admin" class="btn-secondary">← Admin</a>
+			<div class="header-btns">
+				<a href="/admin" class="btn-secondary">← Admin</a>
+				<button class="btn-primary" onclick={() => { showInvite = !showInvite; inviteLink = null; }}>
+					{showInvite ? 'Annuler' : '+ Inviter'}
+				</button>
+			</div>
 		</div>
 	</div>
 
-	{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+	{#if showInvite}
+		<div class="invite-panel card">
+			<h2>Inviter un joueur</h2>
+			{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+			<form method="POST" action="?/invite" use:enhance>
+				<div class="form-grid">
+					<div class="field">
+						<label for="inv-email">Adresse email</label>
+						<input id="inv-email" name="email" type="email" required placeholder="joueur@exemple.com" />
+					</div>
+					<div class="field">
+						<label for="inv-role">Rôle</label>
+						<select id="inv-role" name="role">
+							<option value="player">⚔️ Joueur</option>
+							<option value="dm">🎲 Maître du Jeu</option>
+						</select>
+					</div>
+				</div>
+				<div class="form-actions">
+					<button type="submit" class="btn-primary">Générer le lien</button>
+				</div>
+			</form>
+		</div>
+	{/if}
+
+	{#if inviteLink}
+		<div class="invite-result card">
+			<span class="inv-label">Lien d'invitation (valable 7 jours)</span>
+			<div class="inv-link-row">
+				<input type="text" readonly value={inviteLink} class="inv-link-input" onclick={(e) => (e.target as HTMLInputElement).select()} />
+				<button class="btn-copy" onclick={() => navigator.clipboard.writeText(inviteLink!)}>Copier</button>
+			</div>
+		</div>
+	{/if}
+
+	{#if data.invitations?.length}
+		<div class="section-title">Invitations en attente</div>
+		<div class="inv-list">
+			{#each data.invitations as inv}
+				<div class="inv-row card">
+					<div class="inv-info">
+						<span class="inv-email">{inv.email}</span>
+						<span class="inv-role role-{inv.role}">{inv.role === 'dm' ? '🎲 MJ' : '⚔️ Joueur'}</span>
+					</div>
+					<span class="inv-expires">expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}</span>
+				</div>
+			{/each}
+		</div>
+	{/if}
+
+	{#if form?.error && !showInvite}<div class="error-msg">{form.error}</div>{/if}
 
 	<div class="player-list">
 		{#if data.players.length === 0}
@@ -83,6 +147,22 @@
 
 <style>
 	.header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+	.header-btns { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem; }
+	.invite-panel { margin-bottom: 1.5rem; }
+	.invite-panel h2 { font-size: 0.9rem; letter-spacing: 0.08em; margin-bottom: 1.25rem; color: #C2374A; }
+	.invite-result { margin-bottom: 1.5rem; padding: 1rem 1.25rem; }
+	.inv-label { font-family: 'Cinzel', serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.4); display: block; margin-bottom: 0.6rem; }
+	.inv-link-row { display: flex; gap: 0.5rem; }
+	.inv-link-input { flex: 1; background: #0A0A0A; border: 1px solid #2A2A2A; color: #F0EDEA; padding: 0.55rem 0.75rem; border-radius: 3px; font-family: 'Crimson Text', serif; font-size: 0.9rem; }
+	.btn-copy { background: transparent; border: 1px solid #2A3A4A; color: rgba(240,237,234,0.6); padding: 0.4rem 0.85rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+	.btn-copy:hover { border-color: #5CB85C; color: #5CB85C; }
+	.section-title { font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(240,237,234,0.3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.5rem; margin-top: 1.5rem; }
+	.inv-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.5rem; }
+	.inv-row { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1rem; }
+	.inv-info { display: flex; align-items: center; gap: 0.75rem; }
+	.inv-email { font-size: 0.85rem; color: rgba(240,237,234,0.7); }
+	.inv-role { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.15rem 0.4rem; border-radius: 3px; border: 1px solid; }
+	.inv-expires { font-size: 0.75rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; }
 	.subtitle { font-family: 'Cinzel', serif; font-size: 0.8rem; color: rgba(240,237,234,0.4); margin-top: 0.4rem; letter-spacing: 0.05em; }
 	.error-msg { background: #1A0508; border: 1px solid #C2374A44; color: #E05060; padding: 0.6rem 0.85rem; border-radius: 3px; font-size: 0.9rem; margin-bottom: 1rem; }
 	.list-header { font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(240,237,234,0.3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.75rem; }
