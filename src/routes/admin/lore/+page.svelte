@@ -6,7 +6,7 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	interface Attachment { name: string; url: string; type: 'image' | 'pdf'; }
-	interface LoreEntry { id: string; title: string; category: string; content: string; dm_notes: string | null; visibility: string; attachments?: Attachment[]; }
+	interface LoreEntry { id: string; title: string; category: string; section: string; content: string; dm_notes: string | null; visibility: string; attachments?: Attachment[]; }
 
 	let showForm = $state(false);
 	let editEntry = $state<LoreEntry | null>(null);
@@ -14,7 +14,8 @@
 	let newAttachments = $state<Attachment[]>([]);
 	let editAttachments = $state<Attachment[]>([]);
 
-	const CATEGORIES = ['Monde', 'Pays', 'Confédération d\'Orde', 'Guildes & Factions', 'Panthéon', 'Histoire', 'Personnages', 'Magie', 'Divers'];
+	const SECTIONS = ['Monde', 'Guildes & Factions', 'Panthéon', 'Histoire', 'Divers'];
+	const CATEGORIES = ['Monde', 'Carte', 'Pays', 'Confédération d\'Orde', 'Guildes & Factions', 'Panthéon', 'Histoire', 'Personnages', 'Magie', 'Divers'];
 
 	const filtered = $derived(
 		search.trim() === ''
@@ -65,8 +66,13 @@
 						<input id="title" name="title" type="text" required placeholder="Ex: Le Duché de Valambrais" />
 					</div>
 					<div class="field required">
-						<label for="category">Catégorie</label>
-						<input id="category" name="category" type="text" required list="cat-list" placeholder="Ex: Géographie" />
+						<label for="section">Section</label>
+						<input id="section" name="section" type="text" required list="sec-list" placeholder="Ex: Monde" />
+						<datalist id="sec-list">{#each SECTIONS as s}<option value={s}></option>{/each}</datalist>
+					</div>
+					<div class="field required">
+						<label for="category">Sous-section</label>
+						<input id="category" name="category" type="text" required list="cat-list" placeholder="Ex: Pays" />
 						<datalist id="cat-list">{#each CATEGORIES as c}<option value={c}></option>{/each}</datalist>
 					</div>
 					<div class="field">
@@ -150,7 +156,12 @@
 						<input name="title" type="text" required value={editEntry.title} />
 					</div>
 					<div class="field required">
-						<label>Catégorie</label>
+						<label>Section</label>
+						<input name="section" type="text" required list="sec-list2" value={editEntry.section} />
+						<datalist id="sec-list2">{#each SECTIONS as s}<option value={s}></option>{/each}</datalist>
+					</div>
+					<div class="field required">
+						<label>Sous-section</label>
 						<input name="category" type="text" required list="cat-list2" value={editEntry.category} />
 						<datalist id="cat-list2">{#each CATEGORIES as c}<option value={c}></option>{/each}</datalist>
 					</div>
