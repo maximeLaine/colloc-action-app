@@ -14,7 +14,7 @@
 	let newAttachments = $state<Attachment[]>([]);
 	let editAttachments = $state<Attachment[]>([]);
 
-	const CATEGORIES = ['Géographie', 'Histoire', 'Factions', 'Religion', 'Personnages', 'Magie', 'Divers'];
+	const CATEGORIES = ['Monde', 'Pays', 'Confédération d\'Orde', 'Guildes & Factions', 'Panthéon', 'Histoire', 'Personnages', 'Magie', 'Divers'];
 
 	const filtered = $derived(
 		search.trim() === ''
