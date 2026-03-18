@@ -35,6 +35,30 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	update: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		if (!id) return fail(400, { error: 'ID manquant' });
+
+		const { error } = await locals.supabase.rpc('admin_update_monster', {
+			p_user_id: user.id,
+			p_monster_id: id,
+			p_name: (form.get('name') as string)?.trim() || null,
+			p_type: (form.get('type') as string)?.trim() || null,
+			p_cr: (form.get('cr') as string)?.trim() || null,
+			p_hp: parseInt(form.get('hp') as string) || null,
+			p_ac: parseInt(form.get('ac') as string) || null,
+			p_notes: (form.get('notes') as string)?.trim() || null,
+			p_image_url: (form.get('image_url') as string)?.trim() || null
+		});
+
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
 	delete: async ({ request, locals }) => {
 		const { user } = await locals.safeGetSession();
 		if (!user) redirect(303, '/login');
