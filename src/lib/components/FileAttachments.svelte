@@ -11,12 +11,9 @@
 
 	let uploading = $state(false);
 	let uploadError = $state('');
+	let dragOver = $state(false);
 
-	async function handleFile(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-
+	async function uploadFile(file: File) {
 		uploading = true;
 		uploadError = '';
 
@@ -36,8 +33,23 @@
 			uploadError = 'Erreur réseau';
 		} finally {
 			uploading = false;
-			input.value = '';
 		}
+	}
+
+	async function handleFile(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		await uploadFile(file);
+		input.value = '';
+	}
+
+	async function handleDrop(e: DragEvent) {
+		e.preventDefault();
+		dragOver = false;
+		const file = e.dataTransfer?.files?.[0];
+		if (!file) return;
+		await uploadFile(file);
 	}
 
 	function remove(index: number) {
@@ -64,10 +76,26 @@
 		</div>
 	{/if}
 
-	<label class="file-btn" class:loading={uploading}>
-		{uploading ? 'Envoi…' : '📎 Ajouter image / PDF'}
-		<input type="file" accept="image/*,.pdf" onchange={handleFile} style="display:none" disabled={uploading} />
-	</label>
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="drop-zone"
+		class:drag-over={dragOver}
+		class:loading={uploading}
+		ondragover={(e) => { e.preventDefault(); dragOver = true; }}
+		ondragleave={() => dragOver = false}
+		ondrop={handleDrop}
+	>
+		{#if uploading}
+			<span>Envoi…</span>
+		{:else}
+			<span>Glissez une image / PDF ici</span>
+			<span class="drop-or">ou</span>
+			<label class="file-btn">
+				Parcourir
+				<input type="file" accept="image/*,.pdf" onchange={handleFile} style="display:none" disabled={uploading} />
+			</label>
+		{/if}
+	</div>
 
 	{#if uploadError}<p class="upload-err">{uploadError}</p>{/if}
 </div>
@@ -85,16 +113,27 @@
 	.att-name { font-size: 0.75rem; color: rgba(240,237,234,0.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
 	.att-remove { background: transparent; border: none; color: rgba(240,237,234,0.3); cursor: pointer; font-size: 0.65rem; padding: 0; flex-shrink: 0; transition: color 0.15s; }
 	.att-remove:hover { color: #C2374A; }
+
+	.drop-zone {
+		display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+		border: 2px dashed #333; border-radius: 6px; padding: 1.25rem;
+		color: rgba(240,237,234,0.4); font-family: 'Cinzel', serif;
+		font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;
+		transition: border-color 0.2s, background 0.2s;
+		cursor: default;
+	}
+	.drop-zone.drag-over { border-color: #C2374A; background: rgba(194,55,74,0.06); color: #E05060; }
+	.drop-zone.loading { opacity: 0.5; cursor: wait; }
+	.drop-or { color: rgba(240,237,234,0.2); }
+
 	.file-btn {
 		display: inline-flex; align-items: center;
 		background: #1A1A1A; border: 1px solid #333; color: rgba(240,237,234,0.6);
-		padding: 0.4rem 0.75rem; border-radius: 3px;
+		padding: 0.3rem 0.65rem; border-radius: 3px;
 		font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700;
 		letter-spacing: 0.06em; text-transform: uppercase;
 		cursor: pointer; transition: border-color 0.2s, color 0.2s; white-space: nowrap;
-		align-self: flex-start;
 	}
 	.file-btn:hover { border-color: #C2374A; color: #E05060; }
-	.file-btn.loading { opacity: 0.5; cursor: wait; }
 	.upload-err { color: #E05060; font-size: 0.8rem; margin: 0; }
 </style>
