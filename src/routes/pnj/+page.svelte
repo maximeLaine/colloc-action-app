@@ -27,7 +27,8 @@
 		if (s === 'malade') return '🤢';
 		if (s === 'pétrifié') return '🪨';
 		if (s === 'prisonnière' || s === 'prisonnier') return '⛓️';
-		return '';
+		if (s === 'vivant' || s === 'vivante') return '✅';
+		return '❓';
 	}
 </script>
 
@@ -58,9 +59,7 @@
 				<div class="npc-footer">
 					<span class="npc-name">{npc.name}</span>
 					<span class="npc-role">{npc.role}</span>
-					{#if npc.status}
-						<span class="npc-status status-{npc.status.toLowerCase()}">{statusEmoji(npc.status) || '✅'} {npc.status}</span>
-					{/if}
+					<span class="npc-status status-{(npc.status ?? 'vivant').toLowerCase()}">{statusEmoji(npc.status ?? 'vivant')} {npc.status ?? 'Vivant'}</span>
 				</div>
 			</button>
 		{/each}

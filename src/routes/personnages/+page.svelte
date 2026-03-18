@@ -24,7 +24,8 @@
 		if (s === 'malade') return '🤢';
 		if (s === 'pétrifié') return '🪨';
 		if (s === 'prisonnière' || s === 'prisonnier') return '⛓️';
-		return '';
+		if (s === 'vivant' || s === 'vivante') return '✅';
+		return '❓';
 	}
 
 	function closeOnBackdrop(e: MouseEvent) {
@@ -72,9 +73,7 @@
 						<div class="char-footer">
 							<span class="char-name">{c.name}</span>
 							<span class="char-meta">{c.race} · {c.class}</span>
-							{#if (c as any).status && (c as any).status.toLowerCase() !== 'vivant'}
-								<span class="char-status status-{(c as any).status.toLowerCase()}">{statusEmoji((c as any).status)} {(c as any).status}</span>
-							{/if}
+							<span class="char-status status-{((c as any).status ?? 'vivant').toLowerCase()}">{statusEmoji((c as any).status ?? 'vivant')} {(c as any).status ?? 'Vivant'}</span>
 							<div class="char-stats">
 								<span>❤️ {c.hp_current}/{c.hp_max}</span>
 								<span>🛡️ {c.ac}</span>
