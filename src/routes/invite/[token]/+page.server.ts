@@ -28,6 +28,7 @@ export const actions: Actions = {
 		if (!password || password.length < 6) return fail(400, { error: 'Mot de passe trop court (min 6 caractères)' });
 		if (!display_name) return fail(400, { error: 'Nom affiché requis' });
 
+		// Sign up — handle_new_user trigger will create the profile with display_name
 		const { error: signUpError } = await locals.supabase.auth.signUp({
 			email,
 			password,
