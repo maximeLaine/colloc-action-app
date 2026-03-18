@@ -117,11 +117,11 @@
 
 	.attachments { margin-top: 1.25rem; }
 	.att-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.4); display: block; margin-bottom: 0.6rem; }
-	.att-list { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-	.att-img-link { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-decoration: none; }
-	.att-img { width: 120px; height: 90px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); transition: border-color 0.2s; }
+	.att-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+	.att-img-link { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; text-decoration: none; }
+	.att-img { width: 100%; height: 200px; object-fit: cover; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); transition: border-color 0.2s; }
 	.att-img-link:hover .att-img { border-color: #C2374A; }
-	.att-caption { font-size: 0.72rem; color: rgba(240,237,234,0.4); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.att-caption { font-size: 0.72rem; color: rgba(240,237,234,0.4); width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
 	.att-pdf-link { display: flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 0.5rem 0.75rem; text-decoration: none; transition: border-color 0.2s; }
 	.att-pdf-link:hover { border-color: #C2374A; }
 	.att-pdf-name { font-size: 0.8rem; color: rgba(240,237,234,0.6); }
