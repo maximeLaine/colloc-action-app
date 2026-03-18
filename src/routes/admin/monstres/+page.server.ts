@@ -52,7 +52,10 @@ export const actions: Actions = {
 			p_hp: parseInt(form.get('hp') as string) || null,
 			p_ac: parseInt(form.get('ac') as string) || null,
 			p_notes: (form.get('notes') as string)?.trim() || null,
-			p_image_url: (form.get('image_url') as string)?.trim() || null
+			p_image_url: (form.get('image_url') as string)?.trim() || null,
+			p_description: (form.get('description') as string)?.trim() || null,
+			p_actions: (form.get('actions') as string)?.trim() || null,
+			p_special_abilities: (form.get('special_abilities') as string)?.trim() || null
 		});
 
 		if (error) return fail(500, { error: error.message });

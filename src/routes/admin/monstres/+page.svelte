@@ -8,6 +8,7 @@
 	interface Monster {
 		id: string; name: string; type: string | null; cr: string | null;
 		hp: number | null; ac: number | null; notes: string | null; image_url: string | null;
+		description: string | null; actions: string | null; special_abilities: string | null;
 	}
 
 	let showForm = $state(false);
@@ -191,7 +192,19 @@
 					</div>
 					<div class="field full">
 						<label>Notes / Attaques</label>
-						<textarea name="notes" rows="4">{editMonster.notes ?? ''}</textarea>
+						<textarea name="notes" rows="3">{editMonster.notes ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Capacités spéciales</label>
+						<textarea name="special_abilities" rows="4">{editMonster.special_abilities ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Description</label>
+						<textarea name="description" rows="4">{editMonster.description ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Actions</label>
+						<textarea name="actions" rows="5">{editMonster.actions ?? ''}</textarea>
 					</div>
 				</div>
 				<div class="form-actions">
@@ -238,7 +251,7 @@
 
 	.list-header { font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(240,237,234,0.3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.75rem; }
 	.monster-row { display: flex; align-items: flex-start; gap: 1rem; padding: 0.85rem 1rem; margin-bottom: 0.5rem; }
-	.monster-img { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; border: 1px solid #2A2A2A; flex-shrink: 0; }
+	.monster-img { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #2A2A2A; flex-shrink: 0; }
 	.monster-info { flex: 1; }
 	.monster-name { font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 700; color: #FFF; letter-spacing: 0.04em; text-transform: uppercase; }
 	.monster-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.3rem; align-items: center; }
