@@ -36,7 +36,8 @@ export const actions: Actions = {
 			p_content: (form.get('content') as string)?.trim() || null,
 			p_dm_notes: (form.get('dm_notes') as string)?.trim() || null,
 			p_visibility: (form.get('visibility') as string) || 'players',
-			p_attachments: attachments
+			p_attachments: attachments,
+			p_section: (form.get('section') as string)?.trim() || 'Divers'
 		});
 
 		if (error) return fail(500, { error: error.message });
