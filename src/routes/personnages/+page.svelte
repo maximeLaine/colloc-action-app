@@ -24,8 +24,7 @@
 		if (s === 'malade') return '🤢';
 		if (s === 'pétrifié') return '🪨';
 		if (s === 'prisonnière' || s === 'prisonnier') return '⛓️';
-		if (s === 'vivant' || s === 'vivante') return '✅';
-		return '❓';
+		return '';
 	}
 
 	function closeOnBackdrop(e: MouseEvent) {
