@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { createClient } from '$lib/supabase';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const supabase = createClient();
+	const registered = $derived($page.url.searchParams.get('registered') === '1');
 
 	let email = $state('');
 	let password = $state('');
@@ -35,6 +37,10 @@
 		</div>
 		<h1>Connexion</h1>
 		<p class="subtitle">La Kolok-Action — Campagne D&D 5e</p>
+
+		{#if registered}
+			<div class="success-msg">Compte créé ! Connectez-vous ci-dessous.</div>
+		{/if}
 
 		<form onsubmit={handleLogin}>
 			<div class="field">
@@ -134,5 +140,15 @@
 		padding: 0.65rem 0.85rem;
 		border-radius: 3px;
 		font-size: 0.9rem;
+	}
+
+	.success-msg {
+		background: #0A1A0A;
+		border: 1px solid #5CB85C44;
+		color: #5CB85C;
+		padding: 0.65rem 0.85rem;
+		border-radius: 3px;
+		font-size: 0.9rem;
+		margin-bottom: 1rem;
 	}
 </style>
