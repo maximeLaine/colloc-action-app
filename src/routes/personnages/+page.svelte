@@ -59,11 +59,14 @@
 					<button class="char-card" onclick={() => (selected = c)}>
 						<div class="char-portrait">
 							{#if c.image_url}
-								<img src={c.image_url} alt={c.name} />
+								<img src={c.image_url} alt={c.name} class:dimmed={(c as any).status && (c as any).status.toLowerCase() !== 'vivant'} />
 							{:else}
 								<div class="portrait-placeholder">⚔️</div>
 							{/if}
 							<div class="char-level">Niv. {c.level}</div>
+							{#if statusEmoji((c as any).status)}
+								<span class="status-emoji">{statusEmoji((c as any).status)}</span>
+							{/if}
 						</div>
 						<div class="char-footer">
 							<span class="char-name">{c.name}</span>
