@@ -67,13 +67,19 @@
 					</div>
 					<div class="field required">
 						<label for="section">Section</label>
-						<input id="section" name="section" type="text" required list="sec-list" placeholder="Ex: Monde" />
-						<datalist id="sec-list">{#each SECTIONS as s}<option value={s}></option>{/each}</datalist>
+						<select id="section" name="section" required>
+							{#each SECTIONS as s}
+								<option value={s}>{s}</option>
+							{/each}
+						</select>
 					</div>
 					<div class="field required">
 						<label for="category">Sous-section</label>
-						<input id="category" name="category" type="text" required list="cat-list" placeholder="Ex: Pays" />
-						<datalist id="cat-list">{#each CATEGORIES as c}<option value={c}></option>{/each}</datalist>
+						<select id="category" name="category" required>
+							{#each CATEGORIES as c}
+								<option value={c}>{c}</option>
+							{/each}
+						</select>
 					</div>
 					<div class="field">
 						<label for="visibility">Visibilité</label>
@@ -157,13 +163,19 @@
 					</div>
 					<div class="field required">
 						<label>Section</label>
-						<input name="section" type="text" required list="sec-list2" value={editEntry.section} />
-						<datalist id="sec-list2">{#each SECTIONS as s}<option value={s}></option>{/each}</datalist>
+						<select name="section" required>
+							{#each SECTIONS as s}
+								<option value={s} selected={editEntry.section === s}>{s}</option>
+							{/each}
+						</select>
 					</div>
 					<div class="field required">
 						<label>Sous-section</label>
-						<input name="category" type="text" required list="cat-list2" value={editEntry.category} />
-						<datalist id="cat-list2">{#each CATEGORIES as c}<option value={c}></option>{/each}</datalist>
+						<select name="category" required>
+							{#each CATEGORIES as c}
+								<option value={c} selected={editEntry.category === c}>{c}</option>
+							{/each}
+						</select>
 					</div>
 					<div class="field">
 						<label>Visibilité</label>
