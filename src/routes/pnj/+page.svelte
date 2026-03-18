@@ -26,6 +26,7 @@
 		if (s === 'mort') return '💀';
 		if (s === 'malade') return '🤢';
 		if (s === 'pétrifié') return '🪨';
+		if (s === 'prisonnière' || s === 'prisonnier') return '⛓️';
 		return '';
 	}
 </script>
@@ -48,10 +49,18 @@
 					{#if statusEmoji(npc.status)}
 						<span class="status-emoji">{statusEmoji(npc.status)}</span>
 					{/if}
+					{#if data.isDM}
+						<span class="vis-badge-card" class:shared={npc.visibility !== 'dm_only'}>
+							{npc.visibility === 'dm_only' ? '🔒' : npc.visibility === 'players' ? '👥' : '🌐'}
+						</span>
+					{/if}
 				</div>
 				<div class="npc-footer">
 					<span class="npc-name">{npc.name}</span>
 					<span class="npc-role">{npc.role}</span>
+					{#if npc.status}
+						<span class="npc-status status-{npc.status.toLowerCase()}">{statusEmoji(npc.status) || '✅'} {npc.status}</span>
+					{/if}
 				</div>
 			</button>
 		{/each}
@@ -193,6 +202,26 @@
 		filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
 	}
 	.npc-portrait img.dimmed { filter: grayscale(60%) brightness(0.7); }
+
+	.npc-status {
+		font-family: 'Cinzel', serif;
+		font-size: 0.62rem;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: #5CB85C;
+		margin-top: 0.1rem;
+	}
+	.npc-status.status-mort { color: #C2374A; }
+	.npc-status.status-malade { color: #E0A030; }
+	.npc-status.status-pétrifié { color: #8080A0; }
+	.npc-status.status-prisonnière { color: #E0A030; }
+
+	.vis-badge-card {
+		position: absolute; top: 0.4rem; left: 0.4rem;
+		font-size: 1rem; line-height: 1;
+		filter: drop-shadow(0 1px 3px rgba(0,0,0,0.9));
+		opacity: 0.85;
+	}
 
 	.npc-footer {
 		padding: 0.65rem 0.75rem;

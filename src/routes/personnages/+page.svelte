@@ -23,6 +23,7 @@
 		if (s === 'mort') return '💀';
 		if (s === 'malade') return '🤢';
 		if (s === 'pétrifié') return '🪨';
+		if (s === 'prisonnière' || s === 'prisonnier') return '⛓️';
 		return '';
 	}
 
@@ -71,6 +72,9 @@
 						<div class="char-footer">
 							<span class="char-name">{c.name}</span>
 							<span class="char-meta">{c.race} · {c.class}</span>
+							{#if (c as any).status && (c as any).status.toLowerCase() !== 'vivant'}
+								<span class="char-status status-{(c as any).status.toLowerCase()}">{statusEmoji((c as any).status)} {(c as any).status}</span>
+							{/if}
 							<div class="char-stats">
 								<span>❤️ {c.hp_current}/{c.hp_max}</span>
 								<span>🛡️ {c.ac}</span>
@@ -277,6 +281,13 @@
 	}
 	.char-portrait img.dimmed { filter: grayscale(60%) brightness(0.7); }
 	.char-footer { padding: 0.65rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+	.char-status {
+		font-family: 'Cinzel', serif; font-size: 0.62rem;
+		letter-spacing: 0.05em; text-transform: uppercase; color: #C2374A;
+	}
+	.char-status.status-malade { color: #E0A030; }
+	.char-status.status-pétrifié { color: #8080A0; }
+	.char-status.status-prisonnière { color: #E0A030; }
 	.char-name { font-family: 'Cinzel', serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #FFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.char-meta { font-size: 0.75rem; color: rgba(240,237,234,0.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.char-stats { display: flex; gap: 0.75rem; font-size: 0.78rem; color: rgba(240,237,234,0.6); margin-top: 0.1rem; }
