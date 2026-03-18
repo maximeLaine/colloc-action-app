@@ -261,7 +261,7 @@
 							<option value="mort" selected={editChar.status === 'mort'}>💀 Mort</option>
 							<option value="malade" selected={editChar.status === 'malade'}>🤢 Malade</option>
 							<option value="pétrifié" selected={editChar.status === 'pétrifié'}>🪨 Pétrifié</option>
-							<option value="prisonnière" selected={editNpc?.status === 'prisonnière' || (editChar as any)?.status === 'prisonnière'}>⛓️ Prisonnier/ère</option>
+							<option value="prisonnière" selected={editChar.status === 'prisonnière'}>⛓️ Prisonnier/ère</option>
 						</select>
 					</div>
 				</div>
