@@ -5,10 +5,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const { user } = await locals.safeGetSession();
 	if (user) redirect(303, '/');
 
-	const { data: invitation, error } = await locals.supabase
+	const { data, error } = await locals.supabase
 		.rpc('get_invitation_by_token', { p_token: params.token });
 
-	if (error || !invitation) {
+	// RPC returns a TABLE — data is an array
+	const invitation = Array.isArray(data) ? data[0] : data;
+
+	if (error || !invitation || !invitation.valid) {
 		return { invalid: true, email: null, role: null };
 	}
 
@@ -25,8 +28,7 @@ export const actions: Actions = {
 		if (!password || password.length < 6) return fail(400, { error: 'Mot de passe trop court (min 6 caractères)' });
 		if (!display_name) return fail(400, { error: 'Nom affiché requis' });
 
-		// Sign up the user client-side — profile will be created by the trigger
-		// We just need to mark the invitation as used after signup
+		// Sign up — handle_new_user trigger will create the profile with display_name
 		const { error: signUpError } = await locals.supabase.auth.signUp({
 			email,
 			password,
@@ -34,6 +36,12 @@ export const actions: Actions = {
 		});
 
 		if (signUpError) return fail(400, { error: signUpError.message });
+
+		// Apply the invitation role (dm/player) to the new profile
+		await locals.supabase.rpc('apply_invitation_role', {
+			p_token: params.token,
+			p_user_email: email
+		});
 
 		// Mark invitation as used
 		await locals.supabase.rpc('use_invitation', { p_token: params.token });

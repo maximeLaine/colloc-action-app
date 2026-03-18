@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { createClient } from '$lib/supabase';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const supabase = createClient();
+	const registered = $derived($page.url.searchParams.get('registered') === '1');
 
 	let email = $state('');
 	let password = $state('');
