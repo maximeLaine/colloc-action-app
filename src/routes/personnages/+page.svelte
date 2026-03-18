@@ -18,6 +18,14 @@
 		return mod >= 0 ? `+${mod}` : `${mod}`;
 	}
 
+	function statusEmoji(status: string): string {
+		const s = (status ?? '').toLowerCase();
+		if (s === 'mort') return '💀';
+		if (s === 'malade') return '🤢';
+		if (s === 'pétrifié') return '🪨';
+		return '';
+	}
+
 	function closeOnBackdrop(e: MouseEvent) {
 		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) {
 			selected = null;
@@ -259,6 +267,12 @@
 		font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
 		padding: 0.15rem 0.4rem; border-radius: 3px;
 	}
+	.status-emoji {
+		position: absolute; top: 0.4rem; right: 0.4rem;
+		font-size: 1.6rem; line-height: 1;
+		filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+	}
+	.char-portrait img.dimmed { filter: grayscale(60%) brightness(0.7); }
 	.char-footer { padding: 0.65rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
 	.char-name { font-family: 'Cinzel', serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #FFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.char-meta { font-size: 0.75rem; color: rgba(240,237,234,0.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

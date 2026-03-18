@@ -20,6 +20,14 @@
 	function closeOnBackdrop(e: MouseEvent) {
 		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) selected = null;
 	}
+
+	function statusEmoji(status: string): string {
+		const s = (status ?? '').toLowerCase();
+		if (s === 'mort') return '💀';
+		if (s === 'malade') return '🤢';
+		if (s === 'pétrifié') return '🪨';
+		return '';
+	}
 </script>
 
 <div class="container">
@@ -33,11 +41,13 @@
 			<button class="npc-card" onclick={() => (selected = npc)}>
 				<div class="npc-portrait">
 					{#if npc.image_url}
-						<img src={npc.image_url} alt={npc.name} />
+						<img src={npc.image_url} alt={npc.name} class:dimmed={npc.status !== 'vivant'} />
 					{:else}
 						<div class="portrait-placeholder">🎭</div>
 					{/if}
-					<span class="status-dot" class:dead={npc.status?.toLowerCase().includes('mort')}></span>
+					{#if statusEmoji(npc.status)}
+						<span class="status-emoji">{statusEmoji(npc.status)}</span>
+					{/if}
 				</div>
 				<div class="npc-footer">
 					<span class="npc-name">{npc.name}</span>
@@ -174,17 +184,15 @@
 		font-size: 3rem;
 	}
 
-	.status-dot {
+	.status-emoji {
 		position: absolute;
-		bottom: 0.5rem;
-		right: 0.5rem;
-		width: 10px;
-		height: 10px;
-		border-radius: 50%;
-		background: #5CB85C;
-		border: 2px solid rgba(0,0,0,0.6);
+		bottom: 0.4rem;
+		right: 0.4rem;
+		font-size: 1.6rem;
+		line-height: 1;
+		filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
 	}
-	.status-dot.dead { background: #C2374A; }
+	.npc-portrait img.dimmed { filter: grayscale(60%) brightness(0.7); }
 
 	.npc-footer {
 		padding: 0.65rem 0.75rem;

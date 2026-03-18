@@ -41,7 +41,8 @@ export const actions: Actions = {
 			p_player_id: player_id || null,
 			p_backstory: (form.get('backstory') as string)?.trim() || null,
 			p_image_url: (form.get('image_url') as string)?.trim() || null,
-			p_dm_backstory: (form.get('dm_backstory') as string)?.trim() || null
+			p_dm_backstory: (form.get('dm_backstory') as string)?.trim() || null,
+			p_status: (form.get('status') as string) || 'vivant'
 		});
 
 		if (error) return fail(500, { error: error.message });
@@ -92,7 +93,8 @@ export const actions: Actions = {
 			p_clear_player: clear_player,
 			p_backstory: (form.get('backstory') as string)?.trim() || null,
 			p_image_url: (form.get('image_url') as string)?.trim() || null,
-			p_dm_backstory: (form.get('dm_backstory') as string)?.trim() || null
+			p_dm_backstory: (form.get('dm_backstory') as string)?.trim() || null,
+			p_status: (form.get('status') as string) || null
 		});
 
 		if (error) return fail(500, { error: error.message });

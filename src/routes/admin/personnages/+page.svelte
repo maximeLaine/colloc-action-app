@@ -10,6 +10,7 @@
 		name: string; race: string; class: string; level: number;
 		hp_max: number; hp_current: number; ac: number; image_url: string | null;
 		visibility: string; backstory: string | null; dm_backstory: string | null;
+		status: string;
 	}
 
 	let showForm = $state(false);
@@ -105,6 +106,15 @@
 						<label for="dm_backstory">Notes MJ (privées)</label>
 						<textarea id="dm_backstory" name="dm_backstory" rows="3" placeholder="Éléments cachés, secrets..."></textarea>
 					</div>
+					<div class="field">
+						<label for="status">Statut</label>
+						<select id="status" name="status">
+							<option value="vivant">✅ Vivant</option>
+							<option value="mort">💀 Mort</option>
+							<option value="malade">🤢 Malade</option>
+							<option value="pétrifié">🪨 Pétrifié</option>
+						</select>
+					</div>
 				</div>
 				<div class="form-actions">
 					<button type="submit" class="btn-primary">Créer le personnage</button>
@@ -137,6 +147,10 @@
 							<span class="hp">{char.hp_current}/{char.hp_max} PV</span>
 							<span class="sep">·</span>
 							<span class="ac">CA {char.ac}</span>
+							{#if char.status && char.status !== 'vivant'}
+								<span class="sep">·</span>
+								<span class="status-tag">{char.status === 'mort' ? '💀' : char.status === 'malade' ? '🤢' : '🪨'} {char.status}</span>
+							{/if}
 						</div>
 						{#if char.player_name}
 							<div class="player-tag">👤 {char.player_name}</div>
@@ -238,6 +252,15 @@
 					<div class="field full">
 						<label for="e-dm-backstory">Notes MJ (privées)</label>
 						<textarea id="e-dm-backstory" name="dm_backstory" rows="3">{editChar.dm_backstory ?? ''}</textarea>
+					</div>
+					<div class="field">
+						<label>Statut</label>
+						<select name="status">
+							<option value="vivant" selected={editChar.status === 'vivant'}>✅ Vivant</option>
+							<option value="mort" selected={editChar.status === 'mort'}>💀 Mort</option>
+							<option value="malade" selected={editChar.status === 'malade'}>🤢 Malade</option>
+							<option value="pétrifié" selected={editChar.status === 'pétrifié'}>🪨 Pétrifié</option>
+						</select>
 					</div>
 				</div>
 				<div class="form-actions">

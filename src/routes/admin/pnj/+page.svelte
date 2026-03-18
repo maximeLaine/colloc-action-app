@@ -63,7 +63,12 @@
 					</div>
 					<div class="field">
 						<label for="status">Statut</label>
-						<input id="status" name="status" type="text" value="Vivant" placeholder="Vivant, Mort, Inconnu..." />
+						<select id="status" name="status">
+							<option value="vivant">✅ Vivant</option>
+							<option value="mort">💀 Mort</option>
+							<option value="malade">🤢 Malade</option>
+							<option value="pétrifié">🪨 Pétrifié</option>
+						</select>
 					</div>
 					<div class="field">
 						<label for="visibility">Visibilité</label>
@@ -181,7 +186,12 @@
 					</div>
 					<div class="field">
 						<label>Statut</label>
-						<input name="status" type="text" value={editNpc.status} />
+						<select name="status">
+							<option value="vivant" selected={editNpc.status === 'vivant'}>✅ Vivant</option>
+							<option value="mort" selected={editNpc.status === 'mort'}>💀 Mort</option>
+							<option value="malade" selected={editNpc.status === 'malade'}>🤢 Malade</option>
+							<option value="pétrifié" selected={editNpc.status === 'pétrifié'}>🪨 Pétrifié</option>
+						</select>
 					</div>
 					<div class="field">
 						<label>Visibilité</label>
