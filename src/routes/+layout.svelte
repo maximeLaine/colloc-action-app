@@ -21,6 +21,7 @@
 
 	const isDM = $derived(data.profile?.role === 'dm');
 	const isLoggedIn = $derived(!!data.user);
+	const isConsole = $derived($page.url.pathname === '/admin');
 
 	const navItems = $derived([
 		{ href: '/', label: '🏠 Accueil', show: true },
@@ -43,7 +44,7 @@
 </svelte:head>
 
 <div class="app">
-	<header class="site-header">
+	<header class="site-header" class:hidden={isConsole}>
 		<div class="header-inner">
 			<a href="/" class="logo">
 				<img src="/logo-kolok-action.jpg" alt="Kolok-Action" />
@@ -105,7 +106,7 @@
 		</div>
 	{/if}
 
-	<main class="main-content">
+	<main class="main-content" class:no-margin={isConsole}>
 		{@render children()}
 	</main>
 
@@ -424,6 +425,8 @@
 		flex: 1;
 		margin-top: 4rem;
 	}
+	.main-content.no-margin { margin-top: 0; }
+	.site-header.hidden { display: none; }
 
 	/* ── Footer ── */
 	.site-footer {

@@ -5,14 +5,42 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const { user } = await locals.safeGetSession();
 	if (!user) redirect(303, '/login');
 
-	const [{ data: statsArr }, { data: rows }] = await Promise.all([
+	const [
+		{ data: statsArr },
+		{ data: rows },
+		sessionsRes,
+		npcsRes,
+		combatRes,
+		campaignRes
+	] = await Promise.all([
 		locals.supabase.rpc('admin_get_dashboard_stats', { p_user_id: user.id }),
-		locals.supabase.rpc('admin_get_players_with_chars', { p_user_id: user.id })
+		locals.supabase.rpc('admin_get_players_with_chars', { p_user_id: user.id }),
+		locals.supabase
+			.from('sessions')
+			.select('id, number, title, date_played, summary, dm_notes, xp_awarded')
+			.order('number', { ascending: false })
+			.limit(30),
+		locals.supabase
+			.from('npcs')
+			.select('id, name, role, status, generated_by_ai, visibility, affiliation')
+			.order('name'),
+		locals.supabase
+			.from('combat_encounters')
+			.select('id, name, combatants, round, turn_index, is_active')
+			.eq('is_active', true)
+			.order('created_at', { ascending: false })
+			.limit(1)
+			.maybeSingle(),
+		locals.supabase
+			.from('campaigns')
+			.select('id, name')
+			.order('created_at')
+			.limit(1)
+			.maybeSingle()
 	]);
 
 	const stats = Array.isArray(statsArr) ? statsArr[0] : statsArr;
 
-	// Grouper les personnages par joueur
 	const playersMap = new Map<string, {
 		id: string; email: string; display_name: string; role: string;
 		characters: { id: string; name: string; class: string; level: number; hp_current: number; hp_max: number; visibility: string }[];
@@ -37,7 +65,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		stats: stats ?? { sessions_count: 0, characters_count: 0, pnj_count: 0, lore_count: 0, monsters_count: 0, kills_count: 0 },
-		players: Array.from(playersMap.values())
+		players: Array.from(playersMap.values()),
+		sessions: sessionsRes.data ?? [],
+		npcs: npcsRes.data ?? [],
+		activeCombat: combatRes.data ?? null,
+		campaign: campaignRes.data ?? null
 	};
 };
 
