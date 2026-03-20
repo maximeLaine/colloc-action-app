@@ -21,7 +21,7 @@
 
 	const isDM = $derived(data.profile?.role === 'dm');
 	const isLoggedIn = $derived(!!data.user);
-	const isConsole = $derived($page.url.pathname === '/admin');
+	const isConsole = $derived(false);
 
 	const navItems = $derived([
 		{ href: '/', label: '🏠 Accueil', show: true },
