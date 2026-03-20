@@ -8,7 +8,7 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const { sessions, npcs, campaign, stats, players } = data;
 
-	type Tab = 'dashboard' | 'sessions' | 'npcs' | 'combat' | 'ia';
+	type Tab = 'dashboard' | 'sessions' | 'npcs' | 'ia';
 	let activeTab = $state<Tab>('dashboard');
 
 	// ─── Players modal + invite ───
@@ -308,7 +308,6 @@
 		<button class="tab" class:tab-active={activeTab === 'dashboard'} onclick={() => activeTab = 'dashboard'}>👥 Joueurs</button>
 		<button class="tab" class:tab-active={activeTab === 'sessions'} onclick={() => activeTab = 'sessions'}>📜 Sessions <span class="tab-count">{sessions.length}</span></button>
 		<button class="tab" class:tab-active={activeTab === 'npcs'} onclick={() => activeTab = 'npcs'}>🎭 PNJ <span class="tab-count">{npcs.length}</span></button>
-		<button class="tab" class:tab-active={activeTab === 'combat'} onclick={() => activeTab = 'combat'}>⚔️ Combat</button>
 		<button class="tab" class:tab-active={activeTab === 'ia'} onclick={() => activeTab = 'ia'}>✨ Outils IA</button>
 	</div>
 
@@ -406,6 +405,183 @@
 				</div>
 			{/each}
 		</div>
+
+	<!-- ═══ TRACKER COMBAT ═══ -->
+	<div class="subsection-title" style="margin-top:2rem">⚔️ Tracker de combat — Round {trackerRound}</div>
+	<div class="combat-layout">
+		<div class="combat-tracker card">
+			<div class="card-section-head">
+				<div style="display:flex;gap:0.5rem">
+					<button class="btn-secondary btn-sm" onclick={() => showAddPanel = !showAddPanel}>+ Ajouter</button>
+					{#if trackerCombatants.length > 0}
+						<button class="btn-primary btn-sm" onclick={nextTrackerTurn}>Suivant ▶</button>
+					{/if}
+				</div>
+			</div>
+
+			{#if showAddPanel}
+				<div class="add-panel">
+					<div class="add-tabs">
+						<button class="add-tab" class:add-tab-active={addType === 'monster'} onclick={() => addType = 'monster'}>🐉 Monstre</button>
+						<button class="add-tab" class:add-tab-active={addType === 'custom'} onclick={() => addType = 'custom'}>✏️ Personnalisé</button>
+					</div>
+					<div class="field-inline">
+						<label>Initiative</label>
+						<input type="number" bind:value={addInitiative} style="width:70px" />
+					</div>
+					{#if addType === 'monster'}
+						<select bind:value={selectedMonsterId}>
+							<option value="">Choisir un monstre…</option>
+							{#each data.monsters as m}
+								<option value={m.id}>{m.name} — PV {m.hp} CA {m.ac} (FP {m.cr})</option>
+							{/each}
+						</select>
+						{#if selectedMonster}
+							<div class="monster-preview">
+								<span>PV <strong>{selectedMonster.hp}</strong></span>
+								<span>CA <strong>{selectedMonster.ac}</strong></span>
+								<span>FP <strong>{selectedMonster.cr}</strong></span>
+							</div>
+						{/if}
+						<button class="btn-primary btn-sm" style="margin-top:0.5rem" onclick={addMonster} disabled={!selectedMonsterId}>Ajouter au combat</button>
+					{:else}
+						<div class="custom-grid">
+							<input placeholder="Nom" bind:value={customName} />
+							<div class="two-col">
+								<div><label>PV</label><input type="number" bind:value={customHp} /></div>
+								<div><label>CA</label><input type="number" bind:value={customAc} /></div>
+							</div>
+							<div class="type-toggle">
+								<button class="toggle-opt" class:toggle-enemy={customType === 'monster'} onclick={() => customType = 'monster'}>🐉 Ennemi</button>
+								<button class="toggle-opt" class:toggle-ally={customType === 'ally'} onclick={() => customType = 'ally'}>🛡️ Allié</button>
+							</div>
+							<button class="btn-primary btn-sm" onclick={addCustom}>Ajouter</button>
+						</div>
+					{/if}
+				</div>
+			{/if}
+
+			{#if trackerCombatants.length > 0}
+				<div class="combatants">
+					{#each trackerCombatants as c, i (c.id)}
+						<div class="combatant-row" class:combatant-active={i === trackerTurn} class:combatant-dead={c.hp_current === 0}>
+							<input type="number" value={c.initiative} style="width:46px;text-align:center"
+								onchange={(e) => { c.initiative = +(e.target as HTMLInputElement).value; sortByInit(); }} />
+							<button class="c-type-btn" onclick={() => c.type = c.type === 'monster' ? 'ally' : 'monster'}>
+								{c.type === 'monster' ? '🐉' : c.type === 'ally' ? '🛡️' : '⚔️'}
+							</button>
+							<div class="c-name">{c.name}</div>
+							<div class="ac-badge">CA {c.ac}</div>
+							<div class="hp-section">
+								<div class="c-hp-bar-wrap"><div class="c-hp-bar" style="width:{cHpPct(c)}%;background:{hpColor(cHpPct(c))}"></div></div>
+								<div class="hp-controls">
+									<button class="hp-btn hp-dmg" onclick={() => changeHp(c.id, -5)}>-5</button>
+									<button class="hp-btn hp-dmg" onclick={() => changeHp(c.id, -1)}>-1</button>
+									<span class="hp-text">{c.hp_current}/{c.hp_max}</span>
+									<button class="hp-btn hp-heal" onclick={() => changeHp(c.id, 1)}>+1</button>
+									<button class="hp-btn hp-heal" onclick={() => changeHp(c.id, 5)}>+5</button>
+								</div>
+							</div>
+							<button class="remove-btn" onclick={() => removeCombatant(c.id)}>✕</button>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="empty-state" style="margin-top:1rem">Aucun combattant — cliquez <strong>+ Ajouter</strong></p>
+			{/if}
+		</div>
+
+		<!-- Kills -->
+		<div class="kills-section card">
+			<div class="card-section-head">
+				<span class="card-section-title">💀 Kills <span class="count-badge">{data.kills.length}</span></span>
+				<button class="btn-secondary btn-sm" onclick={() => showKillForm = !showKillForm}>
+					{showKillForm ? 'Annuler' : '+ Ajouter'}
+				</button>
+			</div>
+
+			{#if showKillForm}
+				<div class="kill-form">
+					{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+					<form method="POST" action="?/addKill" use:enhance={() => ({ result, update }) => {
+						if (result.type === 'success') showKillForm = false;
+						update();
+					}}>
+						<div class="kill-form-grid">
+							<div class="field">
+								<label>Monstre tué *</label>
+								<input name="monster_name" type="text" required list="monster-list" placeholder="Ex: Gobelin" />
+								<datalist id="monster-list">{#each data.monsters as m}<option value={m.name}></option>{/each}</datalist>
+							</div>
+							<div class="field">
+								<label>Par qui *</label>
+								<input name="killed_by" type="text" required placeholder="Ex: Valtim" />
+							</div>
+							<div class="field">
+								<label>Session n°</label>
+								<input name="session_number" type="number" min="1" />
+							</div>
+							<div class="field">
+								<label>Notes</label>
+								<input name="notes" type="text" placeholder="Ex: coup fatal" />
+							</div>
+						</div>
+						<button type="submit" class="btn-primary btn-sm" style="margin-top:0.75rem">Enregistrer</button>
+					</form>
+				</div>
+			{/if}
+
+			{#if data.kills.length === 0}
+				<p class="empty-state">Aucun kill enregistré.</p>
+			{:else}
+				<div class="pj-kills-grid">
+					{#each PJ_ORDER as pj}
+						{@const pjKills = killsByPJ[pj] ?? []}
+						<div class="pj-kills-card">
+							<div class="pj-kills-header">
+								<span class="pj-name">{pj}</span>
+								<span class="pj-total">{pjKills.length}k</span>
+							</div>
+							{#if pjKills.length === 0}
+								<p class="pj-no-kills">—</p>
+							{:else}
+								<ul class="pj-kill-list">
+									{#each pjKills as k}
+										<li class:friendly-fire={k.notes === 'kill allié'}>
+											<span class="kill-session">{k.session ? `E${k.session}` : '?'}</span>
+											<span class="kill-monster">{k.monster}</span>
+										</li>
+									{/each}
+								</ul>
+							{/if}
+						</div>
+					{/each}
+				</div>
+				<details class="kills-detail">
+					<summary>Liste complète</summary>
+					<table class="kills-table">
+						<thead><tr><th>Session</th><th>Monstre</th><th>Tué par</th><th>Notes</th><th></th></tr></thead>
+						<tbody>
+							{#each data.kills as kill}
+								<tr>
+									<td class="k-session">{kill.session_number ? `#${kill.session_number}` : '—'}</td>
+									<td class="k-monster">{kill.monster_name}</td>
+									<td class="k-killer">{kill.killed_by}</td>
+									<td class="k-notes">{kill.notes ?? ''}</td>
+									<td>
+										<form method="POST" action="?/deleteKill" use:enhance>
+											<input type="hidden" name="id" value={kill.id} />
+											<button class="btn-del" type="submit" onclick={(e) => { if (!confirm('Supprimer ?')) e.preventDefault(); }}>✕</button>
+										</form>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</details>
+			{/if}
+		</div>
+	</div>
 
 	<!-- ═══ SESSIONS ═══ -->
 	{:else if activeTab === 'sessions'}
@@ -632,186 +808,6 @@
 				{/each}
 			</div>
 		{/if}
-
-	<!-- ═══ COMBAT ═══ -->
-	{:else if activeTab === 'combat'}
-		<div class="combat-layout">
-
-			<!-- Tracker -->
-			<div class="combat-tracker card">
-				<div class="card-section-head">
-					<span class="card-section-title">⚔️ Tracker — Round {trackerRound}</span>
-					<div style="display:flex;gap:0.5rem">
-						<button class="btn-secondary btn-sm" onclick={() => showAddPanel = !showAddPanel}>+ Ajouter</button>
-						{#if trackerCombatants.length > 0}
-							<button class="btn-primary btn-sm" onclick={nextTrackerTurn}>Suivant ▶</button>
-						{/if}
-					</div>
-				</div>
-
-				{#if showAddPanel}
-					<div class="add-panel">
-						<div class="add-tabs">
-							<button class="add-tab" class:add-tab-active={addType === 'monster'} onclick={() => addType = 'monster'}>🐉 Monstre</button>
-							<button class="add-tab" class:add-tab-active={addType === 'custom'} onclick={() => addType = 'custom'}>✏️ Personnalisé</button>
-						</div>
-						<div class="field-inline">
-							<label>Initiative</label>
-							<input type="number" bind:value={addInitiative} style="width:70px" />
-						</div>
-						{#if addType === 'monster'}
-							<select bind:value={selectedMonsterId}>
-								<option value="">Choisir un monstre…</option>
-								{#each data.monsters as m}
-									<option value={m.id}>{m.name} — PV {m.hp} CA {m.ac} (FP {m.cr})</option>
-								{/each}
-							</select>
-							{#if selectedMonster}
-								<div class="monster-preview">
-									<span>PV <strong>{selectedMonster.hp}</strong></span>
-									<span>CA <strong>{selectedMonster.ac}</strong></span>
-									<span>FP <strong>{selectedMonster.cr}</strong></span>
-								</div>
-							{/if}
-							<button class="btn-primary btn-sm" style="margin-top:0.5rem" onclick={addMonster} disabled={!selectedMonsterId}>Ajouter au combat</button>
-						{:else}
-							<div class="custom-grid">
-								<input placeholder="Nom" bind:value={customName} />
-								<div class="two-col">
-									<div><label>PV</label><input type="number" bind:value={customHp} /></div>
-									<div><label>CA</label><input type="number" bind:value={customAc} /></div>
-								</div>
-								<div class="type-toggle">
-									<button class="toggle-opt" class:toggle-enemy={customType === 'monster'} onclick={() => customType = 'monster'}>🐉 Ennemi</button>
-									<button class="toggle-opt" class:toggle-ally={customType === 'ally'} onclick={() => customType = 'ally'}>🛡️ Allié</button>
-								</div>
-								<button class="btn-primary btn-sm" onclick={addCustom}>Ajouter</button>
-							</div>
-						{/if}
-					</div>
-				{/if}
-
-				{#if trackerCombatants.length > 0}
-					<div class="combatants">
-						{#each trackerCombatants as c, i (c.id)}
-							<div class="combatant-row" class:combatant-active={i === trackerTurn} class:combatant-dead={c.hp_current === 0}>
-								<input type="number" value={c.initiative} style="width:46px;text-align:center"
-									onchange={(e) => { c.initiative = +(e.target as HTMLInputElement).value; sortByInit(); }} />
-								<button class="c-type-btn" onclick={() => c.type = c.type === 'monster' ? 'ally' : 'monster'}>
-									{c.type === 'monster' ? '🐉' : c.type === 'ally' ? '🛡️' : '⚔️'}
-								</button>
-								<div class="c-name">{c.name}</div>
-								<div class="ac-badge">CA {c.ac}</div>
-								<div class="hp-section">
-									<div class="c-hp-bar-wrap"><div class="c-hp-bar" style="width:{cHpPct(c)}%;background:{hpColor(cHpPct(c))}"></div></div>
-									<div class="hp-controls">
-										<button class="hp-btn hp-dmg" onclick={() => changeHp(c.id, -5)}>-5</button>
-										<button class="hp-btn hp-dmg" onclick={() => changeHp(c.id, -1)}>-1</button>
-										<span class="hp-text">{c.hp_current}/{c.hp_max}</span>
-										<button class="hp-btn hp-heal" onclick={() => changeHp(c.id, 1)}>+1</button>
-										<button class="hp-btn hp-heal" onclick={() => changeHp(c.id, 5)}>+5</button>
-									</div>
-								</div>
-								<button class="remove-btn" onclick={() => removeCombatant(c.id)}>✕</button>
-							</div>
-						{/each}
-					</div>
-				{:else}
-					<p class="empty-state" style="margin-top:1rem">Aucun combattant — cliquez <strong>+ Ajouter</strong></p>
-				{/if}
-			</div>
-
-			<!-- Kills -->
-			<div class="kills-section card">
-				<div class="card-section-head">
-					<span class="card-section-title">💀 Kills <span class="count-badge">{data.kills.length}</span></span>
-					<button class="btn-secondary btn-sm" onclick={() => showKillForm = !showKillForm}>
-						{showKillForm ? 'Annuler' : '+ Ajouter'}
-					</button>
-				</div>
-
-				{#if showKillForm}
-					<div class="kill-form">
-						{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
-						<form method="POST" action="?/addKill" use:enhance={() => ({ result, update }) => {
-							if (result.type === 'success') showKillForm = false;
-							update();
-						}}>
-							<div class="kill-form-grid">
-								<div class="field">
-									<label>Monstre tué *</label>
-									<input name="monster_name" type="text" required list="monster-list" placeholder="Ex: Gobelin" />
-									<datalist id="monster-list">{#each data.monsters as m}<option value={m.name}></option>{/each}</datalist>
-								</div>
-								<div class="field">
-									<label>Par qui *</label>
-									<input name="killed_by" type="text" required placeholder="Ex: Valtim" />
-								</div>
-								<div class="field">
-									<label>Session n°</label>
-									<input name="session_number" type="number" min="1" />
-								</div>
-								<div class="field">
-									<label>Notes</label>
-									<input name="notes" type="text" placeholder="Ex: coup fatal" />
-								</div>
-							</div>
-							<button type="submit" class="btn-primary btn-sm" style="margin-top:0.75rem">Enregistrer</button>
-						</form>
-					</div>
-				{/if}
-
-				{#if data.kills.length === 0}
-					<p class="empty-state">Aucun kill enregistré.</p>
-				{:else}
-					<div class="pj-kills-grid">
-						{#each PJ_ORDER as pj}
-							{@const pjKills = killsByPJ[pj] ?? []}
-							<div class="pj-kills-card">
-								<div class="pj-kills-header">
-									<span class="pj-name">{pj}</span>
-									<span class="pj-total">{pjKills.length}k</span>
-								</div>
-								{#if pjKills.length === 0}
-									<p class="pj-no-kills">—</p>
-								{:else}
-									<ul class="pj-kill-list">
-										{#each pjKills as k}
-											<li class:friendly-fire={k.notes === 'kill allié'}>
-												<span class="kill-session">{k.session ? `E${k.session}` : '?'}</span>
-												<span class="kill-monster">{k.monster}</span>
-											</li>
-										{/each}
-									</ul>
-								{/if}
-							</div>
-						{/each}
-					</div>
-					<details class="kills-detail">
-						<summary>Liste complète</summary>
-						<table class="kills-table">
-							<thead><tr><th>Session</th><th>Monstre</th><th>Tué par</th><th>Notes</th><th></th></tr></thead>
-							<tbody>
-								{#each data.kills as kill}
-									<tr>
-										<td class="k-session">{kill.session_number ? `#${kill.session_number}` : '—'}</td>
-										<td class="k-monster">{kill.monster_name}</td>
-										<td class="k-killer">{kill.killed_by}</td>
-										<td class="k-notes">{kill.notes ?? ''}</td>
-										<td>
-											<form method="POST" action="?/deleteKill" use:enhance>
-												<input type="hidden" name="id" value={kill.id} />
-												<button class="btn-del" type="submit" onclick={(e) => { if (!confirm('Supprimer ?')) e.preventDefault(); }}>✕</button>
-											</form>
-										</td>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</details>
-				{/if}
-			</div>
-		</div>
 
 	<!-- ═══ IA ═══ -->
 	{:else if activeTab === 'ia'}
@@ -1310,7 +1306,6 @@
 	.btn-delete-row:hover { border-color: #C2374A; color: #E05060; }
 
 	/* Session modal */
-	.modal-lg { max-width: 720px; }
 	.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 	.field.full { grid-column: 1 / -1; }
 	.field.required label::after { content: ' *'; color: #C2374A; }
@@ -1521,8 +1516,9 @@
 	.drawer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 	.drawer-grid .full { grid-column: 1 / -1; }
 
-	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
-	.modal { background: rgba(12,12,12,0.98); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; max-width: 480px; width: 100%; position: relative; padding: 2rem; }
+	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 1.5rem; overflow-y: auto; }
+	.modal { background: rgba(12,12,12,0.98); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; max-width: 480px; width: 100%; position: relative; padding: 2rem; margin: auto; }
+	.modal-lg { max-width: 720px; }
 	.modal h2 { font-size: 1rem; font-weight: 900; color: #C2374A; margin-bottom: 0.25rem; letter-spacing: 0.05em; text-transform: uppercase; }
 	.modal-email { font-size: 0.82rem; color: rgba(240,237,234,0.4); margin-bottom: 1.5rem; }
 	.modal-close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: rgba(240,237,234,0.5); width: 2rem; height: 2rem; border-radius: 50%; cursor: pointer; font-size: 0.75rem; }
