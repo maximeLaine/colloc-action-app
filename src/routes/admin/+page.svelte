@@ -9,13 +9,23 @@
 	type Tab = 'dashboard' | 'sessions' | 'npcs' | 'combat' | 'ia';
 	let activeTab = $state<Tab>('dashboard');
 
-	// ─── Players modal ───
+	// ─── Players modal + invite ───
 	interface Char { id: string; name: string; class: string; level: number; hp_current: number; hp_max: number; visibility: string; }
 	interface Player { id: string; email: string; display_name: string; role: string; characters: Char[]; }
 	let editPlayer = $state<Player | null>(null);
+	let showInvite = $state(false);
+	let inviteLink = $state<string | null>(null);
+
 	function closeOnBackdrop(e: MouseEvent) {
 		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) editPlayer = null;
 	}
+
+	$effect(() => {
+		if (form?.inviteToken) {
+			inviteLink = `${window.location.origin}/invite/${form.inviteToken}`;
+			showInvite = false;
+		}
+	});
 
 	// ─── HP helpers ───
 	function hpPct(cur: number, max: number) { return max > 0 ? Math.round((cur / max) * 100) : 0; }
@@ -170,6 +180,63 @@
 
 	<!-- ═══ JOUEURS ═══ -->
 	{#if activeTab === 'dashboard'}
+		<!-- Gestion utilisateurs -->
+		<div class="users-toolbar">
+			<span class="users-count">{players.length} compte{players.length !== 1 ? 's' : ''}</span>
+			<button class="btn-primary btn-sm" onclick={() => { showInvite = !showInvite; inviteLink = null; }}>
+				{showInvite ? '✕ Annuler' : '+ Inviter un joueur'}
+			</button>
+		</div>
+
+		{#if showInvite}
+			<div class="invite-panel card">
+				<div class="invite-panel-title">Inviter un joueur</div>
+				{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+				<form method="POST" action="?/invite" use:enhance>
+					<div class="invite-form-row">
+						<div class="field">
+							<label for="inv-email">Adresse email</label>
+							<input id="inv-email" name="email" type="email" required placeholder="joueur@exemple.com" />
+						</div>
+						<div class="field field-role">
+							<label for="inv-role">Rôle</label>
+							<select id="inv-role" name="role">
+								<option value="player">⚔️ Joueur</option>
+								<option value="dm">🎲 Maître du Jeu</option>
+							</select>
+						</div>
+						<button type="submit" class="btn-primary btn-invite-submit">Générer le lien</button>
+					</div>
+				</form>
+			</div>
+		{/if}
+
+		{#if inviteLink}
+			<div class="invite-result card">
+				<span class="inv-label">Lien d'invitation (valable 7 jours)</span>
+				<div class="inv-link-row">
+					<input type="text" readonly value={inviteLink} class="inv-link-input" onclick={(e) => (e.target as HTMLInputElement).select()} />
+					<button class="btn-copy" onclick={() => navigator.clipboard.writeText(inviteLink!)}>Copier</button>
+				</div>
+			</div>
+		{/if}
+
+		{#if data.invitations?.length}
+			<div class="subsection-title">Invitations en attente</div>
+			<div class="inv-list">
+				{#each data.invitations as inv}
+					<div class="inv-row card">
+						<div class="inv-info">
+							<span class="inv-email">{inv.email}</span>
+							<span class="role-badge role-{inv.role}">{inv.role === 'dm' ? '🎲 MJ' : '⚔️ Joueur'}</span>
+						</div>
+						<span class="inv-expires">expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}</span>
+					</div>
+				{/each}
+			</div>
+		{/if}
+
+		<div class="subsection-title">Comptes actifs</div>
 		<div class="player-grid">
 			{#each players as player}
 				<div class="player-card card">
@@ -608,6 +675,32 @@
 
 	.section-actions { margin-bottom: 1.25rem; }
 	.empty-state { text-align: center; padding: 3rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+	/* Users management toolbar */
+	.users-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+	.users-count { font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(240,237,234,0.35); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+	.subsection-title { font-family: 'Cinzel', serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(240,237,234,0.28); margin-bottom: 0.75rem; margin-top: 1.5rem; }
+
+	.invite-panel { margin-bottom: 1.25rem; padding: 1.25rem; }
+	.invite-panel-title { font-family: 'Cinzel', serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C2374A; margin-bottom: 1rem; }
+	.invite-form-row { display: flex; align-items: flex-end; gap: 0.75rem; }
+	.invite-form-row .field { flex: 1; }
+	.field-role { max-width: 180px; }
+	.btn-invite-submit { align-self: flex-end; white-space: nowrap; flex-shrink: 0; }
+
+	.invite-result { margin-bottom: 1.25rem; padding: 1rem 1.25rem; }
+	.inv-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.35); display: block; margin-bottom: 0.55rem; }
+	.inv-link-row { display: flex; gap: 0.5rem; }
+	.inv-link-input { flex: 1; background: #0A0A0A; border: 1px solid #2A2A2A; color: #F0EDEA; padding: 0.5rem 0.75rem; border-radius: 3px; font-family: 'Crimson Text', serif; font-size: 0.88rem; }
+	.btn-copy { background: transparent; border: 1px solid #2A3A4A; color: rgba(240,237,234,0.5); padding: 0.4rem 0.85rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+	.btn-copy:hover { border-color: #5CB85C; color: #5CB85C; }
+
+	.inv-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.5rem; }
+	.inv-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; }
+	.inv-info { display: flex; align-items: center; gap: 0.75rem; }
+	.inv-email { font-size: 0.85rem; color: rgba(240,237,234,0.6); }
+	.inv-expires { font-size: 0.72rem; color: rgba(240,237,234,0.28); font-family: 'Cinzel', serif; letter-spacing: 0.03em; }
+	.error-msg { background: #1A0508; border: 1px solid rgba(194,55,74,0.3); color: #E05060; padding: 0.5rem 0.75rem; border-radius: 3px; font-size: 0.88rem; margin-bottom: 0.75rem; }
 
 	/* Players */
 	.player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }

@@ -13,7 +13,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		combatRes,
 		campaignRes,
 		{ data: kills },
-		{ data: monsters }
+		{ data: monsters },
+		{ data: invitations }
 	] = await Promise.all([
 		locals.supabase.rpc('admin_get_dashboard_stats', { p_user_id: user.id }),
 		locals.supabase.rpc('admin_get_players_with_chars', { p_user_id: user.id }),
@@ -40,7 +41,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.limit(1)
 			.maybeSingle(),
 		locals.supabase.rpc('get_kills_for_user', { p_user_id: user.id }),
-		locals.supabase.rpc('get_monsters_for_user', { p_user_id: user.id })
+		locals.supabase.rpc('get_monsters_for_user', { p_user_id: user.id }),
+		locals.supabase.rpc('admin_list_invitations', { p_user_id: user.id })
 	]);
 
 	const stats = Array.isArray(statsArr) ? statsArr[0] : statsArr;
@@ -75,7 +77,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		activeCombat: combatRes.data ?? null,
 		campaign: campaignRes.data ?? null,
 		kills: kills ?? [],
-		monsters: monsters ?? []
+		monsters: monsters ?? [],
+		invitations: invitations ?? []
 	};
 };
 
@@ -108,6 +111,25 @@ export const actions: Actions = {
 		});
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
+	},
+
+	invite: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+
+		const form = await request.formData();
+		const email = (form.get('email') as string)?.trim();
+		const role = (form.get('role') as string) || 'player';
+		if (!email) return fail(400, { error: 'Email requis' });
+
+		const { data: token, error } = await locals.supabase.rpc('admin_create_invitation', {
+			p_user_id: user.id,
+			p_email: email,
+			p_role: role
+		});
+
+		if (error) return fail(500, { error: error.message });
+		return { success: true, inviteToken: token };
 	},
 
 	updatePlayer: async ({ request, locals }) => {
