@@ -21,9 +21,9 @@
 
 	const isDM = $derived(data.profile?.role === 'dm');
 	const isLoggedIn = $derived(!!data.user);
+	const isConsole = $derived(false);
 
 	const navItems = $derived([
-		{ href: '/', label: '🏠 Accueil', show: true },
 		{ href: '/personnages', label: '⚔️ Personnages', show: true },
 		{ href: '/pnj', label: '🎭 PNJ', show: true },
 		{ href: '/sessions', label: '📜 Sessions', show: true },
@@ -43,7 +43,7 @@
 </svelte:head>
 
 <div class="app">
-	<header class="site-header">
+	<header class="site-header" class:hidden={isConsole}>
 		<div class="header-inner">
 			<a href="/" class="logo">
 				<img src="/logo-kolok-action.jpg" alt="Kolok-Action" />
@@ -70,7 +70,7 @@
 						<span class="role-badge player">Joueur</span>
 					{/if}
 					<form method="POST" action="/auth?/logout" class="logout-form">
-						<button type="submit" class="btn-logout">Déconnexion</button>
+						<button type="submit" class="btn-logout" title="Déconnexion">🔓</button>
 					</form>
 					<button class="burger" onclick={() => menuOpen = !menuOpen} aria-label="Menu">
 						<span class:open={menuOpen}></span>
@@ -105,7 +105,7 @@
 		</div>
 	{/if}
 
-	<main class="main-content">
+	<main class="main-content" class:no-margin={isConsole}>
 		{@render children()}
 	</main>
 
@@ -391,15 +391,17 @@
 	.btn-logout {
 		background: transparent;
 		border: 1px solid #333;
-		color: rgba(240,237,234,0.5);
-		padding: 0.3rem 0.75rem;
-		font-family: 'Cinzel', serif;
-		font-size: 0.65rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
+		color: rgba(240,237,234,0.4);
+		padding: 0.25rem 0.5rem;
+		font-size: 0.85rem;
+		line-height: 1;
 		border-radius: 3px;
 		transition: border-color 0.2s, color 0.2s;
+		width: 1.8rem;
+		height: 1.8rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.btn-logout:hover { border-color: #C2374A; color: #E05060; }
@@ -424,6 +426,8 @@
 		flex: 1;
 		margin-top: 4rem;
 	}
+	.main-content.no-margin { margin-top: 0; }
+	.site-header.hidden { display: none; }
 
 	/* ── Footer ── */
 	.site-footer {
