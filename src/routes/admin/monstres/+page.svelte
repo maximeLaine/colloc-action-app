@@ -9,6 +9,20 @@
 		id: string; name: string; type: string | null; cr: string | null;
 		hp: number | null; ac: number | null; notes: string | null; image_url: string | null;
 		description: string | null; actions: string | null; special_abilities: string | null;
+		size: string | null; alignment: string | null; speed: string | null;
+		str_score: number | null; dex_score: number | null; con_score: number | null;
+		int_score: number | null; wis_score: number | null; cha_score: number | null;
+		saving_throws: string | null; skills_text: string | null;
+		damage_resistances: string | null; damage_immunities: string | null;
+		condition_immunities: string | null; senses: string | null; languages: string | null;
+		legendary_actions: string | null; reactions: string | null;
+		source_url: string | null;
+	}
+
+	function mod(score: number | null): string {
+		if (score == null) return '';
+		const m = Math.floor((score - 10) / 2);
+		return m >= 0 ? `+${m}` : `${m}`;
 	}
 
 	let showForm = $state(false);
@@ -19,8 +33,8 @@
 	const TYPES = ['Aberration', 'Bête', 'Céleste', 'Construction', 'Dragon', 'Élémentaire',
 		'Fée', 'Fiélon', 'Géant', 'Humanoïde', 'Mort-vivant', 'Plante', 'Vase'];
 
-	const usedTypes = $derived(
-		[...new Set(data.monsters.map((m: Monster) => m.type).filter(Boolean))] as string[]
+	const countByType = $derived(
+		TYPES.reduce((acc, t) => { acc[t] = data.monsters.filter((m: Monster) => m.type === t).length; return acc; }, {} as Record<string, number>)
 	);
 
 	const filtered = $derived(
@@ -105,9 +119,14 @@
 	<div class="filters">
 		<input class="search-input" type="text" bind:value={search} placeholder="🔍 Rechercher…" />
 		<div class="type-filters">
-			<button class="type-btn" class:active={filterType === ''} onclick={() => filterType = ''}>Tous</button>
-			{#each usedTypes as t}
-				<button class="type-btn" class:active={filterType === t} onclick={() => filterType = t}>{t}</button>
+			<button class="type-btn" class:active={filterType === ''} onclick={() => filterType = ''}>
+				Tous <span class="type-count">{data.monsters.length}</span>
+			</button>
+			{#each TYPES as t}
+				<button class="type-btn" class:active={filterType === t} onclick={() => filterType = t}
+					class:type-empty={!countByType[t]}>
+					{t} {#if countByType[t]}<span class="type-count">{countByType[t]}</span>{/if}
+				</button>
 			{/each}
 		</div>
 	</div>
@@ -117,33 +136,36 @@
 			<div class="empty">Aucun monstre. Ajoute le premier !</div>
 		{:else}
 			<div class="list-header">{filtered.length} / {data.monsters.length} monstre{data.monsters.length > 1 ? 's' : ''}</div>
-			{#each filtered as m}
-				<div class="monster-row card">
-					{#if m.image_url}
-						<img src={m.image_url} alt={m.name} class="monster-img" />
-					{/if}
-					<div class="monster-info">
-						<div class="monster-name">{m.name}</div>
-						<div class="monster-meta">
-							{#if m.type}<span class="tag">{m.type}</span>{/if}
-							{#if m.cr}<span class="tag cr">FP {m.cr}</span>{/if}
-							{#if m.hp}<span class="stat">❤️ {m.hp}</span>{/if}
-							{#if m.ac}<span class="stat">🛡️ {m.ac}</span>{/if}
+			<div class="monster-grid">
+				{#each filtered as m}
+					<div class="monster-card card">
+						{#if m.image_url}
+							<img src={m.image_url} alt={m.name} class="monster-card-img" />
+						{:else}
+							<div class="monster-card-placeholder">🐉</div>
+						{/if}
+						<div class="monster-card-body">
+							<div class="monster-name">{m.name}</div>
+							<div class="monster-meta">
+								{#if m.type}<span class="tag">{m.type}</span>{/if}
+								{#if m.cr}<span class="tag cr">FP {m.cr}</span>{/if}
+							</div>
+							<div class="monster-stats">
+								{#if m.hp}<span class="stat">❤️ {m.hp} PV</span>{/if}
+								{#if m.ac}<span class="stat">🛡️ {m.ac} CA</span>{/if}
+							</div>
 						</div>
-						{#if m.notes}<div class="monster-notes">{m.notes}</div>{/if}
+						<div class="card-actions">
+							<button class="btn-edit" onclick={() => editMonster = m as Monster}>Modifier</button>
+							<form method="POST" action="?/delete" use:enhance>
+								<input type="hidden" name="id" value={m.id} />
+								<button type="submit" class="btn-delete-small"
+									onclick={(e) => { if (!confirm(`Supprimer "${m.name}" ?`)) e.preventDefault(); }}>✕</button>
+							</form>
+						</div>
 					</div>
-					<div class="row-actions">
-						<button class="btn-edit" onclick={() => editMonster = m as Monster}>Modifier</button>
-						<form method="POST" action="?/delete" use:enhance>
-							<input type="hidden" name="id" value={m.id} />
-							<button type="submit" class="btn-delete"
-								onclick={(e) => { if (!confirm(`Supprimer "${m.name}" ?`)) e.preventDefault(); }}>
-								Supprimer
-							</button>
-						</form>
-					</div>
-				</div>
-			{/each}
+				{/each}
+			</div>
 		{/if}
 	</div>
 </div>
@@ -175,6 +197,14 @@
 						</select>
 					</div>
 					<div class="field">
+						<label>Taille</label>
+						<input name="size" type="text" value={editMonster.size ?? ''} placeholder="Grande, Moyenne…" />
+					</div>
+					<div class="field">
+						<label>Alignement</label>
+						<input name="alignment" type="text" value={editMonster.alignment ?? ''} placeholder="loyal mauvais…" />
+					</div>
+					<div class="field">
 						<label>FP</label>
 						<input name="cr" type="text" value={editMonster.cr ?? ''} />
 					</div>
@@ -186,25 +216,85 @@
 						<label>Classe d'armure</label>
 						<input name="ac" type="number" min="1" value={editMonster.ac ?? ''} />
 					</div>
+					<div class="field">
+						<label>Vitesse</label>
+						<input name="speed" type="text" value={editMonster.speed ?? ''} placeholder="9 m, nage 12 m…" />
+					</div>
+
+					<div class="field full">
+						<label>Caractéristiques</label>
+						<div class="ability-grid">
+							{#each [['FOR','str_score'],['DEX','dex_score'],['CON','con_score'],['INT','int_score'],['SAG','wis_score'],['CHA','cha_score']] as [lbl, field]}
+								<div class="ability-box">
+									<span class="ability-lbl">{lbl}</span>
+									<input name={field} type="number" min="1" max="30"
+										value={(editMonster as Record<string,unknown>)[field] ?? ''}
+										placeholder="—" />
+								</div>
+							{/each}
+						</div>
+					</div>
+
+					<div class="field">
+						<label>Jets de sauvegarde</label>
+						<input name="saving_throws" type="text" value={editMonster.saving_throws ?? ''} placeholder="Con +6, Int +8…" />
+					</div>
+					<div class="field">
+						<label>Compétences</label>
+						<input name="skills_text" type="text" value={editMonster.skills_text ?? ''} placeholder="Histoire +12, Perception +10…" />
+					</div>
+					<div class="field">
+						<label>Résistances aux dégâts</label>
+						<input name="damage_resistances" type="text" value={editMonster.damage_resistances ?? ''} />
+					</div>
+					<div class="field">
+						<label>Immunités aux dégâts</label>
+						<input name="damage_immunities" type="text" value={editMonster.damage_immunities ?? ''} />
+					</div>
+					<div class="field">
+						<label>Immunités aux états</label>
+						<input name="condition_immunities" type="text" value={editMonster.condition_immunities ?? ''} />
+					</div>
+					<div class="field">
+						<label>Sens</label>
+						<input name="senses" type="text" value={editMonster.senses ?? ''} placeholder="vision dans le noir 36 m…" />
+					</div>
+					<div class="field">
+						<label>Langues</label>
+						<input name="languages" type="text" value={editMonster.languages ?? ''} />
+					</div>
+
 					<div class="field full">
 						<label>Image</label>
 						<ImageUpload name="image_url" value={editMonster.image_url ?? ''} placeholder="/img/monstres/nom.png" />
 					</div>
 					<div class="field full">
-						<label>Notes / Attaques</label>
-						<textarea name="notes" rows="3">{editMonster.notes ?? ''}</textarea>
+						<label>Description</label>
+						<textarea name="description" rows="3">{editMonster.description ?? ''}</textarea>
 					</div>
 					<div class="field full">
 						<label>Capacités spéciales</label>
 						<textarea name="special_abilities" rows="4">{editMonster.special_abilities ?? ''}</textarea>
 					</div>
 					<div class="field full">
-						<label>Description</label>
-						<textarea name="description" rows="4">{editMonster.description ?? ''}</textarea>
-					</div>
-					<div class="field full">
 						<label>Actions</label>
 						<textarea name="actions" rows="5">{editMonster.actions ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Réactions</label>
+						<textarea name="reactions" rows="3">{editMonster.reactions ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Actions légendaires</label>
+						<textarea name="legendary_actions" rows="5">{editMonster.legendary_actions ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Notes DM</label>
+						<textarea name="notes" rows="3">{editMonster.notes ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Lien source (ex: AideDD)</label>
+						<input name="source_url" type="url" value={editMonster.source_url ?? ''} placeholder="https://www.aidedd.org/dnd/monstres.php?vf=..." />
 					</div>
 				</div>
 				<div class="form-actions">
@@ -234,6 +324,10 @@
 	textarea { resize: vertical; }
 	select option { background: #111; }
 	.form-actions { margin-top: 1.25rem; display: flex; gap: 0.75rem; justify-content: flex-end; }
+	.ability-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; }
+	.ability-box { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+	.ability-lbl { font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; color: rgba(240,237,234,0.45); text-transform: uppercase; }
+	.ability-box input { text-align: center; padding: 0.4rem 0.2rem; }
 	.error-msg { background: #1A0508; border: 1px solid #C2374A44; color: #E05060; padding: 0.6rem 0.85rem; border-radius: 3px; font-size: 0.9rem; margin-bottom: 1rem; }
 
 	.filters { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.25rem; }
@@ -248,23 +342,28 @@
 	}
 	.type-btn:hover { border-color: #C2374A; color: #E05060; }
 	.type-btn.active { background: rgba(194,55,74,0.15); border-color: #C2374A; color: #E05060; }
+	.type-btn.type-empty { opacity: 0.35; }
+	.type-count { background: rgba(255,255,255,0.1); border-radius: 3px; padding: 0 0.3rem; font-size: 0.55rem; margin-left: 0.2rem; }
+	.type-btn.active .type-count { background: rgba(194,55,74,0.3); }
 
 	.list-header { font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(240,237,234,0.3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.75rem; }
-	.monster-row { display: flex; align-items: flex-start; gap: 1rem; padding: 0.85rem 1rem; margin-bottom: 0.5rem; }
-	.monster-img { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #2A2A2A; flex-shrink: 0; }
-	.monster-info { flex: 1; }
-	.monster-name { font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 700; color: #FFF; letter-spacing: 0.04em; text-transform: uppercase; }
-	.monster-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.3rem; align-items: center; }
-	.tag { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(240,237,234,0.6); padding: 0.15rem 0.45rem; border-radius: 3px; font-size: 0.75rem; }
-	.tag.cr { background: rgba(194,55,74,0.1); border-color: rgba(194,55,74,0.3); color: #C2374A; font-weight: 700; }
-	.stat { font-size: 0.82rem; color: rgba(240,237,234,0.55); }
-	.monster-notes { font-size: 0.82rem; color: rgba(240,237,234,0.4); margin-top: 0.4rem; line-height: 1.5; }
 
-	.row-actions { display: flex; flex-direction: column; gap: 0.4rem; flex-shrink: 0; }
-	.btn-edit { background: transparent; border: 1px solid #2A3A4A; color: rgba(240,237,234,0.5); padding: 0.25rem 0.6rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+	.monster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+	.monster-card { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+	.monster-card-img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-bottom: 1px solid #1A1A1A; }
+	.monster-card-placeholder { width: 100%; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; background: #0A0A0A; border-bottom: 1px solid #1A1A1A; }
+	.monster-card-body { padding: 0.75rem; flex: 1; }
+	.monster-name { font-family: 'Cinzel', serif; font-size: 0.82rem; font-weight: 700; color: #FFF; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.35rem; }
+	.monster-meta { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+	.monster-stats { display: flex; gap: 0.75rem; }
+	.tag { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(240,237,234,0.6); padding: 0.12rem 0.4rem; border-radius: 3px; font-size: 0.7rem; }
+	.tag.cr { background: rgba(194,55,74,0.1); border-color: rgba(194,55,74,0.3); color: #C2374A; font-weight: 700; }
+	.stat { font-size: 0.78rem; color: rgba(240,237,234,0.5); }
+	.card-actions { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; border-top: 1px solid #1A1A1A; }
+	.btn-edit { background: transparent; border: 1px solid #2A3A4A; color: rgba(240,237,234,0.5); padding: 0.22rem 0.55rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
 	.btn-edit:hover { border-color: #2B8FD4; color: #2B8FD4; }
-	.btn-delete { background: transparent; border: 1px solid #3A1A1A; color: rgba(240,237,234,0.35); padding: 0.25rem 0.6rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
-	.btn-delete:hover { border-color: #C2374A; color: #E05060; }
+	.btn-delete-small { background: transparent; border: 1px solid #2A2A2A; color: rgba(240,237,234,0.25); width: 24px; height: 24px; border-radius: 3px; font-size: 0.65rem; cursor: pointer; transition: all 0.15s; }
+	.btn-delete-small:hover { border-color: #C2374A; color: #E05060; }
 	.empty { text-align: center; padding: 3rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
 
 	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }

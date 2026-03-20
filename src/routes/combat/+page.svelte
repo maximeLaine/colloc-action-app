@@ -119,119 +119,19 @@
 	<div class="page-header">
 		<div class="header-row">
 			<h1>Combat</h1>
-			{#if data.isDM}
-				<div class="header-actions">
-					<span class="round-badge">Round {round}</span>
-					<button class="btn-primary" onclick={() => (showAddPanel = !showAddPanel)}>+ Ajouter</button>
-					{#if combatants.length > 0}
-						<button class="btn-secondary" onclick={nextTurn}>Tour suivant ▶</button>
-					{/if}
-				</div>
-			{/if}
 		</div>
 	</div>
 
-	{#if data.isDM}
-		<!-- Panneau d'ajout combattant -->
-		{#if showAddPanel}
-			<div class="add-panel card">
-				<div class="add-tabs">
-					<button class="tab" class:active={addType === 'monster'} onclick={() => (addType = 'monster')}>🐉 Monstre</button>
-					<button class="tab" class:active={addType === 'custom'} onclick={() => (addType = 'custom')}>✏️ Personnalisé</button>
-				</div>
-				<div class="initiative-row">
-					<label>Initiative</label>
-					<input type="number" bind:value={initiative} style="width:70px" />
-				</div>
-				{#if addType === 'monster'}
-					<select bind:value={selectedMonsterId}>
-						<option value="">Choisir un monstre…</option>
-						{#each data.monsters as m}
-							<option value={m.id}>{m.name} — PV {m.hp} CA {m.ac} (FP {m.cr})</option>
-						{/each}
-					</select>
-					{#if selectedMonster}
-						<div class="monster-override">
-							<div class="override-field">
-								<label>PV</label>
-								<input type="number" bind:value={monsterHp} min="1" style="width:70px" />
-							</div>
-							<div class="override-field">
-								<label>CA</label>
-								<input type="number" bind:value={monsterAc} min="1" style="width:70px" />
-							</div>
-							<span class="fp-badge">FP {selectedMonster.cr}</span>
-						</div>
-						{#if selectedMonster.notes}<p class="notes">{selectedMonster.notes}</p>{/if}
-					{/if}
-					<button class="btn-primary mt" onclick={addMonster} disabled={!selectedMonsterId}>Ajouter au combat</button>
-				{:else}
-					<div class="custom-form">
-						<input placeholder="Nom" bind:value={customName} />
-						<div class="two-col">
-							<div><label>PV</label><input type="number" bind:value={customHp} /></div>
-							<div><label>CA</label><input type="number" bind:value={customAc} /></div>
-						</div>
-						<div class="type-toggle">
-							<button type="button" class="toggle-opt" class:active={customType === 'monster'} onclick={() => customType = 'monster'}>🐉 Ennemi</button>
-							<button type="button" class="toggle-opt" class:active={customType === 'ally'} onclick={() => customType = 'ally'}>🛡️ Allié</button>
-						</div>
-						<button class="btn-primary" onclick={addCustom}>Ajouter</button>
-					</div>
-				{/if}
-			</div>
-		{/if}
+	<!-- Tableau des kills -->
+	<div class="kills-section">
+		<div class="kills-header">
+			<h2>Tableau des kills</h2>
+			<button class="btn-primary" onclick={() => (showKillForm = !showKillForm)}>
+				{showKillForm ? 'Annuler' : '+ Ajouter un kill'}
+			</button>
+		</div>
 
-		<!-- Liste combattants -->
-		{#if combatants.length > 0}
-			<div class="combatants">
-				{#each combatants as c, i (c.id)}
-					<div class="combatant-row" class:active={i === turnIndex} class:dead={c.hp_current === 0}>
-						<div class="init-col">
-							<input type="number" value={c.initiative}
-								onchange={(e) => { c.initiative = +(e.target as HTMLInputElement).value; sortByInit(); }}
-								style="width:52px;text-align:center" />
-						</div>
-						<button class="c-type-btn" title="Basculer ennemi/allié"
-						onclick={() => c.type = c.type === 'monster' ? 'ally' : 'monster'}>
-						{c.type === 'monster' ? '🐉' : c.type === 'ally' ? '🛡️' : '⚔️'}
-					</button>
-						<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-					<div class="c-name" class:clickable={c.type === 'monster'} onclick={() => c.type === 'monster' && openSheet(c.name)}>{c.name}</div>
-						<div class="ac-badge">CA {c.ac}</div>
-						<div class="hp-section">
-							<div class="hp-bar-wrap">
-								<div class="hp-bar" style="width:{hpPct(c)}%;background:{hpColor(hpPct(c))}"></div>
-							</div>
-							<div class="hp-controls">
-								<button class="hp-btn dmg" onclick={() => changeHp(c.id, -5)}>-5</button>
-								<button class="hp-btn dmg" onclick={() => changeHp(c.id, -1)}>-1</button>
-								<span class="hp-text">{c.hp_current}/{c.hp_max}</span>
-								<button class="hp-btn heal" onclick={() => changeHp(c.id, 1)}>+1</button>
-								<button class="hp-btn heal" onclick={() => changeHp(c.id, 5)}>+5</button>
-							</div>
-						</div>
-						<button class="dup-btn" title="Dupliquer" onclick={() => duplicate(c.id)}>⧉</button>
-					<button class="remove-btn" onclick={() => remove(c.id)}>✕</button>
-					</div>
-				{/each}
-			</div>
-		{:else}
-			<div class="empty-combat">⚔️ Aucun combattant — utilisez <strong>+ Ajouter</strong></div>
-		{/if}
-
-		<hr class="section-sep" />
-
-		<!-- Tableau des kills -->
-		<div class="kills-section">
-			<div class="kills-header">
-				<h2>Tableau des kills</h2>
-				<button class="btn-primary" onclick={() => (showKillForm = !showKillForm)}>
-					{showKillForm ? 'Annuler' : '+ Ajouter un kill'}
-				</button>
-			</div>
-
-			{#if showKillForm}
+		{#if showKillForm}
 				<div class="kill-form card">
 					{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
 					<form method="POST" action="?/addKill" use:enhance={() => ({ result, update }) => {
@@ -267,7 +167,6 @@
 				</div>
 			{/if}
 		</div>
-	{/if}
 
 	<!-- Fiche monstre (panneau latéral) -->
 	{#if sheetMonster}
@@ -280,13 +179,38 @@
 			{/if}
 			<div class="sheet-header">
 				<h3 class="sheet-name">{sheetMonster.name}</h3>
-				{#if sheetMonster.type}<p class="sheet-type">{sheetMonster.type}</p>{/if}
+				{#if sheetMonster.size || sheetMonster.type || sheetMonster.alignment}
+					<p class="sheet-type">{[sheetMonster.size, sheetMonster.type, sheetMonster.alignment].filter(Boolean).join(' · ')}</p>
+				{/if}
 			</div>
 			<div class="sheet-stats">
 				{#if sheetMonster.cr}<div class="sheet-stat"><span class="stat-label">FP</span><span class="stat-val">{sheetMonster.cr}</span></div>{/if}
 				{#if sheetMonster.hp}<div class="sheet-stat"><span class="stat-label">PV</span><span class="stat-val">{sheetMonster.hp}</span></div>{/if}
 				{#if sheetMonster.ac}<div class="sheet-stat"><span class="stat-label">CA</span><span class="stat-val">{sheetMonster.ac}</span></div>{/if}
+				{#if sheetMonster.speed}<div class="sheet-stat"><span class="stat-label">VIT</span><span class="stat-val" style="font-size:0.75rem">{sheetMonster.speed}</span></div>{/if}
 			</div>
+			{#if sheetMonster.str_score || sheetMonster.dex_score || sheetMonster.con_score || sheetMonster.int_score || sheetMonster.wis_score || sheetMonster.cha_score}
+				<div class="ability-scores">
+					{#each [['FOR', sheetMonster.str_score],['DEX', sheetMonster.dex_score],['CON', sheetMonster.con_score],['INT', sheetMonster.int_score],['SAG', sheetMonster.wis_score],['CHA', sheetMonster.cha_score]] as [lbl, val]}
+						<div class="ability-score">
+							<span class="as-lbl">{lbl}</span>
+							<span class="as-val">{val ?? '—'}</span>
+							{#if val != null}<span class="as-mod">({Math.floor((+val - 10) / 2) >= 0 ? '+' : ''}{Math.floor((+val - 10) / 2)})</span>{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
+			{#if sheetMonster.saving_throws || sheetMonster.skills_text || sheetMonster.damage_resistances || sheetMonster.damage_immunities || sheetMonster.condition_immunities || sheetMonster.senses || sheetMonster.languages}
+				<div class="sheet-props">
+					{#if sheetMonster.saving_throws}<p><span class="prop-lbl">Jets de sauvegarde</span> {sheetMonster.saving_throws}</p>{/if}
+					{#if sheetMonster.skills_text}<p><span class="prop-lbl">Compétences</span> {sheetMonster.skills_text}</p>{/if}
+					{#if sheetMonster.damage_resistances}<p><span class="prop-lbl">Résistances</span> {sheetMonster.damage_resistances}</p>{/if}
+					{#if sheetMonster.damage_immunities}<p><span class="prop-lbl">Immunités (dégâts)</span> {sheetMonster.damage_immunities}</p>{/if}
+					{#if sheetMonster.condition_immunities}<p><span class="prop-lbl">Immunités (états)</span> {sheetMonster.condition_immunities}</p>{/if}
+					{#if sheetMonster.senses}<p><span class="prop-lbl">Sens</span> {sheetMonster.senses}</p>{/if}
+					{#if sheetMonster.languages}<p><span class="prop-lbl">Langues</span> {sheetMonster.languages}</p>{/if}
+				</div>
+			{/if}
 			{#if sheetMonster.description}
 				<div class="sheet-section">
 					<p class="sheet-text">{sheetMonster.description}</p>
@@ -304,17 +228,31 @@
 					<p class="sheet-text">{sheetMonster.actions}</p>
 				</div>
 			{/if}
+			{#if sheetMonster.reactions}
+				<div class="sheet-section">
+					<h4 class="sheet-section-title">Réactions</h4>
+					<p class="sheet-text">{sheetMonster.reactions}</p>
+				</div>
+			{/if}
+			{#if sheetMonster.legendary_actions}
+				<div class="sheet-section">
+					<h4 class="sheet-section-title">Actions légendaires</h4>
+					<p class="sheet-text">{sheetMonster.legendary_actions}</p>
+				</div>
+			{/if}
 			{#if sheetMonster.notes}
 				<div class="sheet-section">
 					<h4 class="sheet-section-title">Notes</h4>
 					<p class="sheet-text">{sheetMonster.notes}</p>
 				</div>
 			{/if}
+			{#if sheetMonster.source_url}
+				<a href={sheetMonster.source_url} target="_blank" rel="noopener noreferrer" class="sheet-source-link">🔗 Voir la fiche complète</a>
+			{/if}
 		</div>
 	{/if}
 
 	<div class="kills-table-wrap">
-		{#if !data.isDM}<h2 class="kills-title">⚔️ Tableau des kills</h2>{/if}
 		{#if data.kills.length === 0}
 			<div class="empty-kills">Aucun kill enregistré pour le moment.</div>
 		{:else}
@@ -490,7 +428,7 @@
 	}
 	.sheet-close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(240,237,234,0.4); width: 2rem; height: 2rem; border-radius: 50%; cursor: pointer; font-size: 0.75rem; transition: all 0.15s; }
 	.sheet-close:hover { color: #FFF; border-color: #C2374A; }
-	.sheet-img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 4px; margin-bottom: 1rem; border: 1px solid #222; }
+	.sheet-img { width: 100%; object-fit: contain; border-radius: 4px; margin-bottom: 1rem; border: 1px solid #222; display: block; }
 	.sheet-header { margin-bottom: 0.75rem; padding-right: 2.5rem; }
 	.sheet-name { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 900; color: #FFF; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 0.2rem; }
 	.sheet-type { font-size: 0.78rem; color: rgba(240,237,234,0.4); margin: 0; font-style: italic; }
@@ -501,6 +439,16 @@
 	.sheet-section { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; margin-top: 0.75rem; }
 	.sheet-section-title { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.35); margin: 0 0 0.4rem; }
 	.sheet-text { font-family: 'Crimson Text', serif; font-size: 0.95rem; color: rgba(240,237,234,0.7); line-height: 1.55; margin: 0; white-space: pre-wrap; }
+	.ability-scores { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; margin: 0.75rem 0; border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.6rem 0.25rem; background: rgba(0,0,0,0.3); }
+	.ability-score { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+	.as-lbl { font-family: 'Cinzel', serif; font-size: 0.5rem; font-weight: 700; text-transform: uppercase; color: rgba(240,237,234,0.35); letter-spacing: 0.06em; }
+	.as-val { font-size: 0.95rem; font-weight: 700; color: #FFF; }
+	.as-mod { font-size: 0.68rem; color: rgba(240,237,234,0.45); }
+	.sheet-props { margin: 0.6rem 0; display: flex; flex-direction: column; gap: 0.25rem; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.6rem 0; }
+	.sheet-props p { font-family: 'Crimson Text', serif; font-size: 0.9rem; color: rgba(240,237,234,0.65); line-height: 1.4; }
+	.prop-lbl { font-weight: 700; color: rgba(240,237,234,0.85); font-family: 'Cinzel', serif; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.3rem; }
+	.sheet-source-link { display: inline-block; margin-top: 1.25rem; font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(194,55,74,0.8); text-decoration: none; letter-spacing: 0.05em; border-bottom: 1px solid rgba(194,55,74,0.3); padding-bottom: 0.1rem; transition: color 0.15s; }
+	.sheet-source-link:hover { color: #E05060; }
 
 	@media (max-width: 600px) {
 		.form-grid { grid-template-columns: 1fr; }

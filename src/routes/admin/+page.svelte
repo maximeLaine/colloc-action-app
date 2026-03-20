@@ -12,9 +12,10 @@
 	let activeTab = $state<Tab>('dashboard');
 
 	// ─── Players modal + invite ───
-	interface Char { id: string; name: string; class: string; level: number; hp_current: number; hp_max: number; visibility: string; }
+	interface Char { id: string; name: string; race: string; class: string; level: number; hp_current: number; hp_max: number; ac: number; status: string; visibility: string; }
 	interface Player { id: string; email: string; display_name: string; role: string; characters: Char[]; }
 	let editPlayer = $state<Player | null>(null);
+	let editChar = $state<Char | null>(null);
 	let showInvite = $state(false);
 	let inviteLink = $state<string | null>(null);
 
@@ -155,6 +156,8 @@
 	let showAddPanel = $state(false);
 	let addType = $state<'monster' | 'custom'>('monster');
 	let selectedMonsterId = $state('');
+	let monsterHp = $state(10);
+	let monsterAc = $state(10);
 	let customName = $state('');
 	let customHp = $state(10);
 	let customAc = $state(10);
@@ -164,11 +167,16 @@
 
 	const selectedMonster = $derived(data.monsters.find((m: { id: string }) => m.id === selectedMonsterId));
 
+	$effect(() => {
+		const m = data.monsters.find((m: { id: string }) => m.id === selectedMonsterId);
+		if (m) { monsterHp = m.hp ?? 10; monsterAc = m.ac ?? 10; }
+	});
+
 	function sortByInit() { trackerCombatants = [...trackerCombatants].sort((a, b) => b.initiative - a.initiative); }
 	function addMonster() {
 		const m = data.monsters.find((m: { id: string }) => m.id === selectedMonsterId);
 		if (!m) return;
-		trackerCombatants = [...trackerCombatants, { id: crypto.randomUUID(), name: m.name, type: 'monster', initiative: addInitiative, hp_max: m.hp ?? 10, hp_current: m.hp ?? 10, ac: m.ac ?? 10, conditions: [] }];
+		trackerCombatants = [...trackerCombatants, { id: crypto.randomUUID(), name: m.name, type: 'monster', initiative: addInitiative, hp_max: monsterHp, hp_current: monsterHp, ac: monsterAc, conditions: [] }];
 		sortByInit(); showAddPanel = false;
 	}
 	function addCustom() {
@@ -187,7 +195,20 @@
 		trackerCombatants = trackerCombatants.filter(c => c.id !== id);
 		trackerTurn = Math.min(trackerTurn, Math.max(0, trackerCombatants.length - 1));
 	}
+	function duplicateCombatant(id: string) {
+		const c = trackerCombatants.find(c => c.id === id);
+		if (!c) return;
+		trackerCombatants = [...trackerCombatants, { ...c, id: crypto.randomUUID() }];
+		sortByInit();
+	}
 	function cHpPct(c: CombatantLocal) { return c.hp_max > 0 ? Math.round((c.hp_current / c.hp_max) * 100) : 0; }
+
+	type MonsterData = typeof data.monsters[0];
+	let sheetMonster = $state<MonsterData | null>(null);
+	function openMonsterSheet(name: string) {
+		const m = data.monsters.find((m: MonsterData) => m.name === name);
+		sheetMonster = m ?? null;
+	}
 
 	const PJ_ORDER = ['Valtim', 'Upkik', 'Freedah', 'Kova', 'Elian Thorne', 'Zik'];
 	const killsByPJ = $derived.by(() => {
@@ -363,7 +384,14 @@
 							<span class="inv-email">{inv.email}</span>
 							<span class="role-badge role-{inv.role}">{inv.role === 'dm' ? '🎲 MJ' : '⚔️ Joueur'}</span>
 						</div>
-						<span class="inv-expires">expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}</span>
+						<div class="inv-actions">
+							<span class="inv-expires">expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}</span>
+							<form method="POST" action="?/deleteInvitation" use:enhance>
+								<input type="hidden" name="id" value={inv.id} />
+								<button class="btn-delete-small" type="submit"
+									onclick={(e) => { if (!confirm('Supprimer cette invitation ?')) e.preventDefault(); }}>✕</button>
+							</form>
+						</div>
 					</div>
 				{/each}
 			</div>
@@ -390,11 +418,12 @@
 										<span class="char-name">{c.name}</span>
 										<span class="char-class">{c.class} niv.{c.level}</span>
 										<span class="vis-dot" class:vis-pub={c.visibility === 'players'}>●</span>
+										<button class="btn-char-edit" onclick={() => editChar = c} title="Modifier">✏️</button>
 									</div>
 									<div class="hp-bar-wrap">
 										<div class="hp-bar" style="width:{hpPct(c.hp_current, c.hp_max)}%;background:{hpColor(hpPct(c.hp_current, c.hp_max))}"></div>
 									</div>
-									<div class="hp-text">{c.hp_current}/{c.hp_max} PV</div>
+									<div class="hp-text">{c.hp_current}/{c.hp_max} PV · CA {c.ac}</div>
 								</div>
 							{/each}
 						</div>
@@ -404,6 +433,192 @@
 				</div>
 			{/each}
 		</div>
+
+	<!-- ═══ COMBAT ═══ -->
+	{:else if activeTab === 'combat'}
+	<div class="subsection-title">⚔️ Tracker de combat — Round {trackerRound}</div>
+	<div class="combat-layout">
+		<div class="combat-tracker card">
+			<div class="card-section-head">
+				<div style="display:flex;gap:0.5rem">
+					<button class="btn-secondary btn-sm" onclick={() => showAddPanel = !showAddPanel}>+ Ajouter</button>
+					{#if trackerCombatants.length > 0}
+						<button class="btn-primary btn-sm" onclick={nextTrackerTurn}>Suivant ▶</button>
+					{/if}
+				</div>
+			</div>
+
+			{#if showAddPanel}
+				<div class="add-panel">
+					<div class="add-tabs">
+						<button class="add-tab" class:add-tab-active={addType === 'monster'} onclick={() => addType = 'monster'}>🐉 Monstre</button>
+						<button class="add-tab" class:add-tab-active={addType === 'custom'} onclick={() => addType = 'custom'}>✏️ Personnalisé</button>
+					</div>
+					<div class="field-inline">
+						<label>Initiative</label>
+						<input type="number" bind:value={addInitiative} style="width:70px" />
+					</div>
+					{#if addType === 'monster'}
+						<select bind:value={selectedMonsterId}>
+							<option value="">Choisir un monstre…</option>
+							{#each data.monsters as m}
+								<option value={m.id}>{m.name} — PV {m.hp} CA {m.ac} (FP {m.cr})</option>
+							{/each}
+						</select>
+						{#if selectedMonster}
+							<div class="monster-preview">
+								<div class="monster-override">
+									<label>PV</label>
+									<input type="number" bind:value={monsterHp} style="width:60px" />
+								</div>
+								<div class="monster-override">
+									<label>CA</label>
+									<input type="number" bind:value={monsterAc} style="width:60px" />
+								</div>
+								<span style="align-self:center">FP <strong>{selectedMonster.cr}</strong></span>
+							</div>
+						{/if}
+						<button class="btn-primary btn-sm" style="margin-top:0.5rem" onclick={addMonster} disabled={!selectedMonsterId}>Ajouter au combat</button>
+					{:else}
+						<div class="custom-grid">
+							<input placeholder="Nom" bind:value={customName} />
+							<div class="two-col">
+								<div><label>PV</label><input type="number" bind:value={customHp} /></div>
+								<div><label>CA</label><input type="number" bind:value={customAc} /></div>
+							</div>
+							<div class="type-toggle">
+								<button class="toggle-opt" class:toggle-enemy={customType === 'monster'} onclick={() => customType = 'monster'}>🐉 Ennemi</button>
+								<button class="toggle-opt" class:toggle-ally={customType === 'ally'} onclick={() => customType = 'ally'}>🛡️ Allié</button>
+							</div>
+							<button class="btn-primary btn-sm" onclick={addCustom}>Ajouter</button>
+						</div>
+					{/if}
+				</div>
+			{/if}
+
+			{#if trackerCombatants.length > 0}
+				<div class="combatants">
+					{#each trackerCombatants as c, i (c.id)}
+						<div class="combatant-row" class:combatant-active={i === trackerTurn} class:combatant-dead={c.hp_current === 0}>
+							<input type="number" value={c.initiative} style="width:46px;text-align:center"
+								onchange={(e) => { c.initiative = +(e.target as HTMLInputElement).value; sortByInit(); }} />
+							<button class="c-type-btn" onclick={() => c.type = c.type === 'monster' ? 'ally' : 'monster'}>
+								{c.type === 'monster' ? '🐉' : c.type === 'ally' ? '🛡️' : '⚔️'}
+							</button>
+							<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+							<div class="c-name" onclick={() => openMonsterSheet(c.name)} style="cursor:pointer">{c.name}</div>
+							<div class="ac-badge">CA {c.ac}</div>
+							<div class="hp-section">
+								<div class="c-hp-bar-wrap"><div class="c-hp-bar" style="width:{cHpPct(c)}%;background:{hpColor(cHpPct(c))}"></div></div>
+								<div class="hp-controls">
+									<button class="hp-btn hp-dmg" onclick={() => changeHp(c.id, -5)}>-5</button>
+									<button class="hp-btn hp-dmg" onclick={() => changeHp(c.id, -1)}>-1</button>
+									<span class="hp-text">{c.hp_current}/{c.hp_max}</span>
+									<button class="hp-btn hp-heal" onclick={() => changeHp(c.id, 1)}>+1</button>
+									<button class="hp-btn hp-heal" onclick={() => changeHp(c.id, 5)}>+5</button>
+								</div>
+							</div>
+							<button class="dup-btn" title="Dupliquer" onclick={() => duplicateCombatant(c.id)}>⧉</button>
+							<button class="remove-btn" onclick={() => removeCombatant(c.id)}>✕</button>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="empty-state" style="margin-top:1rem">Aucun combattant — cliquez <strong>+ Ajouter</strong></p>
+			{/if}
+		</div>
+
+		<!-- Kills -->
+		<div class="kills-section card">
+			<div class="card-section-head">
+				<span class="card-section-title">💀 Kills <span class="count-badge">{data.kills.length}</span></span>
+				<button class="btn-secondary btn-sm" onclick={() => showKillForm = !showKillForm}>
+					{showKillForm ? 'Annuler' : '+ Ajouter'}
+				</button>
+			</div>
+
+			{#if showKillForm}
+				<div class="kill-form">
+					{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+					<form method="POST" action="?/addKill" use:enhance={() => ({ result, update }) => {
+						if (result.type === 'success') showKillForm = false;
+						update();
+					}}>
+						<div class="kill-form-grid">
+							<div class="field">
+								<label>Monstre tué *</label>
+								<input name="monster_name" type="text" required list="monster-list" placeholder="Ex: Gobelin" />
+								<datalist id="monster-list">{#each data.monsters as m}<option value={m.name}></option>{/each}</datalist>
+							</div>
+							<div class="field">
+								<label>Par qui *</label>
+								<input name="killed_by" type="text" required placeholder="Ex: Valtim" />
+							</div>
+							<div class="field">
+								<label>Session n°</label>
+								<input name="session_number" type="number" min="1" />
+							</div>
+							<div class="field">
+								<label>Notes</label>
+								<input name="notes" type="text" placeholder="Ex: coup fatal" />
+							</div>
+						</div>
+						<button type="submit" class="btn-primary btn-sm" style="margin-top:0.75rem">Enregistrer</button>
+					</form>
+				</div>
+			{/if}
+
+			{#if data.kills.length === 0}
+				<p class="empty-state">Aucun kill enregistré.</p>
+			{:else}
+				<div class="pj-kills-grid">
+					{#each PJ_ORDER as pj}
+						{@const pjKills = killsByPJ[pj] ?? []}
+						<div class="pj-kills-card">
+							<div class="pj-kills-header">
+								<span class="pj-name">{pj}</span>
+								<span class="pj-total">{pjKills.length}k</span>
+							</div>
+							{#if pjKills.length === 0}
+								<p class="pj-no-kills">—</p>
+							{:else}
+								<ul class="pj-kill-list">
+									{#each pjKills as k}
+										<li class:friendly-fire={k.notes === 'kill allié'}>
+											<span class="kill-session">{k.session ? `E${k.session}` : '?'}</span>
+											<span class="kill-monster">{k.monster}</span>
+										</li>
+									{/each}
+								</ul>
+							{/if}
+						</div>
+					{/each}
+				</div>
+				<details class="kills-detail">
+					<summary>Liste complète</summary>
+					<table class="kills-table">
+						<thead><tr><th>Session</th><th>Monstre</th><th>Tué par</th><th>Notes</th><th></th></tr></thead>
+						<tbody>
+							{#each data.kills as kill}
+								<tr>
+									<td class="k-session">{kill.session_number ? `#${kill.session_number}` : '—'}</td>
+									<td class="k-monster">{kill.monster_name}</td>
+									<td class="k-killer">{kill.killed_by}</td>
+									<td class="k-notes">{kill.notes ?? ''}</td>
+									<td>
+										<form method="POST" action="?/deleteKill" use:enhance>
+											<input type="hidden" name="id" value={kill.id} />
+											<button class="btn-del" type="submit" onclick={(e) => { if (!confirm('Supprimer ?')) e.preventDefault(); }}>✕</button>
+										</form>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</details>
+			{/if}
+		</div>
+	</div>
 
 	<!-- ═══ SESSIONS ═══ -->
 	{:else if activeTab === 'sessions'}
@@ -630,186 +845,6 @@
 				{/each}
 			</div>
 		{/if}
-
-	<!-- ═══ COMBAT ═══ -->
-	{:else if activeTab === 'combat'}
-		<div class="combat-layout">
-
-			<!-- Tracker -->
-			<div class="combat-tracker card">
-				<div class="card-section-head">
-					<span class="card-section-title">⚔️ Tracker — Round {trackerRound}</span>
-					<div style="display:flex;gap:0.5rem">
-						<button class="btn-secondary btn-sm" onclick={() => showAddPanel = !showAddPanel}>+ Ajouter</button>
-						{#if trackerCombatants.length > 0}
-							<button class="btn-primary btn-sm" onclick={nextTrackerTurn}>Suivant ▶</button>
-						{/if}
-					</div>
-				</div>
-
-				{#if showAddPanel}
-					<div class="add-panel">
-						<div class="add-tabs">
-							<button class="add-tab" class:add-tab-active={addType === 'monster'} onclick={() => addType = 'monster'}>🐉 Monstre</button>
-							<button class="add-tab" class:add-tab-active={addType === 'custom'} onclick={() => addType = 'custom'}>✏️ Personnalisé</button>
-						</div>
-						<div class="field-inline">
-							<label>Initiative</label>
-							<input type="number" bind:value={addInitiative} style="width:70px" />
-						</div>
-						{#if addType === 'monster'}
-							<select bind:value={selectedMonsterId}>
-								<option value="">Choisir un monstre…</option>
-								{#each data.monsters as m}
-									<option value={m.id}>{m.name} — PV {m.hp} CA {m.ac} (FP {m.cr})</option>
-								{/each}
-							</select>
-							{#if selectedMonster}
-								<div class="monster-preview">
-									<span>PV <strong>{selectedMonster.hp}</strong></span>
-									<span>CA <strong>{selectedMonster.ac}</strong></span>
-									<span>FP <strong>{selectedMonster.cr}</strong></span>
-								</div>
-							{/if}
-							<button class="btn-primary btn-sm" style="margin-top:0.5rem" onclick={addMonster} disabled={!selectedMonsterId}>Ajouter au combat</button>
-						{:else}
-							<div class="custom-grid">
-								<input placeholder="Nom" bind:value={customName} />
-								<div class="two-col">
-									<div><label>PV</label><input type="number" bind:value={customHp} /></div>
-									<div><label>CA</label><input type="number" bind:value={customAc} /></div>
-								</div>
-								<div class="type-toggle">
-									<button class="toggle-opt" class:toggle-enemy={customType === 'monster'} onclick={() => customType = 'monster'}>🐉 Ennemi</button>
-									<button class="toggle-opt" class:toggle-ally={customType === 'ally'} onclick={() => customType = 'ally'}>🛡️ Allié</button>
-								</div>
-								<button class="btn-primary btn-sm" onclick={addCustom}>Ajouter</button>
-							</div>
-						{/if}
-					</div>
-				{/if}
-
-				{#if trackerCombatants.length > 0}
-					<div class="combatants">
-						{#each trackerCombatants as c, i (c.id)}
-							<div class="combatant-row" class:combatant-active={i === trackerTurn} class:combatant-dead={c.hp_current === 0}>
-								<input type="number" value={c.initiative} style="width:46px;text-align:center"
-									onchange={(e) => { c.initiative = +(e.target as HTMLInputElement).value; sortByInit(); }} />
-								<button class="c-type-btn" onclick={() => c.type = c.type === 'monster' ? 'ally' : 'monster'}>
-									{c.type === 'monster' ? '🐉' : c.type === 'ally' ? '🛡️' : '⚔️'}
-								</button>
-								<div class="c-name">{c.name}</div>
-								<div class="ac-badge">CA {c.ac}</div>
-								<div class="hp-section">
-									<div class="c-hp-bar-wrap"><div class="c-hp-bar" style="width:{cHpPct(c)}%;background:{hpColor(cHpPct(c))}"></div></div>
-									<div class="hp-controls">
-										<button class="hp-btn hp-dmg" onclick={() => changeHp(c.id, -5)}>-5</button>
-										<button class="hp-btn hp-dmg" onclick={() => changeHp(c.id, -1)}>-1</button>
-										<span class="hp-text">{c.hp_current}/{c.hp_max}</span>
-										<button class="hp-btn hp-heal" onclick={() => changeHp(c.id, 1)}>+1</button>
-										<button class="hp-btn hp-heal" onclick={() => changeHp(c.id, 5)}>+5</button>
-									</div>
-								</div>
-								<button class="remove-btn" onclick={() => removeCombatant(c.id)}>✕</button>
-							</div>
-						{/each}
-					</div>
-				{:else}
-					<p class="empty-state" style="margin-top:1rem">Aucun combattant — cliquez <strong>+ Ajouter</strong></p>
-				{/if}
-			</div>
-
-			<!-- Kills -->
-			<div class="kills-section card">
-				<div class="card-section-head">
-					<span class="card-section-title">💀 Kills <span class="count-badge">{data.kills.length}</span></span>
-					<button class="btn-secondary btn-sm" onclick={() => showKillForm = !showKillForm}>
-						{showKillForm ? 'Annuler' : '+ Ajouter'}
-					</button>
-				</div>
-
-				{#if showKillForm}
-					<div class="kill-form">
-						{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
-						<form method="POST" action="?/addKill" use:enhance={() => ({ result, update }) => {
-							if (result.type === 'success') showKillForm = false;
-							update();
-						}}>
-							<div class="kill-form-grid">
-								<div class="field">
-									<label>Monstre tué *</label>
-									<input name="monster_name" type="text" required list="monster-list" placeholder="Ex: Gobelin" />
-									<datalist id="monster-list">{#each data.monsters as m}<option value={m.name}></option>{/each}</datalist>
-								</div>
-								<div class="field">
-									<label>Par qui *</label>
-									<input name="killed_by" type="text" required placeholder="Ex: Valtim" />
-								</div>
-								<div class="field">
-									<label>Session n°</label>
-									<input name="session_number" type="number" min="1" />
-								</div>
-								<div class="field">
-									<label>Notes</label>
-									<input name="notes" type="text" placeholder="Ex: coup fatal" />
-								</div>
-							</div>
-							<button type="submit" class="btn-primary btn-sm" style="margin-top:0.75rem">Enregistrer</button>
-						</form>
-					</div>
-				{/if}
-
-				{#if data.kills.length === 0}
-					<p class="empty-state">Aucun kill enregistré.</p>
-				{:else}
-					<div class="pj-kills-grid">
-						{#each PJ_ORDER as pj}
-							{@const pjKills = killsByPJ[pj] ?? []}
-							<div class="pj-kills-card">
-								<div class="pj-kills-header">
-									<span class="pj-name">{pj}</span>
-									<span class="pj-total">{pjKills.length}k</span>
-								</div>
-								{#if pjKills.length === 0}
-									<p class="pj-no-kills">—</p>
-								{:else}
-									<ul class="pj-kill-list">
-										{#each pjKills as k}
-											<li class:friendly-fire={k.notes === 'kill allié'}>
-												<span class="kill-session">{k.session ? `E${k.session}` : '?'}</span>
-												<span class="kill-monster">{k.monster}</span>
-											</li>
-										{/each}
-									</ul>
-								{/if}
-							</div>
-						{/each}
-					</div>
-					<details class="kills-detail">
-						<summary>Liste complète</summary>
-						<table class="kills-table">
-							<thead><tr><th>Session</th><th>Monstre</th><th>Tué par</th><th>Notes</th><th></th></tr></thead>
-							<tbody>
-								{#each data.kills as kill}
-									<tr>
-										<td class="k-session">{kill.session_number ? `#${kill.session_number}` : '—'}</td>
-										<td class="k-monster">{kill.monster_name}</td>
-										<td class="k-killer">{kill.killed_by}</td>
-										<td class="k-notes">{kill.notes ?? ''}</td>
-										<td>
-											<form method="POST" action="?/deleteKill" use:enhance>
-												<input type="hidden" name="id" value={kill.id} />
-												<button class="btn-del" type="submit" onclick={(e) => { if (!confirm('Supprimer ?')) e.preventDefault(); }}>✕</button>
-											</form>
-										</td>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</details>
-				{/if}
-			</div>
-		</div>
 
 	<!-- ═══ IA ═══ -->
 	{:else if activeTab === 'ia'}
@@ -1120,6 +1155,125 @@
 	</div>
 {/if}
 
+<!-- Fiche monstre (panneau latéral) -->
+{#if sheetMonster}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="drawer-backdrop" onclick={() => sheetMonster = null}></div>
+	<div class="char-drawer monster-sheet-drawer">
+		<button class="modal-close" onclick={() => sheetMonster = null}>✕</button>
+		{#if sheetMonster.image_url}
+			<img src={sheetMonster.image_url} alt={sheetMonster.name} class="sheet-img" />
+		{/if}
+		<h2 class="drawer-title">{sheetMonster.name}</h2>
+		{#if sheetMonster.size || sheetMonster.type || sheetMonster.alignment}
+			<p class="sheet-subtitle">{[sheetMonster.size, sheetMonster.type, sheetMonster.alignment].filter(Boolean).join(' · ')}</p>
+		{/if}
+		<div class="sheet-stats-row">
+			{#if sheetMonster.cr}<div class="sheet-stat-box"><span class="stat-lbl">FP</span><span class="stat-val">{sheetMonster.cr}</span></div>{/if}
+			{#if sheetMonster.hp}<div class="sheet-stat-box"><span class="stat-lbl">PV</span><span class="stat-val">{sheetMonster.hp}</span></div>{/if}
+			{#if sheetMonster.ac}<div class="sheet-stat-box"><span class="stat-lbl">CA</span><span class="stat-val">{sheetMonster.ac}</span></div>{/if}
+			{#if sheetMonster.speed}<div class="sheet-stat-box"><span class="stat-lbl">VIT</span><span class="stat-val" style="font-size:0.75rem">{sheetMonster.speed}</span></div>{/if}
+		</div>
+		{#if sheetMonster.str_score || sheetMonster.dex_score || sheetMonster.con_score || sheetMonster.int_score || sheetMonster.wis_score || sheetMonster.cha_score}
+			<div class="ability-scores">
+				{#each [['FOR', sheetMonster.str_score],['DEX', sheetMonster.dex_score],['CON', sheetMonster.con_score],['INT', sheetMonster.int_score],['SAG', sheetMonster.wis_score],['CHA', sheetMonster.cha_score]] as [lbl, val]}
+					<div class="ability-score">
+						<span class="as-lbl">{lbl}</span>
+						<span class="as-val">{val ?? '—'}</span>
+						{#if val != null}<span class="as-mod">({Math.floor((val - 10) / 2) >= 0 ? '+' : ''}{Math.floor((val - 10) / 2)})</span>{/if}
+					</div>
+				{/each}
+			</div>
+		{/if}
+		<div class="sheet-props">
+			{#if sheetMonster.saving_throws}<p><span class="prop-lbl">Jets de sauvegarde</span> {sheetMonster.saving_throws}</p>{/if}
+			{#if sheetMonster.skills_text}<p><span class="prop-lbl">Compétences</span> {sheetMonster.skills_text}</p>{/if}
+			{#if sheetMonster.damage_resistances}<p><span class="prop-lbl">Résistances</span> {sheetMonster.damage_resistances}</p>{/if}
+			{#if sheetMonster.damage_immunities}<p><span class="prop-lbl">Immunités (dégâts)</span> {sheetMonster.damage_immunities}</p>{/if}
+			{#if sheetMonster.condition_immunities}<p><span class="prop-lbl">Immunités (états)</span> {sheetMonster.condition_immunities}</p>{/if}
+			{#if sheetMonster.senses}<p><span class="prop-lbl">Sens</span> {sheetMonster.senses}</p>{/if}
+			{#if sheetMonster.languages}<p><span class="prop-lbl">Langues</span> {sheetMonster.languages}</p>{/if}
+		</div>
+		{#if sheetMonster.description}<p class="sheet-text">{sheetMonster.description}</p>{/if}
+		{#if sheetMonster.special_abilities}
+			<h4 class="sheet-section-title">Capacités spéciales</h4>
+			<p class="sheet-text">{sheetMonster.special_abilities}</p>
+		{/if}
+		{#if sheetMonster.actions}
+			<h4 class="sheet-section-title">Actions</h4>
+			<p class="sheet-text">{sheetMonster.actions}</p>
+		{/if}
+		{#if sheetMonster.reactions}
+			<h4 class="sheet-section-title">Réactions</h4>
+			<p class="sheet-text">{sheetMonster.reactions}</p>
+		{/if}
+		{#if sheetMonster.legendary_actions}
+			<h4 class="sheet-section-title">Actions légendaires</h4>
+			<p class="sheet-text">{sheetMonster.legendary_actions}</p>
+		{/if}
+		{#if sheetMonster.notes}
+			<h4 class="sheet-section-title">Notes DM</h4>
+			<p class="sheet-text">{sheetMonster.notes}</p>
+		{/if}
+		{#if sheetMonster.source_url}
+			<a href={sheetMonster.source_url} target="_blank" rel="noopener noreferrer" class="sheet-source-link">🔗 Voir la fiche complète</a>
+		{/if}
+	</div>
+{/if}
+
+<!-- Drawer modifier PJ -->
+{#if editChar}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="drawer-backdrop" onclick={() => editChar = null}></div>
+	<div class="char-drawer">
+		<button class="modal-close" onclick={() => editChar = null}>✕</button>
+		<h2 class="drawer-title">Modifier — {editChar.name}</h2>
+		<p class="drawer-sub">{editChar.race} {editChar.class}</p>
+		{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+		<form method="POST" action="?/updateChar" use:enhance={() => ({ result, update }) => {
+			if (result.type === 'success') editChar = null;
+			update();
+		}}>
+			<input type="hidden" name="id" value={editChar.id} />
+			<input type="hidden" name="name" value={editChar.name} />
+			<input type="hidden" name="race" value={editChar.race} />
+			<input type="hidden" name="class" value={editChar.class} />
+			<div class="drawer-grid">
+				<div class="field">
+					<label>Niveau</label>
+					<input name="level" type="number" min="1" max="20" value={editChar.level} />
+				</div>
+				<div class="field">
+					<label>Classe d'armure (CA)</label>
+					<input name="ac" type="number" min="1" value={editChar.ac} />
+				</div>
+				<div class="field">
+					<label>PV max</label>
+					<input name="hp_max" type="number" min="1" value={editChar.hp_max} />
+				</div>
+				<div class="field">
+					<label>PV actuels</label>
+					<input name="hp_current" type="number" min="0" value={editChar.hp_current} />
+				</div>
+				<div class="field full">
+					<label>Statut</label>
+					<select name="status">
+						<option value="vivant" selected={editChar.status === 'vivant'}>✅ Vivant</option>
+						<option value="mort" selected={editChar.status === 'mort'}>💀 Mort</option>
+						<option value="malade" selected={editChar.status === 'malade'}>🤢 Malade</option>
+						<option value="pétrifié" selected={editChar.status === 'pétrifié'}>🪨 Pétrifié</option>
+						<option value="prisonnière" selected={editChar.status === 'prisonnière'}>⛓️ Prisonnier/ère</option>
+					</select>
+				</div>
+			</div>
+			<div class="form-actions">
+				<button type="button" class="btn-secondary" onclick={() => editChar = null}>Annuler</button>
+				<button type="submit" class="btn-primary">Enregistrer</button>
+			</div>
+		</form>
+	</div>
+{/if}
+
 <!-- Modal modifier joueur -->
 {#if editPlayer}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
@@ -1201,6 +1355,7 @@
 
 	.inv-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.5rem; }
 	.inv-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; }
+	.inv-actions { display: flex; align-items: center; gap: 0.75rem; }
 	.inv-info { display: flex; align-items: center; gap: 0.75rem; }
 	.inv-email { font-size: 0.85rem; color: rgba(240,237,234,0.6); }
 	.inv-expires { font-size: 0.72rem; color: rgba(240,237,234,0.28); font-family: 'Cinzel', serif; letter-spacing: 0.03em; }
@@ -1255,7 +1410,6 @@
 	.btn-delete-row:hover { border-color: #C2374A; color: #E05060; }
 
 	/* Session modal */
-	.modal-lg { max-width: 720px; }
 	.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 	.field.full { grid-column: 1 / -1; }
 	.field.required label::after { content: ' *'; color: #C2374A; }
@@ -1340,8 +1494,11 @@
 	.field-inline label { font-family: 'Cinzel', serif; font-size: 0.62rem; text-transform: uppercase; color: rgba(240,237,234,0.45); }
 	.add-panel select, .add-panel input[type="number"], .add-panel input[type="text"] { background: #0A0A0A; border: 1px solid #2A2A2A; color: #F0EDEA; padding: 0.4rem 0.6rem; border-radius: 3px; font-family: 'Crimson Text', serif; font-size: 0.95rem; width: 100%; }
 	.add-panel select:focus, .add-panel input:focus { outline: none; border-color: #C2374A; }
-	.monster-preview { display: flex; gap: 1.25rem; background: rgba(0,0,0,0.3); border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.45rem 0.7rem; font-size: 0.88rem; }
+	.monster-preview { display: flex; gap: 1.25rem; align-items: flex-start; background: rgba(0,0,0,0.3); border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.45rem 0.7rem; font-size: 0.88rem; }
 	.monster-preview strong { color: #FFF; }
+	.monster-override { display: flex; flex-direction: column; gap: 0.2rem; }
+	.monster-override label { font-family: 'Cinzel', serif; font-size: 0.58rem; text-transform: uppercase; color: rgba(240,237,234,0.45); }
+	.monster-override input { width: 60px; background: #0A0A0A; border: 1px solid #2A2A2A; color: #FFF; padding: 0.2rem 0.4rem; border-radius: 3px; font-size: 0.88rem; }
 	.custom-grid { display: flex; flex-direction: column; gap: 0.5rem; }
 	.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
 	.two-col label { font-family: 'Cinzel', serif; font-size: 0.6rem; text-transform: uppercase; color: rgba(240,237,234,0.4); display: block; margin-bottom: 0.2rem; }
@@ -1369,6 +1526,27 @@
 	.hp-text { font-size: 0.8rem; color: rgba(240,237,234,0.6); flex: 1; text-align: center; }
 	.remove-btn { background: transparent; border: 1px solid #2A2A2A; color: rgba(240,237,234,0.25); width: 24px; height: 24px; border-radius: 3px; font-size: 0.65rem; flex-shrink: 0; cursor: pointer; transition: all 0.15s; }
 	.remove-btn:hover { border-color: #C2374A; color: #E05060; }
+	.dup-btn { background: transparent; border: 1px solid #2A2A2A; color: rgba(240,237,234,0.25); width: 24px; height: 24px; border-radius: 3px; font-size: 0.75rem; flex-shrink: 0; cursor: pointer; transition: all 0.15s; }
+	.dup-btn:hover { border-color: #5577AA; color: #88AACC; }
+	.sheet-img { width: 100%; object-fit: contain; border-radius: 3px; margin-bottom: 1rem; display: block; }
+	.sheet-stats-row { display: flex; gap: 1rem; margin-bottom: 1rem; }
+	.sheet-stat-box { background: rgba(0,0,0,0.3); border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.4rem 0.75rem; text-align: center; }
+	.stat-lbl { display: block; font-family: 'Cinzel', serif; font-size: 0.55rem; text-transform: uppercase; color: rgba(240,237,234,0.4); letter-spacing: 0.06em; }
+	.stat-val { font-size: 1.1rem; font-weight: 700; color: #FFF; }
+	.sheet-section-title { font-family: 'Cinzel', serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(240,237,234,0.5); margin: 1rem 0 0.4rem; }
+	.sheet-text { font-size: 0.9rem; color: rgba(240,237,234,0.65); line-height: 1.6; white-space: pre-wrap; }
+	.sheet-subtitle { font-size: 0.82rem; color: rgba(240,237,234,0.45); margin-bottom: 1rem; font-style: italic; }
+	.monster-sheet-drawer { width: 560px; }
+	.ability-scores { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; margin: 0.75rem 0; border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.6rem 0.4rem; background: rgba(0,0,0,0.3); }
+	.ability-score { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+	.as-lbl { font-family: 'Cinzel', serif; font-size: 0.55rem; font-weight: 700; text-transform: uppercase; color: rgba(240,237,234,0.4); letter-spacing: 0.06em; }
+	.as-val { font-size: 1rem; font-weight: 700; color: #FFF; }
+	.as-mod { font-size: 0.72rem; color: rgba(240,237,234,0.5); }
+	.sheet-props { margin: 0.75rem 0; display: flex; flex-direction: column; gap: 0.3rem; border-top: 1px solid #1A1A1A; border-bottom: 1px solid #1A1A1A; padding: 0.6rem 0; }
+	.sheet-props p { font-size: 0.85rem; color: rgba(240,237,234,0.65); line-height: 1.5; }
+	.prop-lbl { font-weight: 700; color: rgba(240,237,234,0.85); font-family: 'Cinzel', serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.3rem; }
+	.sheet-source-link { display: inline-block; margin-top: 1.25rem; font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(194,55,74,0.8); text-decoration: none; letter-spacing: 0.05em; border-bottom: 1px solid rgba(194,55,74,0.3); padding-bottom: 0.1rem; transition: color 0.15s; }
+	.sheet-source-link:hover { color: #E05060; }
 
 	/* Kills */
 	.kills-section { padding: 1.25rem; }
@@ -1447,8 +1625,28 @@
 	.error-msg { background: #1A0508; border: 1px solid #C2374A44; color: #E05060; padding: 0.6rem 0.85rem; border-radius: 3px; font-size: 0.9rem; }
 
 	/* Modal */
-	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
-	.modal { background: rgba(12,12,12,0.98); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; max-width: 480px; width: 100%; position: relative; padding: 2rem; }
+	/* Char edit button */
+	.btn-char-edit { background: none; border: none; cursor: pointer; font-size: 0.75rem; padding: 0 0.1rem; opacity: 0.4; transition: opacity 0.15s; line-height: 1; margin-left: auto; }
+	.btn-char-edit:hover { opacity: 1; }
+
+	/* Char drawer */
+	.drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(3px); z-index: 200; }
+	.char-drawer {
+		position: fixed; top: 0; right: 0; bottom: 0; width: 400px; max-width: 100vw;
+		background: #0D0D0D; border-left: 1px solid rgba(194,55,74,0.25);
+		z-index: 201; overflow-y: auto; padding: 2rem 1.5rem;
+		box-shadow: -8px 0 32px rgba(0,0,0,0.7);
+		animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+	.drawer-title { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 900; color: #C2374A; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 0.2rem; padding-right: 2.5rem; }
+	.drawer-sub { font-size: 0.82rem; color: rgba(240,237,234,0.4); margin: 0 0 1.5rem; font-style: italic; }
+	.drawer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+	.drawer-grid .full { grid-column: 1 / -1; }
+
+	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 1.5rem; overflow-y: auto; }
+	.modal { background: rgba(12,12,12,0.98); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; max-width: 480px; width: 100%; position: relative; padding: 2rem; margin: auto; }
+	.modal-lg { max-width: 720px; }
 	.modal h2 { font-size: 1rem; font-weight: 900; color: #C2374A; margin-bottom: 0.25rem; letter-spacing: 0.05em; text-transform: uppercase; }
 	.modal-email { font-size: 0.82rem; color: rgba(240,237,234,0.4); margin-bottom: 1.5rem; }
 	.modal-close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: rgba(240,237,234,0.5); width: 2rem; height: 2rem; border-radius: 50%; cursor: pointer; font-size: 0.75rem; }

@@ -42,7 +42,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const playersMap = new Map<string, {
 		id: string; email: string; display_name: string; role: string;
-		characters: { id: string; name: string; class: string; level: number; hp_current: number; hp_max: number; visibility: string }[];
+		characters: { id: string; name: string; race: string; class: string; level: number; hp_current: number; hp_max: number; ac: number; status: string; visibility: string }[];
 	}>();
 
 	for (const row of rows ?? []) {
@@ -55,9 +55,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 		if (row.char_id) {
 			playersMap.get(row.player_id)!.characters.push({
-				id: row.char_id, name: row.char_name, class: row.char_class,
-				level: row.char_level, hp_current: row.char_hp_current,
-				hp_max: row.char_hp_max, visibility: row.char_visibility
+				id: row.char_id, name: row.char_name, race: row.char_race ?? '',
+				class: row.char_class, level: row.char_level,
+				hp_current: row.char_hp_current, hp_max: row.char_hp_max,
+				ac: row.char_ac ?? 10, status: row.char_status ?? 'vivant',
+				visibility: row.char_visibility
 			});
 		}
 	}
@@ -277,6 +279,53 @@ export const actions: Actions = {
 			p_player_id: id,
 			p_display_name: (form.get('display_name') as string)?.trim() || '',
 			p_role: (form.get('role') as string) || ''
+		});
+
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
+	updateChar: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		if (!id) return fail(400, { error: 'ID manquant' });
+
+		const { error } = await locals.supabase.rpc('admin_update_character', {
+			p_user_id: user.id,
+			p_char_id: id,
+			p_name: (form.get('name') as string)?.trim() || null,
+			p_race: (form.get('race') as string)?.trim() || null,
+			p_class: (form.get('class') as string)?.trim() || null,
+			p_level: parseInt(form.get('level') as string) || null,
+			p_hp_max: parseInt(form.get('hp_max') as string) || null,
+			p_hp_current: parseInt(form.get('hp_current') as string) || null,
+			p_ac: parseInt(form.get('ac') as string) || null,
+			p_player_id: null,
+			p_clear_player: false,
+			p_backstory: null,
+			p_image_url: null,
+			p_dm_backstory: null,
+			p_status: (form.get('status') as string) || null
+		});
+
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
+	deleteInvitation: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		if (!id) return fail(400, { error: 'ID manquant' });
+
+		const { error } = await locals.supabase.rpc('admin_delete_invitation', {
+			p_user_id: user.id,
+			p_invitation_id: id
 		});
 
 		if (error) return fail(500, { error: error.message });

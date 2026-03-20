@@ -24,7 +24,7 @@
 	const isConsole = $derived(false);
 
 	const navItems = $derived([
-		{ href: '/personnages', label: '⚔️ Personnages', show: true },
+		{ href: '/personnages', label: '⚔️ PJ', show: true },
 		{ href: '/pnj', label: '🎭 PNJ', show: true },
 		{ href: '/sessions', label: '📜 Sessions', show: true },
 		{ href: '/lore', label: '📚 Lore', show: true },
