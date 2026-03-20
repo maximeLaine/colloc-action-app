@@ -156,6 +156,8 @@
 	let showAddPanel = $state(false);
 	let addType = $state<'monster' | 'custom'>('monster');
 	let selectedMonsterId = $state('');
+	let monsterHp = $state(10);
+	let monsterAc = $state(10);
 	let customName = $state('');
 	let customHp = $state(10);
 	let customAc = $state(10);
@@ -165,11 +167,16 @@
 
 	const selectedMonster = $derived(data.monsters.find((m: { id: string }) => m.id === selectedMonsterId));
 
+	$effect(() => {
+		const m = data.monsters.find((m: { id: string }) => m.id === selectedMonsterId);
+		if (m) { monsterHp = m.hp ?? 10; monsterAc = m.ac ?? 10; }
+	});
+
 	function sortByInit() { trackerCombatants = [...trackerCombatants].sort((a, b) => b.initiative - a.initiative); }
 	function addMonster() {
 		const m = data.monsters.find((m: { id: string }) => m.id === selectedMonsterId);
 		if (!m) return;
-		trackerCombatants = [...trackerCombatants, { id: crypto.randomUUID(), name: m.name, type: 'monster', initiative: addInitiative, hp_max: m.hp ?? 10, hp_current: m.hp ?? 10, ac: m.ac ?? 10, conditions: [] }];
+		trackerCombatants = [...trackerCombatants, { id: crypto.randomUUID(), name: m.name, type: 'monster', initiative: addInitiative, hp_max: monsterHp, hp_current: monsterHp, ac: monsterAc, conditions: [] }];
 		sortByInit(); showAddPanel = false;
 	}
 	function addCustom() {
@@ -188,7 +195,20 @@
 		trackerCombatants = trackerCombatants.filter(c => c.id !== id);
 		trackerTurn = Math.min(trackerTurn, Math.max(0, trackerCombatants.length - 1));
 	}
+	function duplicateCombatant(id: string) {
+		const c = trackerCombatants.find(c => c.id === id);
+		if (!c) return;
+		trackerCombatants = [...trackerCombatants, { ...c, id: crypto.randomUUID() }];
+		sortByInit();
+	}
 	function cHpPct(c: CombatantLocal) { return c.hp_max > 0 ? Math.round((c.hp_current / c.hp_max) * 100) : 0; }
+
+	type MonsterData = typeof data.monsters[0];
+	let sheetMonster = $state<MonsterData | null>(null);
+	function openMonsterSheet(name: string) {
+		const m = data.monsters.find((m: MonsterData) => m.name === name);
+		sheetMonster = m ?? null;
+	}
 
 	const PJ_ORDER = ['Valtim', 'Upkik', 'Freedah', 'Kova', 'Elian Thorne', 'Zik'];
 	const killsByPJ = $derived.by(() => {
@@ -364,7 +384,14 @@
 							<span class="inv-email">{inv.email}</span>
 							<span class="role-badge role-{inv.role}">{inv.role === 'dm' ? '🎲 MJ' : '⚔️ Joueur'}</span>
 						</div>
-						<span class="inv-expires">expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}</span>
+						<div class="inv-actions">
+							<span class="inv-expires">expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}</span>
+							<form method="POST" action="?/deleteInvitation" use:enhance>
+								<input type="hidden" name="id" value={inv.id} />
+								<button class="btn-delete-small" type="submit"
+									onclick={(e) => { if (!confirm('Supprimer cette invitation ?')) e.preventDefault(); }}>✕</button>
+							</form>
+						</div>
 					</div>
 				{/each}
 			</div>
@@ -440,9 +467,15 @@
 						</select>
 						{#if selectedMonster}
 							<div class="monster-preview">
-								<span>PV <strong>{selectedMonster.hp}</strong></span>
-								<span>CA <strong>{selectedMonster.ac}</strong></span>
-								<span>FP <strong>{selectedMonster.cr}</strong></span>
+								<div class="monster-override">
+									<label>PV</label>
+									<input type="number" bind:value={monsterHp} style="width:60px" />
+								</div>
+								<div class="monster-override">
+									<label>CA</label>
+									<input type="number" bind:value={monsterAc} style="width:60px" />
+								</div>
+								<span style="align-self:center">FP <strong>{selectedMonster.cr}</strong></span>
 							</div>
 						{/if}
 						<button class="btn-primary btn-sm" style="margin-top:0.5rem" onclick={addMonster} disabled={!selectedMonsterId}>Ajouter au combat</button>
@@ -472,7 +505,8 @@
 							<button class="c-type-btn" onclick={() => c.type = c.type === 'monster' ? 'ally' : 'monster'}>
 								{c.type === 'monster' ? '🐉' : c.type === 'ally' ? '🛡️' : '⚔️'}
 							</button>
-							<div class="c-name">{c.name}</div>
+							<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+							<div class="c-name" onclick={() => openMonsterSheet(c.name)} style="cursor:pointer">{c.name}</div>
 							<div class="ac-badge">CA {c.ac}</div>
 							<div class="hp-section">
 								<div class="c-hp-bar-wrap"><div class="c-hp-bar" style="width:{cHpPct(c)}%;background:{hpColor(cHpPct(c))}"></div></div>
@@ -484,6 +518,7 @@
 									<button class="hp-btn hp-heal" onclick={() => changeHp(c.id, 5)}>+5</button>
 								</div>
 							</div>
+							<button class="dup-btn" title="Dupliquer" onclick={() => duplicateCombatant(c.id)}>⧉</button>
 							<button class="remove-btn" onclick={() => removeCombatant(c.id)}>✕</button>
 						</div>
 					{/each}
@@ -1120,6 +1155,38 @@
 	</div>
 {/if}
 
+<!-- Fiche monstre (panneau latéral) -->
+{#if sheetMonster}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="drawer-backdrop" onclick={() => sheetMonster = null}></div>
+	<div class="char-drawer">
+		<button class="modal-close" onclick={() => sheetMonster = null}>✕</button>
+		{#if sheetMonster.image_url}
+			<img src={sheetMonster.image_url} alt={sheetMonster.name} class="sheet-img" />
+		{/if}
+		<h2 class="drawer-title">{sheetMonster.name}</h2>
+		{#if sheetMonster.type}<p style="font-size:0.82rem;color:rgba(240,237,234,0.45);margin-bottom:1rem">{sheetMonster.type}</p>{/if}
+		<div class="sheet-stats-row">
+			{#if sheetMonster.cr}<div class="sheet-stat-box"><span class="stat-lbl">FP</span><span class="stat-val">{sheetMonster.cr}</span></div>{/if}
+			{#if sheetMonster.hp}<div class="sheet-stat-box"><span class="stat-lbl">PV</span><span class="stat-val">{sheetMonster.hp}</span></div>{/if}
+			{#if sheetMonster.ac}<div class="sheet-stat-box"><span class="stat-lbl">CA</span><span class="stat-val">{sheetMonster.ac}</span></div>{/if}
+		</div>
+		{#if sheetMonster.description}<p class="sheet-text">{sheetMonster.description}</p>{/if}
+		{#if sheetMonster.special_abilities}
+			<h4 class="sheet-section-title">Capacités spéciales</h4>
+			<p class="sheet-text">{sheetMonster.special_abilities}</p>
+		{/if}
+		{#if sheetMonster.actions}
+			<h4 class="sheet-section-title">Actions</h4>
+			<p class="sheet-text">{sheetMonster.actions}</p>
+		{/if}
+		{#if sheetMonster.notes}
+			<h4 class="sheet-section-title">Notes</h4>
+			<p class="sheet-text">{sheetMonster.notes}</p>
+		{/if}
+	</div>
+{/if}
+
 <!-- Drawer modifier PJ -->
 {#if editChar}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
@@ -1254,6 +1321,7 @@
 
 	.inv-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.5rem; }
 	.inv-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; }
+	.inv-actions { display: flex; align-items: center; gap: 0.75rem; }
 	.inv-info { display: flex; align-items: center; gap: 0.75rem; }
 	.inv-email { font-size: 0.85rem; color: rgba(240,237,234,0.6); }
 	.inv-expires { font-size: 0.72rem; color: rgba(240,237,234,0.28); font-family: 'Cinzel', serif; letter-spacing: 0.03em; }
@@ -1392,8 +1460,11 @@
 	.field-inline label { font-family: 'Cinzel', serif; font-size: 0.62rem; text-transform: uppercase; color: rgba(240,237,234,0.45); }
 	.add-panel select, .add-panel input[type="number"], .add-panel input[type="text"] { background: #0A0A0A; border: 1px solid #2A2A2A; color: #F0EDEA; padding: 0.4rem 0.6rem; border-radius: 3px; font-family: 'Crimson Text', serif; font-size: 0.95rem; width: 100%; }
 	.add-panel select:focus, .add-panel input:focus { outline: none; border-color: #C2374A; }
-	.monster-preview { display: flex; gap: 1.25rem; background: rgba(0,0,0,0.3); border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.45rem 0.7rem; font-size: 0.88rem; }
+	.monster-preview { display: flex; gap: 1.25rem; align-items: flex-start; background: rgba(0,0,0,0.3); border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.45rem 0.7rem; font-size: 0.88rem; }
 	.monster-preview strong { color: #FFF; }
+	.monster-override { display: flex; flex-direction: column; gap: 0.2rem; }
+	.monster-override label { font-family: 'Cinzel', serif; font-size: 0.58rem; text-transform: uppercase; color: rgba(240,237,234,0.45); }
+	.monster-override input { width: 60px; background: #0A0A0A; border: 1px solid #2A2A2A; color: #FFF; padding: 0.2rem 0.4rem; border-radius: 3px; font-size: 0.88rem; }
 	.custom-grid { display: flex; flex-direction: column; gap: 0.5rem; }
 	.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
 	.two-col label { font-family: 'Cinzel', serif; font-size: 0.6rem; text-transform: uppercase; color: rgba(240,237,234,0.4); display: block; margin-bottom: 0.2rem; }
@@ -1421,6 +1492,15 @@
 	.hp-text { font-size: 0.8rem; color: rgba(240,237,234,0.6); flex: 1; text-align: center; }
 	.remove-btn { background: transparent; border: 1px solid #2A2A2A; color: rgba(240,237,234,0.25); width: 24px; height: 24px; border-radius: 3px; font-size: 0.65rem; flex-shrink: 0; cursor: pointer; transition: all 0.15s; }
 	.remove-btn:hover { border-color: #C2374A; color: #E05060; }
+	.dup-btn { background: transparent; border: 1px solid #2A2A2A; color: rgba(240,237,234,0.25); width: 24px; height: 24px; border-radius: 3px; font-size: 0.75rem; flex-shrink: 0; cursor: pointer; transition: all 0.15s; }
+	.dup-btn:hover { border-color: #5577AA; color: #88AACC; }
+	.sheet-img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 3px; margin-bottom: 1rem; }
+	.sheet-stats-row { display: flex; gap: 1rem; margin-bottom: 1rem; }
+	.sheet-stat-box { background: rgba(0,0,0,0.3); border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.4rem 0.75rem; text-align: center; }
+	.stat-lbl { display: block; font-family: 'Cinzel', serif; font-size: 0.55rem; text-transform: uppercase; color: rgba(240,237,234,0.4); letter-spacing: 0.06em; }
+	.stat-val { font-size: 1.1rem; font-weight: 700; color: #FFF; }
+	.sheet-section-title { font-family: 'Cinzel', serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(240,237,234,0.5); margin: 1rem 0 0.4rem; }
+	.sheet-text { font-size: 0.9rem; color: rgba(240,237,234,0.65); line-height: 1.6; }
 
 	/* Kills */
 	.kills-section { padding: 1.25rem; }

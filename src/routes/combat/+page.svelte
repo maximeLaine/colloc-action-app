@@ -122,17 +122,16 @@
 		</div>
 	</div>
 
-	{#if data.isDM}
-		<!-- Tableau des kills -->
-		<div class="kills-section">
-			<div class="kills-header">
-				<h2>Tableau des kills</h2>
-				<button class="btn-primary" onclick={() => (showKillForm = !showKillForm)}>
-					{showKillForm ? 'Annuler' : '+ Ajouter un kill'}
-				</button>
-			</div>
+	<!-- Tableau des kills -->
+	<div class="kills-section">
+		<div class="kills-header">
+			<h2>Tableau des kills</h2>
+			<button class="btn-primary" onclick={() => (showKillForm = !showKillForm)}>
+				{showKillForm ? 'Annuler' : '+ Ajouter un kill'}
+			</button>
+		</div>
 
-			{#if showKillForm}
+		{#if showKillForm}
 				<div class="kill-form card">
 					{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
 					<form method="POST" action="?/addKill" use:enhance={() => ({ result, update }) => {
@@ -168,7 +167,6 @@
 				</div>
 			{/if}
 		</div>
-	{/if}
 
 	<!-- Fiche monstre (panneau latéral) -->
 	{#if sheetMonster}
@@ -215,7 +213,6 @@
 	{/if}
 
 	<div class="kills-table-wrap">
-		{#if !data.isDM}<h2 class="kills-title">⚔️ Tableau des kills</h2>{/if}
 		{#if data.kills.length === 0}
 			<div class="empty-kills">Aucun kill enregistré pour le moment.</div>
 		{:else}
