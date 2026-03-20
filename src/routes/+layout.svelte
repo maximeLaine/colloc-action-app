@@ -70,7 +70,7 @@
 						<span class="role-badge player">Joueur</span>
 					{/if}
 					<form method="POST" action="/auth?/logout" class="logout-form">
-						<button type="submit" class="btn-logout" title="Déconnexion">↪</button>
+						<button type="submit" class="btn-logout" title="Déconnexion">🔓</button>
 					</form>
 					<button class="burger" onclick={() => menuOpen = !menuOpen} aria-label="Menu">
 						<span class:open={menuOpen}></span>
