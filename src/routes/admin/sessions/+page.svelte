@@ -32,7 +32,7 @@
 	function closeForm() { editing = null; showModal = false; }
 
 	function closeOnBackdrop(e: MouseEvent) {
-		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) closeForm();
+		if ((e.target as HTMLElement).classList.contains('drawer-backdrop')) closeForm();
 	}
 
 	function formatDate(d: string | null) {
@@ -137,11 +137,11 @@
 	</div>
 </div>
 
-<!-- Modal création / édition -->
+<!-- Drawer création / édition -->
 {#if showModal}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal-backdrop" onclick={closeOnBackdrop}>
-		<div class="modal">
+	<div class="drawer-backdrop" onclick={closeOnBackdrop}></div>
+	<div class="drawer">
 			<button class="modal-close" onclick={closeForm}>✕</button>
 			<h2 class="modal-title">{editing ? `Session ${editing.number} — Modifier` : 'Nouvelle Session'}</h2>
 
@@ -236,7 +236,6 @@
 					<button type="button" class="btn-secondary" onclick={closeForm}>Annuler</button>
 				</div>
 			</form>
-		</div>
 	</div>
 {/if}
 
@@ -286,19 +285,26 @@
 
 	.empty { text-align: center; padding: 3rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
 
-	/* Modal */
-	.modal-backdrop {
+	/* Drawer */
+	.drawer-backdrop {
 		position: fixed; inset: 0;
-		background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
-		z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 1.5rem;
-		overflow-y: auto;
+		background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
+		z-index: 200;
 	}
-	.modal {
-		background: rgba(12,12,12,0.98);
-		border: 1px solid rgba(255,255,255,0.1);
-		border-radius: 8px; max-width: 700px; width: 100%;
-		position: relative; padding: 2rem;
-		margin: auto;
+	.drawer {
+		position: fixed; top: 0; right: 0; bottom: 0;
+		width: 520px; max-width: 100vw;
+		background: #0D0D0D;
+		border-left: 1px solid rgba(194,55,74,0.25);
+		z-index: 201;
+		overflow-y: auto;
+		padding: 2rem 1.75rem;
+		box-shadow: -8px 0 32px rgba(0,0,0,0.7);
+		animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	@keyframes slideIn {
+		from { transform: translateX(100%); }
+		to   { transform: translateX(0); }
 	}
 	.modal-close {
 		position: absolute; top: 1rem; right: 1rem;
