@@ -45,7 +45,13 @@ Propose 3 directions narratives pour cette situation. Réponds UNIQUEMENT en JSO
 	try {
 		result = JSON.parse(raw);
 	} catch {
-		throw error(500, 'Réponse IA non parsable');
+		const match = raw.match(/\{[\s\S]*\}/);
+		if (!match) throw error(500, 'Réponse IA non parsable');
+		try {
+			result = JSON.parse(match[0]);
+		} catch {
+			throw error(500, 'Réponse IA non parsable');
+		}
 	}
 
 	return json(result);

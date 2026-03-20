@@ -45,7 +45,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	} catch {
 		const match = raw.match(/\{[\s\S]*\}/);
 		if (!match) throw error(500, 'Réponse IA invalide');
-		result = JSON.parse(match[0]);
+		try {
+			result = JSON.parse(match[0]);
+		} catch {
+			throw error(500, 'Réponse IA invalide');
+		}
 	}
 
 	return json({ encounters: result.encounters ?? [] });

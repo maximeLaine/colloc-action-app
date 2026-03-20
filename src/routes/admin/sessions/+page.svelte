@@ -290,14 +290,15 @@
 	.modal-backdrop {
 		position: fixed; inset: 0;
 		background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
-		z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+		z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 1.5rem;
+		overflow-y: auto;
 	}
 	.modal {
 		background: rgba(12,12,12,0.98);
 		border: 1px solid rgba(255,255,255,0.1);
 		border-radius: 8px; max-width: 700px; width: 100%;
-		max-height: 90vh; overflow-y: auto;
 		position: relative; padding: 2rem;
+		margin: auto;
 	}
 	.modal-close {
 		position: absolute; top: 1rem; right: 1rem;
