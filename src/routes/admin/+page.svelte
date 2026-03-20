@@ -8,7 +8,7 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const { sessions, npcs, campaign, stats, players } = data;
 
-	type Tab = 'dashboard' | 'sessions' | 'npcs' | 'ia';
+	type Tab = 'dashboard' | 'sessions' | 'npcs' | 'combat' | 'ia';
 	let activeTab = $state<Tab>('dashboard');
 
 	// ─── Players modal + invite ───
@@ -308,6 +308,7 @@
 		<button class="tab" class:tab-active={activeTab === 'dashboard'} onclick={() => activeTab = 'dashboard'}>👥 Joueurs</button>
 		<button class="tab" class:tab-active={activeTab === 'sessions'} onclick={() => activeTab = 'sessions'}>📜 Sessions <span class="tab-count">{sessions.length}</span></button>
 		<button class="tab" class:tab-active={activeTab === 'npcs'} onclick={() => activeTab = 'npcs'}>🎭 PNJ <span class="tab-count">{npcs.length}</span></button>
+		<button class="tab" class:tab-active={activeTab === 'combat'} onclick={() => activeTab = 'combat'}>⚔️ Combat</button>
 		<button class="tab" class:tab-active={activeTab === 'ia'} onclick={() => activeTab = 'ia'}>✨ Outils IA</button>
 	</div>
 
@@ -406,8 +407,9 @@
 			{/each}
 		</div>
 
-	<!-- ═══ TRACKER COMBAT ═══ -->
-	<div class="subsection-title" style="margin-top:2rem">⚔️ Tracker de combat — Round {trackerRound}</div>
+	<!-- ═══ COMBAT ═══ -->
+	{:else if activeTab === 'combat'}
+	<div class="subsection-title">⚔️ Tracker de combat — Round {trackerRound}</div>
 	<div class="combat-layout">
 		<div class="combat-tracker card">
 			<div class="card-section-head">

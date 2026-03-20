@@ -55,6 +55,14 @@
 				<p>Tracker d'initiative, PV, monstres et alliés</p>
 				{#if isDM}<span class="dm-only">MJ</span>{/if}
 			</a>
+			{#if isDM}
+			<a href="/admin" class="section-card admin-card">
+				<div class="section-icon">🛡️</div>
+				<h2>Admin</h2>
+				<p>Gérer les sessions, PNJ, joueurs et outils MJ</p>
+				<span class="dm-only">MJ</span>
+			</a>
+			{/if}
 		</div>
 	{/if}
 </div>
@@ -134,6 +142,8 @@
 	}
 
 	.section-card.highlight { border-color: #C2374A33; }
+	.section-card.admin-card { border-color: rgba(240,165,0,0.2); }
+	.section-card.admin-card:hover { border-color: rgba(240,165,0,0.5); background: rgba(240,165,0,0.04); }
 
 	.section-icon {
 		font-size: 2rem;

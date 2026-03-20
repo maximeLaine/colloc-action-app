@@ -119,109 +119,10 @@
 	<div class="page-header">
 		<div class="header-row">
 			<h1>Combat</h1>
-			{#if data.isDM}
-				<div class="header-actions">
-					<span class="round-badge">Round {round}</span>
-					<button class="btn-primary" onclick={() => (showAddPanel = !showAddPanel)}>+ Ajouter</button>
-					{#if combatants.length > 0}
-						<button class="btn-secondary" onclick={nextTurn}>Tour suivant ▶</button>
-					{/if}
-				</div>
-			{/if}
 		</div>
 	</div>
 
 	{#if data.isDM}
-		<!-- Panneau d'ajout combattant -->
-		{#if showAddPanel}
-			<div class="add-panel card">
-				<div class="add-tabs">
-					<button class="tab" class:active={addType === 'monster'} onclick={() => (addType = 'monster')}>🐉 Monstre</button>
-					<button class="tab" class:active={addType === 'custom'} onclick={() => (addType = 'custom')}>✏️ Personnalisé</button>
-				</div>
-				<div class="initiative-row">
-					<label>Initiative</label>
-					<input type="number" bind:value={initiative} style="width:70px" />
-				</div>
-				{#if addType === 'monster'}
-					<select bind:value={selectedMonsterId}>
-						<option value="">Choisir un monstre…</option>
-						{#each data.monsters as m}
-							<option value={m.id}>{m.name} — PV {m.hp} CA {m.ac} (FP {m.cr})</option>
-						{/each}
-					</select>
-					{#if selectedMonster}
-						<div class="monster-override">
-							<div class="override-field">
-								<label>PV</label>
-								<input type="number" bind:value={monsterHp} min="1" style="width:70px" />
-							</div>
-							<div class="override-field">
-								<label>CA</label>
-								<input type="number" bind:value={monsterAc} min="1" style="width:70px" />
-							</div>
-							<span class="fp-badge">FP {selectedMonster.cr}</span>
-						</div>
-						{#if selectedMonster.notes}<p class="notes">{selectedMonster.notes}</p>{/if}
-					{/if}
-					<button class="btn-primary mt" onclick={addMonster} disabled={!selectedMonsterId}>Ajouter au combat</button>
-				{:else}
-					<div class="custom-form">
-						<input placeholder="Nom" bind:value={customName} />
-						<div class="two-col">
-							<div><label>PV</label><input type="number" bind:value={customHp} /></div>
-							<div><label>CA</label><input type="number" bind:value={customAc} /></div>
-						</div>
-						<div class="type-toggle">
-							<button type="button" class="toggle-opt" class:active={customType === 'monster'} onclick={() => customType = 'monster'}>🐉 Ennemi</button>
-							<button type="button" class="toggle-opt" class:active={customType === 'ally'} onclick={() => customType = 'ally'}>🛡️ Allié</button>
-						</div>
-						<button class="btn-primary" onclick={addCustom}>Ajouter</button>
-					</div>
-				{/if}
-			</div>
-		{/if}
-
-		<!-- Liste combattants -->
-		{#if combatants.length > 0}
-			<div class="combatants">
-				{#each combatants as c, i (c.id)}
-					<div class="combatant-row" class:active={i === turnIndex} class:dead={c.hp_current === 0}>
-						<div class="init-col">
-							<input type="number" value={c.initiative}
-								onchange={(e) => { c.initiative = +(e.target as HTMLInputElement).value; sortByInit(); }}
-								style="width:52px;text-align:center" />
-						</div>
-						<button class="c-type-btn" title="Basculer ennemi/allié"
-						onclick={() => c.type = c.type === 'monster' ? 'ally' : 'monster'}>
-						{c.type === 'monster' ? '🐉' : c.type === 'ally' ? '🛡️' : '⚔️'}
-					</button>
-						<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-					<div class="c-name" class:clickable={c.type === 'monster'} onclick={() => c.type === 'monster' && openSheet(c.name)}>{c.name}</div>
-						<div class="ac-badge">CA {c.ac}</div>
-						<div class="hp-section">
-							<div class="hp-bar-wrap">
-								<div class="hp-bar" style="width:{hpPct(c)}%;background:{hpColor(hpPct(c))}"></div>
-							</div>
-							<div class="hp-controls">
-								<button class="hp-btn dmg" onclick={() => changeHp(c.id, -5)}>-5</button>
-								<button class="hp-btn dmg" onclick={() => changeHp(c.id, -1)}>-1</button>
-								<span class="hp-text">{c.hp_current}/{c.hp_max}</span>
-								<button class="hp-btn heal" onclick={() => changeHp(c.id, 1)}>+1</button>
-								<button class="hp-btn heal" onclick={() => changeHp(c.id, 5)}>+5</button>
-							</div>
-						</div>
-						<button class="dup-btn" title="Dupliquer" onclick={() => duplicate(c.id)}>⧉</button>
-					<button class="remove-btn" onclick={() => remove(c.id)}>✕</button>
-					</div>
-				{/each}
-			</div>
-		{:else}
-			<div class="empty-combat">⚔️ Aucun combattant — utilisez <strong>+ Ajouter</strong></div>
-		{/if}
-
-		<hr class="section-sep" />
-
 		<!-- Tableau des kills -->
 		<div class="kills-section">
 			<div class="kills-header">
