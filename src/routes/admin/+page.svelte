@@ -1525,7 +1525,7 @@
 	.remove-btn:hover { border-color: #C2374A; color: #E05060; }
 	.dup-btn { background: transparent; border: 1px solid #2A2A2A; color: rgba(240,237,234,0.25); width: 24px; height: 24px; border-radius: 3px; font-size: 0.75rem; flex-shrink: 0; cursor: pointer; transition: all 0.15s; }
 	.dup-btn:hover { border-color: #5577AA; color: #88AACC; }
-	.sheet-img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 3px; margin-bottom: 1rem; }
+	.sheet-img { width: 100%; object-fit: contain; border-radius: 3px; margin-bottom: 1rem; display: block; }
 	.sheet-stats-row { display: flex; gap: 1rem; margin-bottom: 1rem; }
 	.sheet-stat-box { background: rgba(0,0,0,0.3); border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.4rem 0.75rem; text-align: center; }
 	.stat-lbl { display: block; font-family: 'Cinzel', serif; font-size: 0.55rem; text-transform: uppercase; color: rgba(240,237,234,0.4); letter-spacing: 0.06em; }

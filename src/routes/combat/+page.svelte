@@ -425,7 +425,7 @@
 	}
 	.sheet-close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(240,237,234,0.4); width: 2rem; height: 2rem; border-radius: 50%; cursor: pointer; font-size: 0.75rem; transition: all 0.15s; }
 	.sheet-close:hover { color: #FFF; border-color: #C2374A; }
-	.sheet-img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 4px; margin-bottom: 1rem; border: 1px solid #222; }
+	.sheet-img { width: 100%; object-fit: contain; border-radius: 4px; margin-bottom: 1rem; border: 1px solid #222; display: block; }
 	.sheet-header { margin-bottom: 0.75rem; padding-right: 2.5rem; }
 	.sheet-name { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 900; color: #FFF; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 0.2rem; }
 	.sheet-type { font-size: 0.78rem; color: rgba(240,237,234,0.4); margin: 0; font-style: italic; }
