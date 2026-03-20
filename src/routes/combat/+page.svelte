@@ -179,13 +179,38 @@
 			{/if}
 			<div class="sheet-header">
 				<h3 class="sheet-name">{sheetMonster.name}</h3>
-				{#if sheetMonster.type}<p class="sheet-type">{sheetMonster.type}</p>{/if}
+				{#if sheetMonster.size || sheetMonster.type || sheetMonster.alignment}
+					<p class="sheet-type">{[sheetMonster.size, sheetMonster.type, sheetMonster.alignment].filter(Boolean).join(' · ')}</p>
+				{/if}
 			</div>
 			<div class="sheet-stats">
 				{#if sheetMonster.cr}<div class="sheet-stat"><span class="stat-label">FP</span><span class="stat-val">{sheetMonster.cr}</span></div>{/if}
 				{#if sheetMonster.hp}<div class="sheet-stat"><span class="stat-label">PV</span><span class="stat-val">{sheetMonster.hp}</span></div>{/if}
 				{#if sheetMonster.ac}<div class="sheet-stat"><span class="stat-label">CA</span><span class="stat-val">{sheetMonster.ac}</span></div>{/if}
+				{#if sheetMonster.speed}<div class="sheet-stat"><span class="stat-label">VIT</span><span class="stat-val" style="font-size:0.75rem">{sheetMonster.speed}</span></div>{/if}
 			</div>
+			{#if sheetMonster.str_score || sheetMonster.dex_score || sheetMonster.con_score || sheetMonster.int_score || sheetMonster.wis_score || sheetMonster.cha_score}
+				<div class="ability-scores">
+					{#each [['FOR', sheetMonster.str_score],['DEX', sheetMonster.dex_score],['CON', sheetMonster.con_score],['INT', sheetMonster.int_score],['SAG', sheetMonster.wis_score],['CHA', sheetMonster.cha_score]] as [lbl, val]}
+						<div class="ability-score">
+							<span class="as-lbl">{lbl}</span>
+							<span class="as-val">{val ?? '—'}</span>
+							{#if val != null}<span class="as-mod">{Math.floor((+val - 10) / 2) >= 0 ? '+' : ''}{Math.floor((+val - 10) / 2)}</span>{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
+			{#if sheetMonster.saving_throws || sheetMonster.skills_text || sheetMonster.damage_resistances || sheetMonster.damage_immunities || sheetMonster.condition_immunities || sheetMonster.senses || sheetMonster.languages}
+				<div class="sheet-props">
+					{#if sheetMonster.saving_throws}<p><span class="prop-lbl">Jets de sauvegarde</span> {sheetMonster.saving_throws}</p>{/if}
+					{#if sheetMonster.skills_text}<p><span class="prop-lbl">Compétences</span> {sheetMonster.skills_text}</p>{/if}
+					{#if sheetMonster.damage_resistances}<p><span class="prop-lbl">Résistances</span> {sheetMonster.damage_resistances}</p>{/if}
+					{#if sheetMonster.damage_immunities}<p><span class="prop-lbl">Immunités (dégâts)</span> {sheetMonster.damage_immunities}</p>{/if}
+					{#if sheetMonster.condition_immunities}<p><span class="prop-lbl">Immunités (états)</span> {sheetMonster.condition_immunities}</p>{/if}
+					{#if sheetMonster.senses}<p><span class="prop-lbl">Sens</span> {sheetMonster.senses}</p>{/if}
+					{#if sheetMonster.languages}<p><span class="prop-lbl">Langues</span> {sheetMonster.languages}</p>{/if}
+				</div>
+			{/if}
 			{#if sheetMonster.description}
 				<div class="sheet-section">
 					<p class="sheet-text">{sheetMonster.description}</p>
@@ -201,6 +226,18 @@
 				<div class="sheet-section">
 					<h4 class="sheet-section-title">Actions</h4>
 					<p class="sheet-text">{sheetMonster.actions}</p>
+				</div>
+			{/if}
+			{#if sheetMonster.reactions}
+				<div class="sheet-section">
+					<h4 class="sheet-section-title">Réactions</h4>
+					<p class="sheet-text">{sheetMonster.reactions}</p>
+				</div>
+			{/if}
+			{#if sheetMonster.legendary_actions}
+				<div class="sheet-section">
+					<h4 class="sheet-section-title">Actions légendaires</h4>
+					<p class="sheet-text">{sheetMonster.legendary_actions}</p>
 				</div>
 			{/if}
 			{#if sheetMonster.notes}
@@ -399,6 +436,14 @@
 	.sheet-section { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; margin-top: 0.75rem; }
 	.sheet-section-title { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.35); margin: 0 0 0.4rem; }
 	.sheet-text { font-family: 'Crimson Text', serif; font-size: 0.95rem; color: rgba(240,237,234,0.7); line-height: 1.55; margin: 0; white-space: pre-wrap; }
+	.ability-scores { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; margin: 0.75rem 0; border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.6rem 0.25rem; background: rgba(0,0,0,0.3); }
+	.ability-score { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+	.as-lbl { font-family: 'Cinzel', serif; font-size: 0.5rem; font-weight: 700; text-transform: uppercase; color: rgba(240,237,234,0.35); letter-spacing: 0.06em; }
+	.as-val { font-size: 0.95rem; font-weight: 700; color: #FFF; }
+	.as-mod { font-size: 0.68rem; color: rgba(240,237,234,0.45); }
+	.sheet-props { margin: 0.6rem 0; display: flex; flex-direction: column; gap: 0.25rem; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.6rem 0; }
+	.sheet-props p { font-family: 'Crimson Text', serif; font-size: 0.9rem; color: rgba(240,237,234,0.65); line-height: 1.4; }
+	.prop-lbl { font-weight: 700; color: rgba(240,237,234,0.85); font-family: 'Cinzel', serif; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.3rem; }
 
 	@media (max-width: 600px) {
 		.form-grid { grid-template-columns: 1fr; }

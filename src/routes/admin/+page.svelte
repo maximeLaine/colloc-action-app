@@ -1159,17 +1159,40 @@
 {#if sheetMonster}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div class="drawer-backdrop" onclick={() => sheetMonster = null}></div>
-	<div class="char-drawer">
+	<div class="char-drawer monster-sheet-drawer">
 		<button class="modal-close" onclick={() => sheetMonster = null}>✕</button>
 		{#if sheetMonster.image_url}
 			<img src={sheetMonster.image_url} alt={sheetMonster.name} class="sheet-img" />
 		{/if}
 		<h2 class="drawer-title">{sheetMonster.name}</h2>
-		{#if sheetMonster.type}<p style="font-size:0.82rem;color:rgba(240,237,234,0.45);margin-bottom:1rem">{sheetMonster.type}</p>{/if}
+		{#if sheetMonster.size || sheetMonster.type || sheetMonster.alignment}
+			<p class="sheet-subtitle">{[sheetMonster.size, sheetMonster.type, sheetMonster.alignment].filter(Boolean).join(' · ')}</p>
+		{/if}
 		<div class="sheet-stats-row">
 			{#if sheetMonster.cr}<div class="sheet-stat-box"><span class="stat-lbl">FP</span><span class="stat-val">{sheetMonster.cr}</span></div>{/if}
 			{#if sheetMonster.hp}<div class="sheet-stat-box"><span class="stat-lbl">PV</span><span class="stat-val">{sheetMonster.hp}</span></div>{/if}
 			{#if sheetMonster.ac}<div class="sheet-stat-box"><span class="stat-lbl">CA</span><span class="stat-val">{sheetMonster.ac}</span></div>{/if}
+			{#if sheetMonster.speed}<div class="sheet-stat-box"><span class="stat-lbl">VIT</span><span class="stat-val" style="font-size:0.75rem">{sheetMonster.speed}</span></div>{/if}
+		</div>
+		{#if sheetMonster.str_score || sheetMonster.dex_score || sheetMonster.con_score || sheetMonster.int_score || sheetMonster.wis_score || sheetMonster.cha_score}
+			<div class="ability-scores">
+				{#each [['FOR', sheetMonster.str_score],['DEX', sheetMonster.dex_score],['CON', sheetMonster.con_score],['INT', sheetMonster.int_score],['SAG', sheetMonster.wis_score],['CHA', sheetMonster.cha_score]] as [lbl, val]}
+					<div class="ability-score">
+						<span class="as-lbl">{lbl}</span>
+						<span class="as-val">{val ?? '—'}</span>
+						{#if val != null}<span class="as-mod">{Math.floor((val - 10) / 2) >= 0 ? '+' : ''}{Math.floor((val - 10) / 2)}</span>{/if}
+					</div>
+				{/each}
+			</div>
+		{/if}
+		<div class="sheet-props">
+			{#if sheetMonster.saving_throws}<p><span class="prop-lbl">Jets de sauvegarde</span> {sheetMonster.saving_throws}</p>{/if}
+			{#if sheetMonster.skills_text}<p><span class="prop-lbl">Compétences</span> {sheetMonster.skills_text}</p>{/if}
+			{#if sheetMonster.damage_resistances}<p><span class="prop-lbl">Résistances</span> {sheetMonster.damage_resistances}</p>{/if}
+			{#if sheetMonster.damage_immunities}<p><span class="prop-lbl">Immunités (dégâts)</span> {sheetMonster.damage_immunities}</p>{/if}
+			{#if sheetMonster.condition_immunities}<p><span class="prop-lbl">Immunités (états)</span> {sheetMonster.condition_immunities}</p>{/if}
+			{#if sheetMonster.senses}<p><span class="prop-lbl">Sens</span> {sheetMonster.senses}</p>{/if}
+			{#if sheetMonster.languages}<p><span class="prop-lbl">Langues</span> {sheetMonster.languages}</p>{/if}
 		</div>
 		{#if sheetMonster.description}<p class="sheet-text">{sheetMonster.description}</p>{/if}
 		{#if sheetMonster.special_abilities}
@@ -1180,8 +1203,16 @@
 			<h4 class="sheet-section-title">Actions</h4>
 			<p class="sheet-text">{sheetMonster.actions}</p>
 		{/if}
+		{#if sheetMonster.reactions}
+			<h4 class="sheet-section-title">Réactions</h4>
+			<p class="sheet-text">{sheetMonster.reactions}</p>
+		{/if}
+		{#if sheetMonster.legendary_actions}
+			<h4 class="sheet-section-title">Actions légendaires</h4>
+			<p class="sheet-text">{sheetMonster.legendary_actions}</p>
+		{/if}
 		{#if sheetMonster.notes}
-			<h4 class="sheet-section-title">Notes</h4>
+			<h4 class="sheet-section-title">Notes DM</h4>
 			<p class="sheet-text">{sheetMonster.notes}</p>
 		{/if}
 	</div>
@@ -1500,7 +1531,17 @@
 	.stat-lbl { display: block; font-family: 'Cinzel', serif; font-size: 0.55rem; text-transform: uppercase; color: rgba(240,237,234,0.4); letter-spacing: 0.06em; }
 	.stat-val { font-size: 1.1rem; font-weight: 700; color: #FFF; }
 	.sheet-section-title { font-family: 'Cinzel', serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(240,237,234,0.5); margin: 1rem 0 0.4rem; }
-	.sheet-text { font-size: 0.9rem; color: rgba(240,237,234,0.65); line-height: 1.6; }
+	.sheet-text { font-size: 0.9rem; color: rgba(240,237,234,0.65); line-height: 1.6; white-space: pre-wrap; }
+	.sheet-subtitle { font-size: 0.82rem; color: rgba(240,237,234,0.45); margin-bottom: 1rem; font-style: italic; }
+	.monster-sheet-drawer { width: 560px; }
+	.ability-scores { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; margin: 0.75rem 0; border: 1px solid #1A1A1A; border-radius: 3px; padding: 0.6rem 0.4rem; background: rgba(0,0,0,0.3); }
+	.ability-score { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+	.as-lbl { font-family: 'Cinzel', serif; font-size: 0.55rem; font-weight: 700; text-transform: uppercase; color: rgba(240,237,234,0.4); letter-spacing: 0.06em; }
+	.as-val { font-size: 1rem; font-weight: 700; color: #FFF; }
+	.as-mod { font-size: 0.72rem; color: rgba(240,237,234,0.5); }
+	.sheet-props { margin: 0.75rem 0; display: flex; flex-direction: column; gap: 0.3rem; border-top: 1px solid #1A1A1A; border-bottom: 1px solid #1A1A1A; padding: 0.6rem 0; }
+	.sheet-props p { font-size: 0.85rem; color: rgba(240,237,234,0.65); line-height: 1.5; }
+	.prop-lbl { font-weight: 700; color: rgba(240,237,234,0.85); font-family: 'Cinzel', serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.3rem; }
 
 	/* Kills */
 	.kills-section { padding: 1.25rem; }

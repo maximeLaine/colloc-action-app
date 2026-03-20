@@ -9,6 +9,19 @@
 		id: string; name: string; type: string | null; cr: string | null;
 		hp: number | null; ac: number | null; notes: string | null; image_url: string | null;
 		description: string | null; actions: string | null; special_abilities: string | null;
+		size: string | null; alignment: string | null; speed: string | null;
+		str_score: number | null; dex_score: number | null; con_score: number | null;
+		int_score: number | null; wis_score: number | null; cha_score: number | null;
+		saving_throws: string | null; skills_text: string | null;
+		damage_resistances: string | null; damage_immunities: string | null;
+		condition_immunities: string | null; senses: string | null; languages: string | null;
+		legendary_actions: string | null; reactions: string | null;
+	}
+
+	function mod(score: number | null): string {
+		if (score == null) return '';
+		const m = Math.floor((score - 10) / 2);
+		return m >= 0 ? `+${m}` : `${m}`;
 	}
 
 	let showForm = $state(false);
@@ -175,6 +188,14 @@
 						</select>
 					</div>
 					<div class="field">
+						<label>Taille</label>
+						<input name="size" type="text" value={editMonster.size ?? ''} placeholder="Grande, Moyenne…" />
+					</div>
+					<div class="field">
+						<label>Alignement</label>
+						<input name="alignment" type="text" value={editMonster.alignment ?? ''} placeholder="loyal mauvais…" />
+					</div>
+					<div class="field">
 						<label>FP</label>
 						<input name="cr" type="text" value={editMonster.cr ?? ''} />
 					</div>
@@ -186,25 +207,81 @@
 						<label>Classe d'armure</label>
 						<input name="ac" type="number" min="1" value={editMonster.ac ?? ''} />
 					</div>
+					<div class="field">
+						<label>Vitesse</label>
+						<input name="speed" type="text" value={editMonster.speed ?? ''} placeholder="9 m, nage 12 m…" />
+					</div>
+
+					<div class="field full">
+						<label>Caractéristiques</label>
+						<div class="ability-grid">
+							{#each [['FOR','str_score'],['DEX','dex_score'],['CON','con_score'],['INT','int_score'],['SAG','wis_score'],['CHA','cha_score']] as [lbl, field]}
+								<div class="ability-box">
+									<span class="ability-lbl">{lbl}</span>
+									<input name={field} type="number" min="1" max="30"
+										value={(editMonster as Record<string,unknown>)[field] ?? ''}
+										placeholder="—" />
+								</div>
+							{/each}
+						</div>
+					</div>
+
+					<div class="field">
+						<label>Jets de sauvegarde</label>
+						<input name="saving_throws" type="text" value={editMonster.saving_throws ?? ''} placeholder="Con +6, Int +8…" />
+					</div>
+					<div class="field">
+						<label>Compétences</label>
+						<input name="skills_text" type="text" value={editMonster.skills_text ?? ''} placeholder="Histoire +12, Perception +10…" />
+					</div>
+					<div class="field">
+						<label>Résistances aux dégâts</label>
+						<input name="damage_resistances" type="text" value={editMonster.damage_resistances ?? ''} />
+					</div>
+					<div class="field">
+						<label>Immunités aux dégâts</label>
+						<input name="damage_immunities" type="text" value={editMonster.damage_immunities ?? ''} />
+					</div>
+					<div class="field">
+						<label>Immunités aux états</label>
+						<input name="condition_immunities" type="text" value={editMonster.condition_immunities ?? ''} />
+					</div>
+					<div class="field">
+						<label>Sens</label>
+						<input name="senses" type="text" value={editMonster.senses ?? ''} placeholder="vision dans le noir 36 m…" />
+					</div>
+					<div class="field">
+						<label>Langues</label>
+						<input name="languages" type="text" value={editMonster.languages ?? ''} />
+					</div>
+
 					<div class="field full">
 						<label>Image</label>
 						<ImageUpload name="image_url" value={editMonster.image_url ?? ''} placeholder="/img/monstres/nom.png" />
 					</div>
 					<div class="field full">
-						<label>Notes / Attaques</label>
-						<textarea name="notes" rows="3">{editMonster.notes ?? ''}</textarea>
+						<label>Description</label>
+						<textarea name="description" rows="3">{editMonster.description ?? ''}</textarea>
 					</div>
 					<div class="field full">
 						<label>Capacités spéciales</label>
 						<textarea name="special_abilities" rows="4">{editMonster.special_abilities ?? ''}</textarea>
 					</div>
 					<div class="field full">
-						<label>Description</label>
-						<textarea name="description" rows="4">{editMonster.description ?? ''}</textarea>
-					</div>
-					<div class="field full">
 						<label>Actions</label>
 						<textarea name="actions" rows="5">{editMonster.actions ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Réactions</label>
+						<textarea name="reactions" rows="3">{editMonster.reactions ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Actions légendaires</label>
+						<textarea name="legendary_actions" rows="5">{editMonster.legendary_actions ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Notes DM</label>
+						<textarea name="notes" rows="3">{editMonster.notes ?? ''}</textarea>
 					</div>
 				</div>
 				<div class="form-actions">
@@ -234,6 +311,10 @@
 	textarea { resize: vertical; }
 	select option { background: #111; }
 	.form-actions { margin-top: 1.25rem; display: flex; gap: 0.75rem; justify-content: flex-end; }
+	.ability-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; }
+	.ability-box { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+	.ability-lbl { font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; color: rgba(240,237,234,0.45); text-transform: uppercase; }
+	.ability-box input { text-align: center; padding: 0.4rem 0.2rem; }
 	.error-msg { background: #1A0508; border: 1px solid #C2374A44; color: #E05060; padding: 0.6rem 0.85rem; border-radius: 3px; font-size: 0.9rem; margin-bottom: 1rem; }
 
 	.filters { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.25rem; }
