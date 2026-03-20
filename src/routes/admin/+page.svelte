@@ -12,9 +12,10 @@
 	let activeTab = $state<Tab>('dashboard');
 
 	// ─── Players modal + invite ───
-	interface Char { id: string; name: string; class: string; level: number; hp_current: number; hp_max: number; visibility: string; }
+	interface Char { id: string; name: string; race: string; class: string; level: number; hp_current: number; hp_max: number; ac: number; status: string; visibility: string; }
 	interface Player { id: string; email: string; display_name: string; role: string; characters: Char[]; }
 	let editPlayer = $state<Player | null>(null);
+	let editChar = $state<Char | null>(null);
 	let showInvite = $state(false);
 	let inviteLink = $state<string | null>(null);
 
@@ -390,11 +391,12 @@
 										<span class="char-name">{c.name}</span>
 										<span class="char-class">{c.class} niv.{c.level}</span>
 										<span class="vis-dot" class:vis-pub={c.visibility === 'players'}>●</span>
+										<button class="btn-char-edit" onclick={() => editChar = c} title="Modifier">✏️</button>
 									</div>
 									<div class="hp-bar-wrap">
 										<div class="hp-bar" style="width:{hpPct(c.hp_current, c.hp_max)}%;background:{hpColor(hpPct(c.hp_current, c.hp_max))}"></div>
 									</div>
-									<div class="hp-text">{c.hp_current}/{c.hp_max} PV</div>
+									<div class="hp-text">{c.hp_current}/{c.hp_max} PV · CA {c.ac}</div>
 								</div>
 							{/each}
 						</div>
@@ -1120,6 +1122,59 @@
 	</div>
 {/if}
 
+<!-- Drawer modifier PJ -->
+{#if editChar}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="drawer-backdrop" onclick={() => editChar = null}></div>
+	<div class="char-drawer">
+		<button class="modal-close" onclick={() => editChar = null}>✕</button>
+		<h2 class="drawer-title">Modifier — {editChar.name}</h2>
+		<p class="drawer-sub">{editChar.race} {editChar.class}</p>
+		{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+		<form method="POST" action="?/updateChar" use:enhance={() => ({ result, update }) => {
+			if (result.type === 'success') editChar = null;
+			update();
+		}}>
+			<input type="hidden" name="id" value={editChar.id} />
+			<input type="hidden" name="name" value={editChar.name} />
+			<input type="hidden" name="race" value={editChar.race} />
+			<input type="hidden" name="class" value={editChar.class} />
+			<div class="drawer-grid">
+				<div class="field">
+					<label>Niveau</label>
+					<input name="level" type="number" min="1" max="20" value={editChar.level} />
+				</div>
+				<div class="field">
+					<label>Classe d'armure (CA)</label>
+					<input name="ac" type="number" min="1" value={editChar.ac} />
+				</div>
+				<div class="field">
+					<label>PV max</label>
+					<input name="hp_max" type="number" min="1" value={editChar.hp_max} />
+				</div>
+				<div class="field">
+					<label>PV actuels</label>
+					<input name="hp_current" type="number" min="0" value={editChar.hp_current} />
+				</div>
+				<div class="field full">
+					<label>Statut</label>
+					<select name="status">
+						<option value="vivant" selected={editChar.status === 'vivant'}>✅ Vivant</option>
+						<option value="mort" selected={editChar.status === 'mort'}>💀 Mort</option>
+						<option value="malade" selected={editChar.status === 'malade'}>🤢 Malade</option>
+						<option value="pétrifié" selected={editChar.status === 'pétrifié'}>🪨 Pétrifié</option>
+						<option value="prisonnière" selected={editChar.status === 'prisonnière'}>⛓️ Prisonnier/ère</option>
+					</select>
+				</div>
+			</div>
+			<div class="form-actions">
+				<button type="button" class="btn-secondary" onclick={() => editChar = null}>Annuler</button>
+				<button type="submit" class="btn-primary">Enregistrer</button>
+			</div>
+		</form>
+	</div>
+{/if}
+
 <!-- Modal modifier joueur -->
 {#if editPlayer}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
@@ -1447,6 +1502,25 @@
 	.error-msg { background: #1A0508; border: 1px solid #C2374A44; color: #E05060; padding: 0.6rem 0.85rem; border-radius: 3px; font-size: 0.9rem; }
 
 	/* Modal */
+	/* Char edit button */
+	.btn-char-edit { background: none; border: none; cursor: pointer; font-size: 0.75rem; padding: 0 0.1rem; opacity: 0.4; transition: opacity 0.15s; line-height: 1; margin-left: auto; }
+	.btn-char-edit:hover { opacity: 1; }
+
+	/* Char drawer */
+	.drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(3px); z-index: 200; }
+	.char-drawer {
+		position: fixed; top: 0; right: 0; bottom: 0; width: 400px; max-width: 100vw;
+		background: #0D0D0D; border-left: 1px solid rgba(194,55,74,0.25);
+		z-index: 201; overflow-y: auto; padding: 2rem 1.5rem;
+		box-shadow: -8px 0 32px rgba(0,0,0,0.7);
+		animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+	.drawer-title { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 900; color: #C2374A; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 0.2rem; padding-right: 2.5rem; }
+	.drawer-sub { font-size: 0.82rem; color: rgba(240,237,234,0.4); margin: 0 0 1.5rem; font-style: italic; }
+	.drawer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+	.drawer-grid .full { grid-column: 1 / -1; }
+
 	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
 	.modal { background: rgba(12,12,12,0.98); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; max-width: 480px; width: 100%; position: relative; padding: 2rem; }
 	.modal h2 { font-size: 1rem; font-weight: 900; color: #C2374A; margin-bottom: 0.25rem; letter-spacing: 0.05em; text-transform: uppercase; }
