@@ -1180,7 +1180,7 @@
 					<div class="ability-score">
 						<span class="as-lbl">{lbl}</span>
 						<span class="as-val">{val ?? '—'}</span>
-						{#if val != null}<span class="as-mod">{Math.floor((val - 10) / 2) >= 0 ? '+' : ''}{Math.floor((val - 10) / 2)}</span>{/if}
+						{#if val != null}<span class="as-mod">({Math.floor((val - 10) / 2) >= 0 ? '+' : ''}{Math.floor((val - 10) / 2)})</span>{/if}
 					</div>
 				{/each}
 			</div>
