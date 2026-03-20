@@ -20,21 +20,37 @@
 	let round = $state(1);
 	let turnIndex = $state(0);
 
+	// ─── Fiche monstre ────────────────────────────────────────────────
+	type MonsterData = typeof data.monsters[0];
+	let sheetMonster = $state<MonsterData | null>(null);
+
+	function openSheet(name: string) {
+		const m = data.monsters.find((m: MonsterData) => m.name === name);
+		sheetMonster = m ?? null;
+	}
+
 	let showAddPanel = $state(false);
 	let addType = $state<'monster' | 'custom'>('monster');
 	let selectedMonsterId = $state('');
+	let monsterHp = $state(10);
+	let monsterAc = $state(10);
 	let customName = $state('');
 	let customHp = $state(10);
 	let customAc = $state(10);
 	let customType = $state<'monster' | 'ally'>('monster');
 	let initiative = $state(0);
 
+	$effect(() => {
+		const m = data.monsters.find((m: { id: string }) => m.id === selectedMonsterId);
+		if (m) { monsterHp = m.hp ?? 10; monsterAc = m.ac ?? 10; }
+	});
+
 	function addMonster() {
 		const m = data.monsters.find((m: { id: string }) => m.id === selectedMonsterId);
 		if (!m) return;
 		combatants = [...combatants, {
 			id: crypto.randomUUID(), name: m.name, type: 'monster',
-			initiative, hp_max: m.hp ?? 10, hp_current: m.hp ?? 10, ac: m.ac ?? 10, conditions: []
+			initiative, hp_max: monsterHp, hp_current: monsterHp, ac: monsterAc, conditions: []
 		}];
 		sortByInit(); showAddPanel = false;
 	}
@@ -45,6 +61,13 @@
 			initiative, hp_max: customHp, hp_current: customHp, ac: customAc, conditions: []
 		}];
 		sortByInit(); showAddPanel = false; customName = ''; customHp = 10; customAc = 10;
+	}
+
+	function duplicate(id: string) {
+		const c = combatants.find(c => c.id === id);
+		if (!c) return;
+		combatants = [...combatants, { ...c, id: crypto.randomUUID() }];
+		sortByInit();
 	}
 
 	function sortByInit() {
@@ -128,12 +151,18 @@
 						{/each}
 					</select>
 					{#if selectedMonster}
-						<div class="monster-preview">
-							<span>PV <strong>{selectedMonster.hp}</strong></span>
-							<span>CA <strong>{selectedMonster.ac}</strong></span>
-							<span>FP <strong>{selectedMonster.cr}</strong></span>
-							{#if selectedMonster.notes}<p class="notes">{selectedMonster.notes}</p>{/if}
+						<div class="monster-override">
+							<div class="override-field">
+								<label>PV</label>
+								<input type="number" bind:value={monsterHp} min="1" style="width:70px" />
+							</div>
+							<div class="override-field">
+								<label>CA</label>
+								<input type="number" bind:value={monsterAc} min="1" style="width:70px" />
+							</div>
+							<span class="fp-badge">FP {selectedMonster.cr}</span>
 						</div>
+						{#if selectedMonster.notes}<p class="notes">{selectedMonster.notes}</p>{/if}
 					{/if}
 					<button class="btn-primary mt" onclick={addMonster} disabled={!selectedMonsterId}>Ajouter au combat</button>
 				{:else}
@@ -167,7 +196,8 @@
 						onclick={() => c.type = c.type === 'monster' ? 'ally' : 'monster'}>
 						{c.type === 'monster' ? '🐉' : c.type === 'ally' ? '🛡️' : '⚔️'}
 					</button>
-						<div class="c-name">{c.name}</div>
+						<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+					<div class="c-name" class:clickable={c.type === 'monster'} onclick={() => c.type === 'monster' && openSheet(c.name)}>{c.name}</div>
 						<div class="ac-badge">CA {c.ac}</div>
 						<div class="hp-section">
 							<div class="hp-bar-wrap">
@@ -181,7 +211,8 @@
 								<button class="hp-btn heal" onclick={() => changeHp(c.id, 5)}>+5</button>
 							</div>
 						</div>
-						<button class="remove-btn" onclick={() => remove(c.id)}>✕</button>
+						<button class="dup-btn" title="Dupliquer" onclick={() => duplicate(c.id)}>⧉</button>
+					<button class="remove-btn" onclick={() => remove(c.id)}>✕</button>
 					</div>
 				{/each}
 			</div>
@@ -238,7 +269,50 @@
 		</div>
 	{/if}
 
-	<!-- Tableau des kills par PJ (visible à tous) -->
+	<!-- Fiche monstre (panneau latéral) -->
+	{#if sheetMonster}
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div class="sheet-backdrop" onclick={() => sheetMonster = null}></div>
+		<div class="monster-sheet">
+			<button class="sheet-close" onclick={() => sheetMonster = null}>✕</button>
+			{#if sheetMonster.image_url}
+				<img src={sheetMonster.image_url} alt={sheetMonster.name} class="sheet-img" />
+			{/if}
+			<div class="sheet-header">
+				<h3 class="sheet-name">{sheetMonster.name}</h3>
+				{#if sheetMonster.type}<p class="sheet-type">{sheetMonster.type}</p>{/if}
+			</div>
+			<div class="sheet-stats">
+				{#if sheetMonster.cr}<div class="sheet-stat"><span class="stat-label">FP</span><span class="stat-val">{sheetMonster.cr}</span></div>{/if}
+				{#if sheetMonster.hp}<div class="sheet-stat"><span class="stat-label">PV</span><span class="stat-val">{sheetMonster.hp}</span></div>{/if}
+				{#if sheetMonster.ac}<div class="sheet-stat"><span class="stat-label">CA</span><span class="stat-val">{sheetMonster.ac}</span></div>{/if}
+			</div>
+			{#if sheetMonster.description}
+				<div class="sheet-section">
+					<p class="sheet-text">{sheetMonster.description}</p>
+				</div>
+			{/if}
+			{#if sheetMonster.special_abilities}
+				<div class="sheet-section">
+					<h4 class="sheet-section-title">Capacités spéciales</h4>
+					<p class="sheet-text">{sheetMonster.special_abilities}</p>
+				</div>
+			{/if}
+			{#if sheetMonster.actions}
+				<div class="sheet-section">
+					<h4 class="sheet-section-title">Actions</h4>
+					<p class="sheet-text">{sheetMonster.actions}</p>
+				</div>
+			{/if}
+			{#if sheetMonster.notes}
+				<div class="sheet-section">
+					<h4 class="sheet-section-title">Notes</h4>
+					<p class="sheet-text">{sheetMonster.notes}</p>
+				</div>
+			{/if}
+		</div>
+	{/if}
+
 	<div class="kills-table-wrap">
 		{#if !data.isDM}<h2 class="kills-title">⚔️ Tableau des kills</h2>{/if}
 		{#if data.kills.length === 0}
@@ -391,6 +465,42 @@
 	.btn-delete-small { background: transparent; border: none; color: rgba(240,237,234,0.25); font-size: 0.8rem; cursor: pointer; padding: 0.2rem 0.5rem; transition: color 0.15s; }
 	.btn-delete-small:hover { color: #E05060; }
 	.empty-kills { text-align: center; padding: 2.5rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+	/* Monster override fields */
+	.monster-override { display: flex; align-items: center; gap: 1rem; margin: 0.75rem 0; flex-wrap: wrap; }
+	.override-field { display: flex; flex-direction: column; gap: 0.25rem; }
+	.override-field label { font-family: 'Cinzel', serif; font-size: 0.65rem; text-transform: uppercase; color: rgba(240,237,234,0.4); }
+	.fp-badge { font-family: 'Cinzel', serif; font-size: 0.75rem; font-weight: 700; color: #C2374A; padding: 0.2rem 0.5rem; background: rgba(194,55,74,0.1); border: 1px solid rgba(194,55,74,0.25); border-radius: 3px; align-self: flex-end; margin-bottom: 2px; }
+
+	/* Duplicate button */
+	.dup-btn { background: transparent; border: 1px solid #2A3A2A; color: rgba(240,237,234,0.3); width: 26px; height: 26px; border-radius: 3px; font-size: 0.85rem; flex-shrink: 0; transition: all 0.15s; cursor: pointer; }
+	.dup-btn:hover { border-color: #5CB85C; color: #5CB85C; }
+
+	/* Clickable name */
+	.c-name.clickable { cursor: pointer; transition: color 0.15s; }
+	.c-name.clickable:hover { color: #C2374A; }
+
+	/* Monster sheet panel */
+	.sheet-backdrop { position: fixed; inset: 0; z-index: 299; }
+	.monster-sheet {
+		position: fixed; top: 0; right: 0; bottom: 0; width: 320px; max-width: 90vw;
+		background: #0C0C0C; border-left: 1px solid rgba(194,55,74,0.3);
+		z-index: 300; overflow-y: auto; padding: 1.5rem 1.25rem;
+		box-shadow: -4px 0 24px rgba(0,0,0,0.6);
+	}
+	.sheet-close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(240,237,234,0.4); width: 2rem; height: 2rem; border-radius: 50%; cursor: pointer; font-size: 0.75rem; transition: all 0.15s; }
+	.sheet-close:hover { color: #FFF; border-color: #C2374A; }
+	.sheet-img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 4px; margin-bottom: 1rem; border: 1px solid #222; }
+	.sheet-header { margin-bottom: 0.75rem; padding-right: 2.5rem; }
+	.sheet-name { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 900; color: #FFF; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 0.2rem; }
+	.sheet-type { font-size: 0.78rem; color: rgba(240,237,234,0.4); margin: 0; font-style: italic; }
+	.sheet-stats { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+	.sheet-stat { background: #111; border: 1px solid #222; border-radius: 4px; padding: 0.4rem 0.75rem; text-align: center; }
+	.stat-label { display: block; font-family: 'Cinzel', serif; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C2374A; margin-bottom: 0.1rem; }
+	.stat-val { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 900; color: #FFF; }
+	.sheet-section { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem; margin-top: 0.75rem; }
+	.sheet-section-title { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.35); margin: 0 0 0.4rem; }
+	.sheet-text { font-family: 'Crimson Text', serif; font-size: 0.95rem; color: rgba(240,237,234,0.7); line-height: 1.55; margin: 0; white-space: pre-wrap; }
 
 	@media (max-width: 600px) {
 		.form-grid { grid-template-columns: 1fr; }

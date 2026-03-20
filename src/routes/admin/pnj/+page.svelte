@@ -312,7 +312,7 @@
 							<option value="mort" selected={editNpc.status === 'mort'}>💀 Mort</option>
 							<option value="malade" selected={editNpc.status === 'malade'}>🤢 Malade</option>
 							<option value="pétrifié" selected={editNpc.status === 'pétrifié'}>🪨 Pétrifié</option>
-							<option value="prisonnière" selected={editNpc?.status === 'prisonnière' || (editChar as any)?.status === 'prisonnière'}>⛓️ Prisonnier/ère</option>
+							<option value="prisonnière" selected={editNpc?.status === 'prisonnière'}>⛓️ Prisonnier/ère</option>
 						</select>
 					</div>
 					<div class="field">
@@ -483,8 +483,8 @@
 
 	.empty { text-align: center; padding: 3rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
 
-	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
-	.modal { background: rgba(12,12,12,0.98); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; padding: 2rem; }
+	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 1.5rem; overflow-y: auto; }
+	.modal { background: rgba(12,12,12,0.98); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; max-width: 700px; width: 100%; position: relative; padding: 2rem; margin: auto; }
 	.modal h2 { font-size: 1rem; font-weight: 900; color: #C2374A; margin-bottom: 1.5rem; letter-spacing: 0.05em; text-transform: uppercase; padding-right: 2rem; }
 	.modal-close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: rgba(240,237,234,0.5); width: 2rem; height: 2rem; border-radius: 50%; cursor: pointer; font-size: 0.75rem; }
 	.modal-close:hover { color: #FFF; border-color: #C2374A; }
