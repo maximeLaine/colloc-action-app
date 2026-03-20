@@ -168,4 +168,5 @@
 		padding: 0.15rem 0.5rem;
 		border-radius: 3px;
 	}
+
 </style>

@@ -10,11 +10,24 @@
 	let showModal = $state(false);
 	let attachments = $state<Attachment[]>([]);
 
-	function openNew() { editing = null; attachments = []; showModal = true; }
+	// AI summary state
+	let aiRawNotes = $state('');
+	let aiSummaryLoading = $state(false);
+	let aiSummaryError = $state('');
+	let generatedSummary = $state('');
+	let showAiSection = $state(false);
+
+	// Reference to the summary textarea
+	let summaryEl = $state<HTMLTextAreaElement | null>(null);
+
+	function openNew() { editing = null; attachments = []; showModal = true; aiRawNotes = ''; generatedSummary = ''; showAiSection = false; }
 	function openEdit(s: typeof data.sessions[0]) {
 		editing = s;
 		attachments = (s.attachments as Attachment[]) ?? [];
 		showModal = true;
+		aiRawNotes = '';
+		generatedSummary = '';
+		showAiSection = false;
 	}
 	function closeForm() { editing = null; showModal = false; }
 
@@ -30,6 +43,41 @@
 	function toInputDate(d: string | null) {
 		if (!d) return '';
 		return new Date(d).toISOString().split('T')[0];
+	}
+
+	async function generateSummary() {
+		if (!aiRawNotes.trim()) return;
+		aiSummaryLoading = true;
+		aiSummaryError = '';
+		generatedSummary = '';
+		try {
+			const res = await fetch('/api/claude/summary', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					raw_notes: aiRawNotes,
+					session_number: editing?.number,
+					title: editing?.title ?? ''
+				})
+			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				aiSummaryError = err.message ?? `Erreur ${res.status}`;
+			} else {
+				const d = await res.json();
+				generatedSummary = d.summary ?? '';
+			}
+		} catch {
+			aiSummaryError = 'Erreur réseau';
+		} finally {
+			aiSummaryLoading = false;
+		}
+	}
+
+	function useSummary() {
+		if (summaryEl) summaryEl.value = generatedSummary;
+		generatedSummary = '';
+		showAiSection = false;
 	}
 </script>
 
@@ -129,8 +177,37 @@
 						<input id="m-title" name="title" type="text" required value={editing?.title ?? ''} placeholder="Ex: L'Attaque dans la Forêt" />
 					</div>
 					<div class="field full">
-						<label for="m-summary">Résumé (visible joueurs)</label>
-						<textarea id="m-summary" name="summary" rows="7" placeholder="Ce que les joueurs ont vécu...">{editing?.summary ?? ''}</textarea>
+						<div class="summary-field-header">
+							<label for="m-summary">Résumé (visible joueurs)</label>
+							<button type="button" class="btn-ai-toggle" onclick={() => showAiSection = !showAiSection}>
+								{showAiSection ? '✕ IA' : '✨ Générer via IA'}
+							</button>
+						</div>
+						{#if showAiSection}
+							<div class="ai-summary-block">
+								<textarea
+									class="ai-notes-input"
+									rows="4"
+									placeholder="Collez vos notes brutes de session ici — l'IA rédigera un résumé narratif..."
+									bind:value={aiRawNotes}
+								></textarea>
+								<div class="ai-sum-actions">
+									<button type="button" class="btn-generate" onclick={generateSummary} disabled={aiSummaryLoading || !aiRawNotes.trim()}>
+										{aiSummaryLoading ? '⏳ Rédaction…' : '✨ Rédiger le résumé'}
+									</button>
+								</div>
+								{#if aiSummaryError}
+									<div class="error-msg">{aiSummaryError}</div>
+								{/if}
+								{#if generatedSummary}
+									<div class="ai-summary-preview">
+										<p>{generatedSummary}</p>
+										<button type="button" class="btn-use-summary" onclick={useSummary}>↳ Utiliser ce résumé</button>
+									</div>
+								{/if}
+							</div>
+						{/if}
+						<textarea id="m-summary" name="summary" rows="7" placeholder="Ce que les joueurs ont vécu..." bind:this={summaryEl}>{editing?.summary ?? ''}</textarea>
 					</div>
 					<div class="field full">
 						<label for="m-dm-notes">Notes MJ (privées)</label>
@@ -231,6 +308,38 @@
 	}
 	.modal-close:hover { color: #FFF; border-color: #C2374A; }
 	.modal-title { font-size: 1rem; letter-spacing: 0.08em; color: #C2374A; margin-bottom: 1.5rem; padding-right: 2rem; }
+
+	/* AI summary integration */
+	.summary-field-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem; }
+	.summary-field-header label { margin-bottom: 0; }
+	.btn-ai-toggle {
+		background: rgba(194,55,74,0.1); border: 1px solid rgba(194,55,74,0.35); color: #C2374A;
+		padding: 0.2rem 0.6rem; border-radius: 3px; font-family: 'Cinzel', serif;
+		font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+		cursor: pointer; transition: background 0.2s;
+	}
+	.btn-ai-toggle:hover { background: rgba(194,55,74,0.2); }
+
+	.ai-summary-block { background: rgba(194,55,74,0.04); border: 1px solid rgba(194,55,74,0.12); border-radius: 4px; padding: 0.85rem; margin-bottom: 0.5rem; }
+	.ai-notes-input { background: #0A0A0A; border: 1px solid #2A2A2A; color: #F0EDEA; padding: 0.55rem 0.75rem; border-radius: 3px; font-family: 'Crimson Text', serif; font-size: 1rem; width: 100%; resize: vertical; }
+	.ai-notes-input:focus { outline: none; border-color: #C2374A; }
+	.ai-sum-actions { margin-top: 0.6rem; }
+	.btn-generate {
+		background: #C2374A; border: none; color: #fff; padding: 0.45rem 1rem;
+		border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700;
+		letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: background 0.2s;
+	}
+	.btn-generate:hover:not(:disabled) { background: #E04060; }
+	.btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+	.ai-summary-preview { margin-top: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 3px; padding: 0.75rem; }
+	.ai-summary-preview p { font-size: 0.9rem; color: rgba(240,237,234,0.75); line-height: 1.6; white-space: pre-wrap; }
+	.btn-use-summary {
+		display: block; margin-top: 0.6rem; background: #C2374A; border: none; color: #fff;
+		padding: 0.35rem 0.85rem; border-radius: 3px; font-family: 'Cinzel', serif;
+		font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+		cursor: pointer; transition: background 0.2s;
+	}
+	.btn-use-summary:hover { background: #E04060; }
 
 	@media (max-width: 600px) {
 		.form-grid { grid-template-columns: 1fr; }
