@@ -19,10 +19,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		locals.supabase.rpc('admin_get_dashboard_stats', { p_user_id: user.id }),
 		locals.supabase.rpc('admin_get_players_with_chars', { p_user_id: user.id }),
 		locals.supabase.rpc('get_sessions_for_user', { p_user_id: user.id }),
-		locals.supabase
-			.from('npcs')
-			.select('id, name, role, status, generated_by_ai, visibility, affiliation')
-			.order('name'),
+		locals.supabase.rpc('admin_get_npcs', { p_user_id: user.id }),
 		locals.supabase
 			.from('combat_encounters')
 			.select('id, name, combatants, round, turn_index, is_active')
@@ -79,6 +76,74 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	createNpc: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+		const form = await request.formData();
+		const name = (form.get('name') as string)?.trim();
+		const role = (form.get('role') as string)?.trim();
+		if (!name || !role) return fail(400, { error: 'Nom et rôle requis' });
+		const { error } = await locals.supabase.rpc('admin_create_npc', {
+			p_user_id: user.id, p_name: name, p_role: role,
+			p_affiliation: (form.get('affiliation') as string)?.trim() || null,
+			p_status: (form.get('status') as string)?.trim() || 'vivant',
+			p_description: (form.get('description') as string)?.trim() || null,
+			p_dm_notes: (form.get('dm_notes') as string)?.trim() || null,
+			p_image_url: (form.get('image_url') as string)?.trim() || null,
+			p_visibility: (form.get('visibility') as string) || 'dm_only'
+		});
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
+	updateNpc: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+		const form = await request.formData();
+		const id = (form.get('id') as string)?.trim();
+		const name = (form.get('name') as string)?.trim();
+		const role = (form.get('role') as string)?.trim();
+		if (!id || !name || !role) return fail(400, { error: 'Données manquantes' });
+		const { error } = await locals.supabase.rpc('admin_update_npc', {
+			p_user_id: user.id, p_npc_id: id, p_name: name, p_role: role,
+			p_affiliation: (form.get('affiliation') as string)?.trim() || null,
+			p_status: (form.get('status') as string)?.trim() || 'vivant',
+			p_description: (form.get('description') as string)?.trim() || null,
+			p_dm_notes: (form.get('dm_notes') as string)?.trim() || null,
+			p_image_url: (form.get('image_url') as string)?.trim() || null,
+			p_visibility: (form.get('visibility') as string) || 'dm_only'
+		});
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
+	shareNpc: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		const visibility = (form.get('visibility') as string) || 'players';
+		if (!id) return fail(400, { error: 'ID manquant' });
+		const { error } = await locals.supabase.rpc('admin_set_npc_visibility', {
+			p_user_id: user.id, p_npc_id: id, p_visibility: visibility
+		});
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
+	deleteNpc: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		if (!id) return fail(400, { error: 'ID manquant' });
+		const { error } = await locals.supabase.rpc('admin_delete_npc', {
+			p_user_id: user.id, p_npc_id: id
+		});
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
 	saveSession: async ({ request, locals }) => {
 		const { user } = await locals.safeGetSession();
 		if (!user) redirect(303, '/login');

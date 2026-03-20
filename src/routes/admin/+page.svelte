@@ -3,6 +3,7 @@
 	import type { PageData, ActionData } from './$types';
 	import type { Combatant } from '$lib/types/database';
 	import FileAttachments from '$lib/components/FileAttachments.svelte';
+	import ImageUpload from '$lib/components/ImageUpload.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const { sessions, npcs, campaign, stats, players } = data;
@@ -92,6 +93,60 @@
 		sessionGeneratedSummary = ''; sessionShowAi = false;
 	}
 
+	// ─── NPC management ───
+	interface Npc { id: string; name: string; role: string; affiliation: string | null; status: string; description: string | null; dm_notes: string | null; image_url: string | null; visibility: string; }
+	interface AiNpc { name: string; role: string; affiliation: string; status: string; description: string; dm_notes: string; personality: string; secret: string; motivation: string; }
+	const visLabels: Record<string, string> = { dm_only: '🔒 MJ', players: '👥 Joueurs', public: '🌐 Public' };
+
+	let npcShowForm = $state(false);
+	let npcEditTarget = $state<Npc | null>(null);
+	let npcShowAi = $state(false);
+	let npcAiConcept = $state('');
+	let npcAiRole = $state('');
+	let npcAiAffil = $state('');
+	let npcAiExtra = $state('');
+	let npcAiLoading = $state(false);
+	let npcAiError = $state('');
+	let npcAiResult = $state<AiNpc | null>(null);
+	let npcPrefillName = $state('');
+	let npcPrefillRole = $state('');
+	let npcPrefillAffil = $state('');
+	let npcPrefillDesc = $state('');
+	let npcPrefillDmNotes = $state('');
+
+	function closeNpcOnBackdrop(e: MouseEvent) {
+		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) npcEditTarget = null;
+	}
+
+	async function generateNpcFromTab() {
+		if (!npcAiConcept.trim()) return;
+		npcAiLoading = true; npcAiError = ''; npcAiResult = null;
+		try {
+			const res = await fetch('/api/claude/npc', {
+				method: 'POST', headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ concept: npcAiConcept, role: npcAiRole, affiliation: npcAiAffil, extra: npcAiExtra })
+			});
+			if (!res.ok) { const err = await res.json().catch(() => ({})); npcAiError = err.message ?? `Erreur ${res.status}`; }
+			else { const d = await res.json(); npcAiResult = d.npc; }
+		} catch { npcAiError = 'Erreur réseau'; }
+		finally { npcAiLoading = false; }
+	}
+
+	function useNpcAiResult() {
+		if (!npcAiResult) return;
+		npcPrefillName = npcAiResult.name;
+		npcPrefillRole = npcAiResult.role;
+		npcPrefillAffil = npcAiResult.affiliation ?? '';
+		npcPrefillDesc = npcAiResult.description ?? '';
+		npcPrefillDmNotes = [
+			npcAiResult.dm_notes ?? '',
+			npcAiResult.personality ? `Personnalité: ${npcAiResult.personality}` : '',
+			npcAiResult.secret ? `Secret: ${npcAiResult.secret}` : '',
+			npcAiResult.motivation ? `Motivation: ${npcAiResult.motivation}` : ''
+		].filter(Boolean).join('\n');
+		npcShowAi = false; npcShowForm = true;
+	}
+
 	// ─── Combat tracker ───
 	interface CombatantLocal { id: string; name: string; type: 'monster' | 'player' | 'ally'; initiative: number; hp_max: number; hp_current: number; ac: number; conditions: string[]; }
 	let trackerCombatants = $state<CombatantLocal[]>([]);
@@ -147,10 +202,32 @@
 	});
 
 	// ─── AI ───
-	type AiSection = 'npc-gen' | 'improv' | 'rules';
+	type AiSection = 'npc-gen' | 'enemies' | 'improv' | 'rules';
 	let activeAi = $state<AiSection>('npc-gen');
 	let aiLoading = $state(false);
 	let aiError = $state('');
+
+	// ─── Enemies proposal ───
+	interface Encounter { name: string; type: string; cr: string; description: string; tactics: string; loot: string; hook: string; }
+	let enemiesContext = $state('');
+	let enemiesLevel = $state('');
+	let enemiesTone = $state('');
+	let enemiesResult = $state<Encounter[]>([]);
+	async function proposeEnemies() {
+		aiLoading = true; aiError = ''; enemiesResult = [];
+		try {
+			const res = await fetch('/api/claude/enemies', {
+				method: 'POST', headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ context: enemiesContext, party_level: enemiesLevel, session_tone: enemiesTone })
+			});
+			if (!res.ok) throw new Error((await res.json()).message);
+			enemiesResult = (await res.json()).encounters ?? [];
+		} catch (e: unknown) { aiError = e instanceof Error ? e.message : 'Erreur'; }
+		finally { aiLoading = false; }
+	}
+	const encounterTypeColor: Record<string, string> = {
+		boss: '#C2374A', monstre: '#F0A500', groupe: '#E05060', piège: '#8B6CD4', social: '#2B8FD4'
+	};
 
 	let rulesQ = $state(''); let rulesA = $state('');
 	async function askRules() {
@@ -377,22 +454,179 @@
 
 	<!-- ═══ PNJ ═══ -->
 	{:else if activeTab === 'npcs'}
-		<div class="section-actions">
-			<a href="/admin/pnj" class="btn-primary">+ Gérer les PNJ</a>
+		<div class="section-actions" style="display:flex;gap:0.75rem;align-items:center;">
+			<button class="btn-ai-sm" onclick={() => { npcShowAi = !npcShowAi; npcShowForm = false; }}>
+				{npcShowAi ? '✕ IA' : '✨ Générer via IA'}
+			</button>
+			<button class="btn-primary" onclick={() => { npcShowForm = !npcShowForm; npcShowAi = false; if(!npcShowForm){npcPrefillName='';npcPrefillRole='';npcPrefillAffil='';npcPrefillDesc='';npcPrefillDmNotes='';} }}>
+				{npcShowForm ? 'Annuler' : '+ Nouveau PNJ'}
+			</button>
 		</div>
-		{#if npcs.length === 0}
-			<div class="empty-state">Aucun PNJ enregistré.</div>
-		{:else}
-			<div class="npc-grid">
-				{#each npcs as npc}
-					<a href="/admin/pnj" class="npc-card card">
-						<div class="npc-card-top">
-							<span class="npc-dot" style="background:{statusColor(npc.status)}"></span>
-							<span class="npc-name">{npc.name}</span>
-							{#if npc.generated_by_ai}<span class="ai-badge">✨ IA</span>{/if}
+
+		{#if npcShowAi}
+			<div class="npc-ai-panel card">
+				<div class="ai-panel-header">
+					<span class="ai-panel-label">✨ Générateur de PNJ IA</span>
+					<span class="ai-panel-hint">Décris le concept, l'IA crée le personnage</span>
+				</div>
+				<div class="form-grid">
+					<div class="field full">
+						<label for="nai-concept">Concept *</label>
+						<input id="nai-concept" type="text" bind:value={npcAiConcept} placeholder="Ex: Forgeron nain grognon qui cache un lourd secret…" />
+					</div>
+					<div class="field">
+						<label for="nai-role">Rôle (optionnel)</label>
+						<input id="nai-role" type="text" bind:value={npcAiRole} placeholder="Ex: Allié, Marchand, Ennemi…" />
+					</div>
+					<div class="field">
+						<label for="nai-affil">Affiliation (optionnel)</label>
+						<input id="nai-affil" type="text" bind:value={npcAiAffil} placeholder="Ex: Guilde des Forgerons" />
+					</div>
+					<div class="field full">
+						<label for="nai-extra">Notes supplémentaires (optionnel)</label>
+						<input id="nai-extra" type="text" bind:value={npcAiExtra} placeholder="Ex: Doit connaître Maldrek, apparaît en session 5…" />
+					</div>
+				</div>
+				<div class="ai-actions-row">
+					<button class="btn-generate" onclick={generateNpcFromTab} disabled={npcAiLoading || !npcAiConcept.trim()}>
+						{npcAiLoading ? '⏳ Génération…' : '✨ Générer'}
+					</button>
+				</div>
+				{#if npcAiError}<div class="error-msg">{npcAiError}</div>{/if}
+				{#if npcAiResult}
+					<div class="npc-ai-result">
+						<div class="npc-ai-result-header">
+							<span class="npc-ai-name">{npcAiResult.name}</span>
+							<span class="npc-ai-sub">{npcAiResult.role}{npcAiResult.affiliation ? ' · ' + npcAiResult.affiliation : ''}</span>
 						</div>
-						<div class="npc-role">{npc.role}{npc.affiliation ? ' · ' + npc.affiliation : ''}</div>
-					</a>
+						{#if npcAiResult.description}<p class="npc-ai-desc">{npcAiResult.description}</p>{/if}
+						<div class="npc-ai-dm">
+							{#if npcAiResult.personality}<div class="npc-dm-line"><span class="npc-dm-key">Personnalité</span> {npcAiResult.personality}</div>{/if}
+							{#if npcAiResult.motivation}<div class="npc-dm-line"><span class="npc-dm-key">Motivation</span> {npcAiResult.motivation}</div>{/if}
+							{#if npcAiResult.secret}<div class="npc-dm-line npc-dm-secret"><span class="npc-dm-key">🔒 Secret</span> {npcAiResult.secret}</div>{/if}
+						</div>
+						<div class="npc-ai-actions">
+							<button class="btn-use-ai" onclick={useNpcAiResult}>↳ Utiliser pour créer ce PNJ</button>
+							<button class="btn-regen" onclick={generateNpcFromTab} disabled={npcAiLoading}>↺ Regénérer</button>
+						</div>
+					</div>
+				{/if}
+			</div>
+		{/if}
+
+		{#if npcShowForm}
+			<div class="npc-form-panel card">
+				<div class="npc-form-title">{npcPrefillName ? `Nouveau PNJ — ${npcPrefillName}` : 'Nouveau PNJ'}</div>
+				{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+				<form method="POST" action="?/createNpc" use:enhance={() => ({ result, update }) => {
+					if (result.type === 'success') { npcShowForm = false; npcPrefillName = ''; }
+					update();
+				}}>
+					<div class="form-grid">
+						<div class="field required">
+							<label for="nf-name">Nom</label>
+							<input id="nf-name" name="name" type="text" required value={npcPrefillName} placeholder="Ex: Comte Aldren" />
+						</div>
+						<div class="field required">
+							<label for="nf-role">Rôle / Titre</label>
+							<input id="nf-role" name="role" type="text" required value={npcPrefillRole} placeholder="Ex: Noble, Marchand, Ennemi…" />
+						</div>
+						<div class="field">
+							<label for="nf-affil">Affiliation</label>
+							<input id="nf-affil" name="affiliation" type="text" value={npcPrefillAffil} placeholder="Ex: Comté de Valombre" />
+						</div>
+						<div class="field">
+							<label for="nf-status">Statut</label>
+							<select id="nf-status" name="status">
+								<option value="vivant">✅ Vivant</option>
+								<option value="mort">💀 Mort</option>
+								<option value="malade">🤢 Malade</option>
+								<option value="pétrifié">🪨 Pétrifié</option>
+								<option value="prisonnière">⛓️ Prisonnier/ère</option>
+							</select>
+						</div>
+						<div class="field">
+							<label for="nf-vis">Visibilité</label>
+							<select id="nf-vis" name="visibility">
+								<option value="dm_only">🔒 MJ uniquement</option>
+								<option value="players">👥 Joueurs</option>
+								<option value="public">🌐 Public</option>
+							</select>
+						</div>
+						<div class="field">
+							<label>Image</label>
+							<ImageUpload name="image_url" placeholder="/img/pnj/nom.png" />
+						</div>
+						<div class="field full">
+							<label for="nf-desc">Description (visible joueurs)</label>
+							<textarea id="nf-desc" name="description" rows="3" placeholder="Description publique du PNJ…">{npcPrefillDesc}</textarea>
+						</div>
+						<div class="field full">
+							<label for="nf-dm">Notes MJ (privées)</label>
+							<textarea id="nf-dm" name="dm_notes" rows="3" placeholder="Notes secrètes, motivations, plans…">{npcPrefillDmNotes}</textarea>
+						</div>
+					</div>
+					<div class="form-actions">
+						<button type="submit" class="btn-primary">Créer le PNJ</button>
+						<button type="button" class="btn-secondary" onclick={() => npcShowForm = false}>Annuler</button>
+					</div>
+				</form>
+			</div>
+		{/if}
+
+		{#if data.npcs.length === 0 && !npcShowForm}
+			<div class="empty-state">Aucun PNJ. Crée le premier !</div>
+		{:else}
+			<div class="npc-mgmt-list">
+				{#each data.npcs as npc}
+					<div class="npc-row-full card">
+						<div class="npc-img-wrap">
+							{#if npc.image_url}
+								<img src={npc.image_url} alt={npc.name} />
+							{:else}
+								<div class="npc-img-placeholder">🎭</div>
+							{/if}
+						</div>
+						<div class="npc-row-info">
+							<div class="npc-row-name">{npc.name}
+								{#if npc.generated_by_ai}<span class="ai-badge-sm">✨</span>{/if}
+							</div>
+							<div class="npc-row-meta">
+								<span class="npc-meta-role">{npc.role}</span>
+								{#if npc.affiliation}<span class="npc-meta-sep">·</span><span class="npc-meta-affil">{npc.affiliation}</span>{/if}
+								<span class="npc-meta-sep">·</span>
+								<span class="vis-badge vis-{npc.visibility?.replace('_only', '')}">
+									{visLabels[npc.visibility] ?? npc.visibility}
+								</span>
+							</div>
+							{#if npc.description}
+								<p class="npc-row-desc">{npc.description.slice(0, 120)}{npc.description.length > 120 ? '…' : ''}</p>
+							{/if}
+						</div>
+						<div class="npc-row-actions">
+							<span class="npc-status-tag" class:npc-dead={npc.status?.toLowerCase().includes('mort')}>{npc.status}</span>
+							{#if npc.visibility === 'dm_only'}
+								<form method="POST" action="?/shareNpc" use:enhance>
+									<input type="hidden" name="id" value={npc.id} />
+									<input type="hidden" name="visibility" value="players" />
+									<button type="submit" class="btn-npc-share">👥 Partager</button>
+								</form>
+							{:else if npc.visibility === 'players'}
+								<form method="POST" action="?/shareNpc" use:enhance>
+									<input type="hidden" name="id" value={npc.id} />
+									<input type="hidden" name="visibility" value="dm_only" />
+									<button type="submit" class="btn-npc-unshare">🔒 Masquer</button>
+								</form>
+							{/if}
+							<button class="btn-edit-row" onclick={() => npcEditTarget = npc as Npc}>Modifier</button>
+							<form method="POST" action="?/deleteNpc" use:enhance>
+								<input type="hidden" name="id" value={npc.id} />
+								<button type="submit" class="btn-delete-row" onclick={(e) => {
+									if (!confirm(`Supprimer "${npc.name}" ?`)) e.preventDefault();
+								}}>Supprimer</button>
+							</form>
+						</div>
+					</div>
 				{/each}
 			</div>
 		{/if}
@@ -581,12 +815,59 @@
 	{:else if activeTab === 'ia'}
 		<div class="ia-tabs-bar">
 			<button class="ia-tab" class:ia-tab-active={activeAi === 'npc-gen'} onclick={() => activeAi = 'npc-gen'}>✨ Générer PNJ</button>
+			<button class="ia-tab" class:ia-tab-active={activeAi === 'enemies'} onclick={() => activeAi = 'enemies'}>⚔️ Ennemis session</button>
 			<button class="ia-tab" class:ia-tab-active={activeAi === 'improv'} onclick={() => activeAi = 'improv'}>⚡ Improvisation</button>
 			<button class="ia-tab" class:ia-tab-active={activeAi === 'rules'} onclick={() => activeAi = 'rules'}>📖 Oracle règles</button>
 		</div>
 
 		{#if aiError}<div class="error-msg">{aiError}</div>{/if}
 
+		{#if activeAi === 'enemies'}
+			<div class="ia-content card">
+				<p class="ia-desc">Propose des ennemis et rencontres cohérents avec le fil narratif de la campagne.</p>
+				<div class="ia-form-grid" style="grid-template-columns:1fr 1fr">
+					<div class="field">
+						<label for="en-level">Niveau du groupe</label>
+						<input id="en-level" type="text" bind:value={enemiesLevel} placeholder="Ex: 5, ou 4-6" />
+					</div>
+					<div class="field">
+						<label for="en-tone">Ton souhaité</label>
+						<input id="en-tone" type="text" bind:value={enemiesTone} placeholder="Ex: sombre, épique, mystérieux…" />
+					</div>
+				</div>
+				<div class="field" style="margin-top:0.5rem">
+					<label for="en-ctx">Contexte de la prochaine session (optionnel)</label>
+					<textarea id="en-ctx" rows="3" bind:value={enemiesContext} placeholder="Ex: Les joueurs arrivent à la ville assiégée, cherchent le traître au sein de la garde…"></textarea>
+				</div>
+				<button class="btn-generate" onclick={proposeEnemies} disabled={aiLoading} style="margin-top:0.75rem">
+					{aiLoading ? '⏳ Génération…' : '⚔️ Proposer des ennemis'}
+				</button>
+				{#if aiError}<div class="error-msg" style="margin-top:0.75rem">{aiError}</div>{/if}
+				{#if enemiesResult.length > 0}
+					<div class="enemies-list">
+						{#each enemiesResult as enc}
+							<div class="enemy-card">
+								<div class="enemy-header">
+									<span class="enemy-type-badge" style="background:{encounterTypeColor[enc.type] ?? '#555'}22;border-color:{encounterTypeColor[enc.type] ?? '#555'}55;color:{encounterTypeColor[enc.type] ?? '#aaa'}">{enc.type}</span>
+									<span class="enemy-name">{enc.name}</span>
+									{#if enc.cr}<span class="enemy-cr">FP {enc.cr}</span>{/if}
+								</div>
+								<p class="enemy-desc">{enc.description}</p>
+								{#if enc.tactics}
+									<div class="enemy-detail"><span class="enemy-detail-key">Tactiques</span> {enc.tactics}</div>
+								{/if}
+								{#if enc.hook}
+									<div class="enemy-detail enemy-hook"><span class="enemy-detail-key">Accroche</span> {enc.hook}</div>
+								{/if}
+								{#if enc.loot}
+									<div class="enemy-detail"><span class="enemy-detail-key">Butin</span> {enc.loot}</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		{:else}
 		<div class="ia-content card">
 			{#if activeAi === 'npc-gen'}
 				<p class="ia-desc">Génère un PNJ cohérent avec le contexte de la campagne (sessions récentes, PNJ actifs).</p>
@@ -673,9 +954,76 @@
 				{/if}
 			{/if}
 		</div>
+		{/if}
 	{/if}
 
 </div>
+
+<!-- Modal modifier PNJ -->
+{#if npcEditTarget}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="modal-backdrop" onclick={closeNpcOnBackdrop}>
+		<div class="modal modal-lg">
+			<button class="modal-close" onclick={() => npcEditTarget = null}>✕</button>
+			<h2 class="modal-title">Modifier — {npcEditTarget.name}</h2>
+			{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+			<form method="POST" action="?/updateNpc" use:enhance={() => ({ result, update }) => {
+				if (result.type === 'success') npcEditTarget = null;
+				update();
+			}}>
+				<input type="hidden" name="id" value={npcEditTarget.id} />
+				<div class="form-grid">
+					<div class="field required">
+						<label>Nom</label>
+						<input name="name" type="text" required value={npcEditTarget.name} />
+					</div>
+					<div class="field required">
+						<label>Rôle / Titre</label>
+						<input name="role" type="text" required value={npcEditTarget.role} />
+					</div>
+					<div class="field">
+						<label>Affiliation</label>
+						<input name="affiliation" type="text" value={npcEditTarget.affiliation ?? ''} />
+					</div>
+					<div class="field">
+						<label>Statut</label>
+						<select name="status">
+							<option value="vivant" selected={npcEditTarget.status === 'vivant'}>✅ Vivant</option>
+							<option value="mort" selected={npcEditTarget.status === 'mort'}>💀 Mort</option>
+							<option value="malade" selected={npcEditTarget.status === 'malade'}>🤢 Malade</option>
+							<option value="pétrifié" selected={npcEditTarget.status === 'pétrifié'}>🪨 Pétrifié</option>
+							<option value="prisonnière" selected={npcEditTarget.status === 'prisonnière'}>⛓️ Prisonnier/ère</option>
+						</select>
+					</div>
+					<div class="field">
+						<label>Visibilité</label>
+						<select name="visibility">
+							<option value="dm_only" selected={npcEditTarget.visibility === 'dm_only'}>🔒 MJ uniquement</option>
+							<option value="players" selected={npcEditTarget.visibility === 'players'}>👥 Joueurs</option>
+							<option value="public" selected={npcEditTarget.visibility === 'public'}>🌐 Public</option>
+						</select>
+					</div>
+					<div class="field">
+						<label>Image</label>
+						<ImageUpload name="image_url" placeholder="/img/pnj/nom.png" value={npcEditTarget.image_url ?? ''} />
+					</div>
+					<div class="field full">
+						<label>Description (visible joueurs)</label>
+						<textarea name="description" rows="3">{npcEditTarget.description ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Notes MJ (privées)</label>
+						<textarea name="dm_notes" rows="3">{npcEditTarget.dm_notes ?? ''}</textarea>
+					</div>
+				</div>
+				<div class="form-actions">
+					<button type="submit" class="btn-primary">Enregistrer</button>
+					<button type="button" class="btn-secondary" onclick={() => npcEditTarget = null}>Annuler</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
 
 <!-- Modal session création / édition -->
 {#if sessionShowModal}
@@ -928,14 +1276,54 @@
 	.btn-use-summary { display: block; margin-top: 0.6rem; background: #C2374A; border: none; color: #fff; padding: 0.35rem 0.85rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; }
 	.btn-use-summary:hover { background: #E04060; }
 
-	/* NPCs */
-	.npc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
-	.npc-card { padding: 0.85rem 1rem; text-decoration: none; display: block; }
-	.npc-card-top { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
-	.npc-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-	.npc-name { font-family: 'Cinzel', serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #FFF; flex: 1; }
-	.ai-badge { font-family: 'Cinzel', serif; font-size: 0.58rem; font-weight: 700; color: #C2374A; border: 1px solid rgba(194,55,74,0.35); padding: 0.05rem 0.3rem; border-radius: 2px; }
-	.npc-role { font-size: 0.82rem; color: rgba(240,237,234,0.45); }
+	/* NPCs management */
+	.btn-ai-sm { background: rgba(194,55,74,0.1); border: 1px solid rgba(194,55,74,0.4); color: #C2374A; padding: 0.5rem 1rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; }
+	.btn-ai-sm:hover { background: rgba(194,55,74,0.2); }
+
+	.npc-ai-panel { margin-bottom: 1.25rem; border-color: rgba(194,55,74,0.2); }
+	.ai-panel-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 1.25rem; }
+	.ai-panel-label { font-family: 'Cinzel', serif; font-size: 0.85rem; font-weight: 700; color: #C2374A; letter-spacing: 0.06em; text-transform: uppercase; }
+	.ai-panel-hint { font-size: 0.8rem; color: rgba(240,237,234,0.35); }
+	.ai-actions-row { margin-top: 1rem; }
+	.npc-ai-result { margin-top: 1.25rem; background: rgba(194,55,74,0.05); border: 1px solid rgba(194,55,74,0.15); border-radius: 4px; padding: 1rem 1.25rem; }
+	.npc-ai-result-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
+	.npc-ai-name { font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 900; color: #FFF; letter-spacing: 0.05em; text-transform: uppercase; }
+	.npc-ai-sub { font-size: 0.82rem; color: rgba(240,237,234,0.5); }
+	.npc-ai-desc { font-size: 0.9rem; color: rgba(240,237,234,0.7); line-height: 1.55; margin-bottom: 0.75rem; }
+	.npc-ai-dm { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.75rem; }
+	.npc-dm-line { font-size: 0.82rem; color: rgba(240,237,234,0.5); }
+	.npc-dm-line.npc-dm-secret { color: rgba(194,55,74,0.8); }
+	.npc-dm-key { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(240,237,234,0.35); margin-right: 0.4rem; }
+	.npc-ai-actions { display: flex; gap: 0.75rem; }
+	.btn-use-ai { background: #C2374A; border: none; color: #fff; padding: 0.4rem 1rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; }
+	.btn-use-ai:hover { background: #E04060; }
+	.btn-regen { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(240,237,234,0.5); padding: 0.4rem 0.75rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+	.btn-regen:hover:not(:disabled) { border-color: #C2374A; color: #C2374A; }
+	.btn-regen:disabled { opacity: 0.4; cursor: not-allowed; }
+
+	.npc-form-panel { margin-bottom: 1.5rem; }
+	.npc-form-title { font-family: 'Cinzel', serif; font-size: 0.85rem; font-weight: 700; color: #C2374A; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 1.25rem; }
+
+	.npc-mgmt-list { display: flex; flex-direction: column; gap: 0.5rem; }
+	.npc-row-full { display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1rem; }
+	.npc-img-wrap { flex-shrink: 0; }
+	.npc-img-wrap img, .npc-img-placeholder { width: 52px; height: 52px; border-radius: 4px; object-fit: cover; border: 1px solid #2A2A2A; }
+	.npc-img-placeholder { background: #1A1A1A; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+	.npc-row-info { flex: 1; min-width: 0; }
+	.npc-row-name { font-family: 'Cinzel', serif; font-size: 0.85rem; font-weight: 700; color: #FFF; letter-spacing: 0.05em; text-transform: uppercase; display: flex; align-items: center; gap: 0.4rem; }
+	.ai-badge-sm { font-family: 'Cinzel', serif; font-size: 0.58rem; font-weight: 700; color: #C2374A; border: 1px solid rgba(194,55,74,0.35); padding: 0.05rem 0.3rem; border-radius: 2px; }
+	.npc-row-meta { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.2rem; flex-wrap: wrap; }
+	.npc-meta-role { font-size: 0.85rem; color: rgba(240,237,234,0.6); }
+	.npc-meta-affil { font-size: 0.82rem; color: rgba(240,237,234,0.45); }
+	.npc-meta-sep { color: rgba(240,237,234,0.2); }
+	.npc-row-desc { font-size: 0.85rem; color: rgba(240,237,234,0.45); margin-top: 0.3rem; line-height: 1.4; }
+	.npc-row-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.45rem; flex-shrink: 0; }
+	.npc-status-tag { font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #5CB85C; }
+	.npc-status-tag.npc-dead { color: #C2374A; }
+	.btn-npc-share { background: rgba(43,143,212,0.15); border: 1px solid rgba(43,143,212,0.3); color: #4AAAE8; padding: 0.25rem 0.6rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; }
+	.btn-npc-share:hover { background: rgba(43,143,212,0.3); }
+	.btn-npc-unshare { background: rgba(194,55,74,0.1); border: 1px solid rgba(194,55,74,0.3); color: #C2374A; padding: 0.25rem 0.6rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; }
+	.btn-npc-unshare:hover { background: rgba(194,55,74,0.25); }
 
 	/* Combat */
 	.combat-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
@@ -1013,8 +1401,20 @@
 	.btn-del { background: transparent; border: none; color: rgba(240,237,234,0.22); font-size: 0.78rem; cursor: pointer; padding: 0.15rem 0.4rem; transition: color 0.15s; }
 	.btn-del:hover { color: #E05060; }
 
+	/* Enemies */
+	.enemies-list { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1.25rem; }
+	.enemy-card { background: rgba(255,255,255,0.02); border: 1px solid #2A2A2A; border-radius: 4px; padding: 1rem 1.25rem; }
+	.enemy-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+	.enemy-type-badge { font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid; flex-shrink: 0; }
+	.enemy-name { font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 700; color: #FFF; letter-spacing: 0.05em; text-transform: uppercase; flex: 1; }
+	.enemy-cr { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; color: rgba(240,237,234,0.35); border: 1px solid #2A2A2A; padding: 0.1rem 0.4rem; border-radius: 3px; flex-shrink: 0; }
+	.enemy-desc { font-size: 0.9rem; color: rgba(240,237,234,0.7); line-height: 1.6; margin-bottom: 0.5rem; }
+	.enemy-detail { font-size: 0.85rem; color: rgba(240,237,234,0.5); margin-top: 0.3rem; line-height: 1.45; }
+	.enemy-detail.enemy-hook { color: rgba(43,143,212,0.8); }
+	.enemy-detail-key { font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(240,237,234,0.3); margin-right: 0.4rem; }
+
 	/* IA */
-	.ia-tabs-bar { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
+	.ia-tabs-bar { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
 	.ia-tab { background: transparent; border: 1px solid #2A2A2A; color: rgba(240,237,234,0.45); padding: 0.45rem 1.1rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
 	.ia-tab:hover { border-color: #C2374A; color: #C2374A; }
 	.ia-tab-active { background: rgba(194,55,74,0.12); border-color: #C2374A; color: #C2374A; }

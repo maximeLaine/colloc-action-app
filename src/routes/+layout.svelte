@@ -24,7 +24,6 @@
 	const isConsole = $derived(false);
 
 	const navItems = $derived([
-		{ href: '/', label: '🏠 Accueil', show: true },
 		{ href: '/personnages', label: '⚔️ Personnages', show: true },
 		{ href: '/pnj', label: '🎭 PNJ', show: true },
 		{ href: '/sessions', label: '📜 Sessions', show: true },
@@ -71,7 +70,7 @@
 						<span class="role-badge player">Joueur</span>
 					{/if}
 					<form method="POST" action="/auth?/logout" class="logout-form">
-						<button type="submit" class="btn-logout">Déconnexion</button>
+						<button type="submit" class="btn-logout" title="Déconnexion">↪</button>
 					</form>
 					<button class="burger" onclick={() => menuOpen = !menuOpen} aria-label="Menu">
 						<span class:open={menuOpen}></span>
@@ -392,15 +391,17 @@
 	.btn-logout {
 		background: transparent;
 		border: 1px solid #333;
-		color: rgba(240,237,234,0.5);
-		padding: 0.3rem 0.75rem;
-		font-family: 'Cinzel', serif;
-		font-size: 0.65rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
+		color: rgba(240,237,234,0.4);
+		padding: 0.25rem 0.5rem;
+		font-size: 0.85rem;
+		line-height: 1;
 		border-radius: 3px;
 		transition: border-color 0.2s, color 0.2s;
+		width: 1.8rem;
+		height: 1.8rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.btn-logout:hover { border-color: #C2374A; color: #E05060; }
