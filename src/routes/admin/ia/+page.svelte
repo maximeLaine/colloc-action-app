@@ -139,25 +139,42 @@
 			<!-- Sessions -->
 			<section class="card">
 				<div class="section-head">
-					<span class="section-title">📜 Sessions</span>
+					<span class="section-title">📜 Sessions <span class="section-count">{sessions.length}</span></span>
 					<a href="/admin/sessions" class="link-action">Gérer →</a>
 				</div>
 				{#if sessions.length === 0}
 					<p class="empty-note">Aucune session enregistrée.</p>
 				{:else}
-					<div class="session-list">
+					<div class="session-cards">
 						{#each sessions as s}
-							<a href="/admin/sessions" class="session-row">
-								<span class="s-num">{s.number}</span>
-								<div class="s-info">
-									<div class="s-title">{s.title}</div>
-									{#if s.date_played}<span class="s-date">{formatDate(s.date_played)}</span>{/if}
+							<div class="s-card">
+								<div class="s-card-header">
+									<span class="s-num">{s.number}</span>
+									<div class="s-meta">
+										<span class="s-title">{s.title}</span>
+										<div class="s-tags">
+											{#if s.date_played}<span class="s-date">{formatDate(s.date_played)}</span>{/if}
+											{#if s.xp_awarded}<span class="xp-badge">+{s.xp_awarded} XP</span>{/if}
+										</div>
+									</div>
+									<a href="/admin/sessions" class="s-edit-btn" title="Modifier">✏</a>
 								</div>
-								{#if s.xp_awarded}<span class="xp-badge">+{s.xp_awarded} XP</span>{/if}
 								{#if s.summary}
-									<span class="has-summary" title="Résumé présent">✓</span>
+									<div class="s-section">
+										<div class="s-section-label">Résumé</div>
+										<p class="s-text">{s.summary}</p>
+									</div>
 								{/if}
-							</a>
+								{#if s.dm_notes}
+									<div class="s-section s-dm">
+										<div class="s-section-label">🔒 Notes MJ</div>
+										<p class="s-text s-text-dm">{s.dm_notes}</p>
+									</div>
+								{/if}
+								{#if !s.summary && !s.dm_notes}
+									<p class="s-empty">Aucun contenu rédigé.</p>
+								{/if}
+							</div>
 						{/each}
 					</div>
 				{/if}
@@ -508,31 +525,45 @@
 
 	.link-action:hover { opacity: 0.75; }
 
-	/* Sessions list */
-	.session-list { display: flex; flex-direction: column; gap: 0.3rem; }
+	/* Sessions cards */
+	.section-count {
+		font-family: 'Cinzel', serif;
+		font-size: 0.58rem;
+		color: rgba(240,237,234,0.3);
+		background: rgba(255,255,255,0.05);
+		padding: 0.05rem 0.35rem;
+		border-radius: 3px;
+		margin-left: 0.4rem;
+	}
 
-	.session-row {
+	.session-cards { display: flex; flex-direction: column; gap: 0.75rem; }
+
+	.s-card {
+		background: rgba(255,255,255,0.02);
+		border: 1px solid #1E1E1E;
+		border-radius: 3px;
+		overflow: hidden;
+	}
+
+	.s-card-header {
 		display: flex;
 		align-items: center;
 		gap: 0.85rem;
-		padding: 0.5rem 0.6rem;
-		border-radius: 3px;
-		text-decoration: none;
-		transition: background 0.15s;
+		padding: 0.6rem 0.85rem;
+		border-bottom: 1px solid rgba(255,255,255,0.04);
 	}
-
-	.session-row:hover { background: rgba(255,255,255,0.04); }
 
 	.s-num {
 		font-family: 'Cinzel Decorative', serif;
-		font-size: 1rem;
+		font-size: 1.2rem;
 		font-weight: 900;
 		color: #C2374A;
-		min-width: 1.8rem;
+		min-width: 2rem;
 		flex-shrink: 0;
+		line-height: 1;
 	}
 
-	.s-info { flex: 1; min-width: 0; }
+	.s-meta { flex: 1; min-width: 0; }
 
 	.s-title {
 		font-family: 'Cinzel', serif;
@@ -541,31 +572,61 @@
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: #F0EDEA;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		display: block;
+		margin-bottom: 0.2rem;
 	}
 
-	.s-date { font-size: 0.72rem; color: rgba(240,237,234,0.35); }
+	.s-tags { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+	.s-date { font-size: 0.7rem; color: rgba(240,237,234,0.35); }
 
 	.xp-badge {
 		font-family: 'Cinzel', serif;
-		font-size: 0.58rem;
+		font-size: 0.56rem;
 		font-weight: 700;
 		color: #5CB85C;
 		background: rgba(92,184,92,0.1);
 		border: 1px solid rgba(92,184,92,0.25);
-		padding: 0.1rem 0.4rem;
+		padding: 0.08rem 0.35rem;
 		border-radius: 3px;
 		white-space: nowrap;
+	}
+
+	.s-edit-btn {
+		font-size: 0.7rem;
+		color: rgba(240,237,234,0.2);
+		text-decoration: none;
+		padding: 0.2rem 0.4rem;
+		border-radius: 3px;
+		transition: color 0.15s, background 0.15s;
 		flex-shrink: 0;
 	}
 
-	.has-summary {
-		font-size: 0.7rem;
-		color: rgba(92,184,92,0.6);
-		flex-shrink: 0;
+	.s-edit-btn:hover { color: #C2374A; background: rgba(194,55,74,0.08); }
+
+	.s-section { padding: 0.6rem 0.85rem; }
+	.s-section + .s-section { border-top: 1px solid rgba(255,255,255,0.04); }
+	.s-section.s-dm { background: rgba(194,55,74,0.03); }
+
+	.s-section-label {
+		font-family: 'Cinzel', serif;
+		font-size: 0.58rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: rgba(240,237,234,0.25);
+		margin-bottom: 0.4rem;
 	}
+
+	.s-text {
+		font-size: 0.9rem;
+		color: rgba(240,237,234,0.65);
+		line-height: 1.6;
+		white-space: pre-wrap;
+	}
+
+	.s-text-dm { color: rgba(240,237,234,0.45); font-style: italic; }
+	.s-empty { font-size: 0.8rem; color: rgba(240,237,234,0.2); font-style: italic; padding: 0.5rem 0.85rem; }
 
 	/* NPC grid */
 	.npc-grid {
