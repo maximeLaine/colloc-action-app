@@ -246,6 +246,9 @@
 					<p class="sheet-text">{sheetMonster.notes}</p>
 				</div>
 			{/if}
+			{#if sheetMonster.source_url}
+				<a href={sheetMonster.source_url} target="_blank" rel="noopener noreferrer" class="sheet-source-link">🔗 Voir la fiche complète</a>
+			{/if}
 		</div>
 	{/if}
 
@@ -444,6 +447,8 @@
 	.sheet-props { margin: 0.6rem 0; display: flex; flex-direction: column; gap: 0.25rem; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.6rem 0; }
 	.sheet-props p { font-family: 'Crimson Text', serif; font-size: 0.9rem; color: rgba(240,237,234,0.65); line-height: 1.4; }
 	.prop-lbl { font-weight: 700; color: rgba(240,237,234,0.85); font-family: 'Cinzel', serif; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.3rem; }
+	.sheet-source-link { display: inline-block; margin-top: 1.25rem; font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(194,55,74,0.8); text-decoration: none; letter-spacing: 0.05em; border-bottom: 1px solid rgba(194,55,74,0.3); padding-bottom: 0.1rem; transition: color 0.15s; }
+	.sheet-source-link:hover { color: #E05060; }
 
 	@media (max-width: 600px) {
 		.form-grid { grid-template-columns: 1fr; }

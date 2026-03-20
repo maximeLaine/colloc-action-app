@@ -16,6 +16,7 @@
 		damage_resistances: string | null; damage_immunities: string | null;
 		condition_immunities: string | null; senses: string | null; languages: string | null;
 		legendary_actions: string | null; reactions: string | null;
+		source_url: string | null;
 	}
 
 	function mod(score: number | null): string {
@@ -282,6 +283,10 @@
 					<div class="field full">
 						<label>Notes DM</label>
 						<textarea name="notes" rows="3">{editMonster.notes ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Lien source (ex: AideDD)</label>
+						<input name="source_url" type="url" value={editMonster.source_url ?? ''} placeholder="https://www.aidedd.org/dnd/monstres.php?vf=..." />
 					</div>
 				</div>
 				<div class="form-actions">

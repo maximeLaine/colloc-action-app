@@ -1215,6 +1215,9 @@
 			<h4 class="sheet-section-title">Notes DM</h4>
 			<p class="sheet-text">{sheetMonster.notes}</p>
 		{/if}
+		{#if sheetMonster.source_url}
+			<a href={sheetMonster.source_url} target="_blank" rel="noopener noreferrer" class="sheet-source-link">🔗 Voir la fiche complète</a>
+		{/if}
 	</div>
 {/if}
 
@@ -1542,6 +1545,8 @@
 	.sheet-props { margin: 0.75rem 0; display: flex; flex-direction: column; gap: 0.3rem; border-top: 1px solid #1A1A1A; border-bottom: 1px solid #1A1A1A; padding: 0.6rem 0; }
 	.sheet-props p { font-size: 0.85rem; color: rgba(240,237,234,0.65); line-height: 1.5; }
 	.prop-lbl { font-weight: 700; color: rgba(240,237,234,0.85); font-family: 'Cinzel', serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.3rem; }
+	.sheet-source-link { display: inline-block; margin-top: 1.25rem; font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(194,55,74,0.8); text-decoration: none; letter-spacing: 0.05em; border-bottom: 1px solid rgba(194,55,74,0.3); padding-bottom: 0.1rem; transition: color 0.15s; }
+	.sheet-source-link:hover { color: #E05060; }
 
 	/* Kills */
 	.kills-section { padding: 1.25rem; }

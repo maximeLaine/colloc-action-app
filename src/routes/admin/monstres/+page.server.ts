@@ -57,7 +57,7 @@ export const actions: Actions = {
 			p_saving_throws: g('saving_throws'), p_skills_text: g('skills_text'),
 			p_damage_resistances: g('damage_resistances'), p_damage_immunities: g('damage_immunities'),
 			p_condition_immunities: g('condition_immunities'), p_senses: g('senses'),
-			p_languages: g('languages'), p_legendary_actions: g('legendary_actions'), p_reactions: g('reactions')
+			p_languages: g('languages'), p_legendary_actions: g('legendary_actions'), p_reactions: g('reactions'), p_source_url: g('source_url')
 		});
 
 		if (error) return fail(500, { error: error.message });
