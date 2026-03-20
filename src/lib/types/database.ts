@@ -1,5 +1,6 @@
 export type Role = 'dm' | 'player';
 export type Visibility = 'dm_only' | 'players' | 'public';
+export type RelationType = 'ally' | 'enemy' | 'neutral' | 'family';
 
 export interface Database {
 	public: {
@@ -50,6 +51,11 @@ export interface Database {
 					abilities: string[];
 					image_url: string | null;
 					visibility: Visibility;
+					personality: string | null;
+					secret: string | null;
+					motivation: string | null;
+					location: string | null;
+					generated_by_ai: boolean;
 					created_at: string;
 					updated_at: string;
 				};
@@ -63,14 +69,66 @@ export interface Database {
 					title: string;
 					date_played: string | null;
 					summary: string;
+					raw_notes: string | null;
 					dm_notes: string | null;
 					xp_awarded: number | null;
+					campaign_id: string | null;
 					visibility: Visibility;
 					created_at: string;
 					updated_at: string;
 				};
 				Insert: Omit<Database['public']['Tables']['sessions']['Row'], 'id' | 'created_at' | 'updated_at'>;
 				Update: Partial<Database['public']['Tables']['sessions']['Insert']>;
+			};
+			campaigns: {
+				Row: {
+					id: string;
+					name: string;
+					created_at: string;
+				};
+				Insert: Omit<Database['public']['Tables']['campaigns']['Row'], 'id' | 'created_at'>;
+				Update: Partial<Database['public']['Tables']['campaigns']['Insert']>;
+			};
+			locations: {
+				Row: {
+					id: string;
+					campaign_id: string | null;
+					name: string;
+					description_public: string | null;
+					description_hidden: string | null;
+					created_at: string;
+				};
+				Insert: Omit<Database['public']['Tables']['locations']['Row'], 'id' | 'created_at'>;
+				Update: Partial<Database['public']['Tables']['locations']['Insert']>;
+			};
+			npc_relations: {
+				Row: {
+					id: string;
+					npc_id: string;
+					target_id: string;
+					relation_type: RelationType | null;
+				};
+				Insert: Omit<Database['public']['Tables']['npc_relations']['Row'], 'id'>;
+				Update: Partial<Database['public']['Tables']['npc_relations']['Insert']>;
+			};
+			ai_usage: {
+				Row: {
+					id: string;
+					user_id: string;
+					date: string;
+					count: number;
+				};
+				Insert: Omit<Database['public']['Tables']['ai_usage']['Row'], 'id'>;
+				Update: Partial<Database['public']['Tables']['ai_usage']['Insert']>;
+			};
+			campaign_members: {
+				Row: {
+					campaign_id: string;
+					user_id: string;
+					role: Role;
+				};
+				Insert: Database['public']['Tables']['campaign_members']['Row'];
+				Update: Partial<Database['public']['Tables']['campaign_members']['Insert']>;
 			};
 			lore_entries: {
 				Row: {
