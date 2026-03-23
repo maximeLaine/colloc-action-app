@@ -1163,6 +1163,7 @@
 	<div class="drawer-backdrop" onclick={() => sheetMonster = null}></div>
 	<div class="char-drawer monster-sheet-drawer">
 		<button class="modal-close" onclick={() => sheetMonster = null}>✕</button>
+		<a href="/admin/monstres?edit={sheetMonster.id}" class="btn-edit-monster">✏️ Modifier ce monstre</a>
 		{#if sheetMonster.image_url}
 			<img src={sheetMonster.image_url} alt={sheetMonster.name} class="sheet-img" />
 		{/if}
@@ -1580,6 +1581,8 @@
 	.prop-lbl { font-weight: 700; color: rgba(240,237,234,0.85); font-family: 'Cinzel', serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.3rem; }
 	.sheet-source-link { display: inline-block; margin-top: 1.25rem; font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(194,55,74,0.8); text-decoration: none; letter-spacing: 0.05em; border-bottom: 1px solid rgba(194,55,74,0.3); padding-bottom: 0.1rem; transition: color 0.15s; }
 	.sheet-source-link:hover { color: #E05060; }
+	.btn-edit-monster { display: inline-block; margin-bottom: 1rem; background: transparent; border: 1px solid #2B8FD4; color: #2B8FD4; padding: 0.3rem 0.75rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; transition: all 0.2s; }
+	.btn-edit-monster:hover { background: rgba(43,143,212,0.15); }
 
 	/* Kills */
 	.kills-section { padding: 1.25rem; }
