@@ -95,7 +95,15 @@ export const actions: Actions = {
 			p_description: (form.get('description') as string)?.trim() || null,
 			p_dm_notes: (form.get('dm_notes') as string)?.trim() || null,
 			p_image_url: (form.get('image_url') as string)?.trim() || null,
-			p_visibility: (form.get('visibility') as string) || 'dm_only'
+			p_visibility: (form.get('visibility') as string) || 'dm_only',
+			p_hp: parseInt(form.get('hp') as string) || null,
+			p_ac: parseInt(form.get('ac') as string) || null,
+			p_str_score: parseInt(form.get('str_score') as string) || null,
+			p_dex_score: parseInt(form.get('dex_score') as string) || null,
+			p_con_score: parseInt(form.get('con_score') as string) || null,
+			p_int_score: parseInt(form.get('int_score') as string) || null,
+			p_wis_score: parseInt(form.get('wis_score') as string) || null,
+			p_cha_score: parseInt(form.get('cha_score') as string) || null
 		});
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
@@ -116,7 +124,15 @@ export const actions: Actions = {
 			p_description: (form.get('description') as string)?.trim() || null,
 			p_dm_notes: (form.get('dm_notes') as string)?.trim() || null,
 			p_image_url: (form.get('image_url') as string)?.trim() || null,
-			p_visibility: (form.get('visibility') as string) || 'dm_only'
+			p_visibility: (form.get('visibility') as string) || 'dm_only',
+			p_hp: parseInt(form.get('hp') as string) || null,
+			p_ac: parseInt(form.get('ac') as string) || null,
+			p_str_score: parseInt(form.get('str_score') as string) || null,
+			p_dex_score: parseInt(form.get('dex_score') as string) || null,
+			p_con_score: parseInt(form.get('con_score') as string) || null,
+			p_int_score: parseInt(form.get('int_score') as string) || null,
+			p_wis_score: parseInt(form.get('wis_score') as string) || null,
+			p_cha_score: parseInt(form.get('cha_score') as string) || null
 		});
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
