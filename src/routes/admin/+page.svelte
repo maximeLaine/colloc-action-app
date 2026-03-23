@@ -97,7 +97,7 @@
 	}
 
 	// ─── NPC management ───
-	interface Npc { id: string; name: string; role: string; affiliation: string | null; status: string; description: string | null; dm_notes: string | null; image_url: string | null; visibility: string; }
+	interface Npc { id: string; name: string; role: string; affiliation: string | null; status: string; description: string | null; dm_notes: string | null; image_url: string | null; visibility: string; hp: number | null; ac: number | null; str_score: number | null; dex_score: number | null; con_score: number | null; int_score: number | null; wis_score: number | null; cha_score: number | null; generated_by_ai?: boolean; }
 	interface AiNpc { name: string; role: string; affiliation: string; status: string; description: string; dm_notes: string; personality: string; secret: string; motivation: string; }
 	const visLabels: Record<string, string> = { dm_only: '🔒 MJ', players: '👥 Joueurs', public: '🌐 Public' };
 
@@ -782,6 +782,19 @@
 							<label for="nf-dm">Notes MJ (privées)</label>
 							<textarea id="nf-dm" name="dm_notes" rows="3" placeholder="Notes secrètes, motivations, plans…">{npcPrefillDmNotes}</textarea>
 						</div>
+						<div class="field full npc-stats-section">
+							<div class="npc-stats-label">Stats de combat <span class="npc-stats-hint">(optionnel)</span></div>
+							<div class="npc-stats-grid">
+								<div class="field"><label>PV</label><input name="hp" type="number" min="1" placeholder="—" /></div>
+								<div class="field"><label>CA</label><input name="ac" type="number" min="1" placeholder="—" /></div>
+								<div class="field"><label>FOR</label><input name="str_score" type="number" min="1" max="30" placeholder="—" /></div>
+								<div class="field"><label>DEX</label><input name="dex_score" type="number" min="1" max="30" placeholder="—" /></div>
+								<div class="field"><label>CON</label><input name="con_score" type="number" min="1" max="30" placeholder="—" /></div>
+								<div class="field"><label>INT</label><input name="int_score" type="number" min="1" max="30" placeholder="—" /></div>
+								<div class="field"><label>SAG</label><input name="wis_score" type="number" min="1" max="30" placeholder="—" /></div>
+								<div class="field"><label>CHA</label><input name="cha_score" type="number" min="1" max="30" placeholder="—" /></div>
+							</div>
+						</div>
 					</div>
 					<div class="form-actions">
 						<button type="submit" class="btn-primary">Créer le PNJ</button>
@@ -818,6 +831,13 @@
 							</div>
 							{#if npc.description}
 								<p class="npc-row-desc">{npc.description.slice(0, 120)}{npc.description.length > 120 ? '…' : ''}</p>
+							{/if}
+							{#if npc.hp != null || npc.ac != null || npc.str_score != null}
+								<div class="npc-combat-badges">
+									{#if npc.hp != null}<span class="npc-stat-badge">❤ {npc.hp} PV</span>{/if}
+									{#if npc.ac != null}<span class="npc-stat-badge">🛡 CA {npc.ac}</span>{/if}
+									{#each [["FOR",npc.str_score],["DEX",npc.dex_score],["CON",npc.con_score],["INT",npc.int_score],["SAG",npc.wis_score],["CHA",npc.cha_score]] as [lbl,val]}{#if val != null}<span class="npc-stat-badge npc-stat-ability">{lbl} {val} ({val >= 10 ? "+" : ""}{Math.floor((val - 10) / 2)})</span>{/if}{/each}
+								</div>
 							{/if}
 						</div>
 						<div class="npc-row-actions">
@@ -1051,6 +1071,19 @@
 					<div class="field full">
 						<label>Notes MJ (privées)</label>
 						<textarea name="dm_notes" rows="3">{npcEditTarget.dm_notes ?? ''}</textarea>
+					</div>
+					<div class="field full npc-stats-section">
+						<div class="npc-stats-label">Stats de combat <span class="npc-stats-hint">(optionnel)</span></div>
+						<div class="npc-stats-grid">
+							<div class="field"><label>PV</label><input name="hp" type="number" min="1" value={npcEditTarget.hp ?? ''} placeholder="—" /></div>
+							<div class="field"><label>CA</label><input name="ac" type="number" min="1" value={npcEditTarget.ac ?? ''} placeholder="—" /></div>
+							<div class="field"><label>FOR</label><input name="str_score" type="number" min="1" max="30" value={npcEditTarget.str_score ?? ''} placeholder="—" /></div>
+							<div class="field"><label>DEX</label><input name="dex_score" type="number" min="1" max="30" value={npcEditTarget.dex_score ?? ''} placeholder="—" /></div>
+							<div class="field"><label>CON</label><input name="con_score" type="number" min="1" max="30" value={npcEditTarget.con_score ?? ''} placeholder="—" /></div>
+							<div class="field"><label>INT</label><input name="int_score" type="number" min="1" max="30" value={npcEditTarget.int_score ?? ''} placeholder="—" /></div>
+							<div class="field"><label>SAG</label><input name="wis_score" type="number" min="1" max="30" value={npcEditTarget.wis_score ?? ''} placeholder="—" /></div>
+							<div class="field"><label>CHA</label><input name="cha_score" type="number" min="1" max="30" value={npcEditTarget.cha_score ?? ''} placeholder="—" /></div>
+						</div>
 					</div>
 				</div>
 				<div class="form-actions">
@@ -1505,6 +1538,14 @@
 	.npc-meta-affil { font-size: 0.82rem; color: rgba(240,237,234,0.45); }
 	.npc-meta-sep { color: rgba(240,237,234,0.2); }
 	.npc-row-desc { font-size: 0.85rem; color: rgba(240,237,234,0.45); margin-top: 0.3rem; line-height: 1.4; }
+	.npc-combat-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
+	.npc-stat-badge { font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.1rem 0.4rem; border-radius: 3px; background: rgba(194,55,74,0.08); border: 1px solid rgba(194,55,74,0.25); color: rgba(240,237,234,0.6); }
+	.npc-stat-ability { background: rgba(43,143,212,0.06); border-color: rgba(43,143,212,0.2); color: rgba(43,143,212,0.8); }
+	.npc-stats-section { margin-top: 0.25rem; }
+	.npc-stats-label { font-family: 'Cinzel', serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.4); margin-bottom: 0.6rem; }
+	.npc-stats-hint { font-weight: 400; color: rgba(240,237,234,0.25); }
+	.npc-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+	@media (max-width: 600px) { .npc-stats-grid { grid-template-columns: repeat(4, 1fr); } }
 	.npc-row-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.45rem; flex-shrink: 0; }
 	.npc-status-tag { font-family: 'Cinzel', serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #5CB85C; }
 	.npc-status-tag.npc-dead { color: #C2374A; }
