@@ -1,3 +1,15 @@
+/**
+ * run.mjs — Script de build utilisé par Netlify en lieu et place de `npm run build`.
+ *
+ * Raison d'être : dans certains environnements CI (notamment Netlify), appeler
+ * directement les binaires Node évite des problèmes liés à npm scripts et aux
+ * variables d'environnement non propagées.
+ *
+ * Usage :
+ *   node run.mjs           → build (défaut)
+ *   node run.mjs sync      → svelte-kit sync (génère les types $types)
+ *   node run.mjs dev       → serveur de dev sur le port 5173
+ */
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
