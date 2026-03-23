@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 	import type { PageData, ActionData } from './$types';
 	import ImageUpload from '$lib/components/ImageUpload.svelte';
 
@@ -50,6 +52,14 @@
 	function closeOnBackdrop(e: MouseEvent) {
 		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) editMonster = null;
 	}
+
+	onMount(() => {
+		const editId = $page.url.searchParams.get('edit');
+		if (editId) {
+			const m = data.monsters.find((m: Monster) => m.id === editId);
+			if (m) editMonster = m as Monster;
+		}
+	});
 </script>
 
 <div class="container">
