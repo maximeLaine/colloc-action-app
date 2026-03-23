@@ -86,7 +86,13 @@
 						<span class="inv-email">{inv.email}</span>
 						<span class="inv-role role-{inv.role}">{inv.role === 'dm' ? '🎲 MJ' : '⚔️ Joueur'}</span>
 					</div>
-					<span class="inv-expires">expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}</span>
+					<div class="inv-right">
+						<span class="inv-expires">expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}</span>
+						<form method="POST" action="?/deleteInvite" use:enhance>
+							<input type="hidden" name="id" value={inv.id} />
+							<button type="submit" class="btn-delete-inv" title="Supprimer l'invitation">✕</button>
+						</form>
+					</div>
 				</div>
 			{/each}
 		</div>
@@ -199,6 +205,9 @@
 	.inv-email { font-size: 0.85rem; color: rgba(240,237,234,0.7); }
 	.inv-role { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.15rem 0.4rem; border-radius: 3px; border: 1px solid; }
 	.inv-expires { font-size: 0.75rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; }
+	.inv-right { display: flex; align-items: center; gap: 0.6rem; }
+	.btn-delete-inv { background: transparent; border: 1px solid #2A2A2A; color: rgba(240,237,234,0.25); width: 22px; height: 22px; border-radius: 3px; font-size: 0.6rem; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+	.btn-delete-inv:hover { border-color: #C2374A; color: #E05060; }
 	.subtitle { font-family: 'Cinzel', serif; font-size: 0.8rem; color: rgba(240,237,234,0.4); margin-top: 0.4rem; letter-spacing: 0.05em; }
 	.error-msg { background: #1A0508; border: 1px solid #C2374A44; color: #E05060; padding: 0.6rem 0.85rem; border-radius: 3px; font-size: 0.9rem; margin-bottom: 1rem; }
 	.list-header { font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(240,237,234,0.3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.75rem; }
