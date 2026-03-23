@@ -5,9 +5,14 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	interface Player { id: string; email: string; display_name: string; role: string; created_at: string; }
+	interface Character { id: string; name: string; class: string; level: number; player_id: string | null; }
 	let editPlayer = $state<Player | null>(null);
 	let showInvite = $state(false);
 	let inviteLink = $state<string | null>(null);
+
+	const characters = $derived(data.characters as Character[]);
+	const assignedChars = $derived((p: Player) => characters.filter(c => c.player_id === p.id));
+	const unassignedChars = $derived(characters.filter(c => !c.player_id));
 
 	function closeOnBackdrop(e: MouseEvent) {
 		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) editPlayer = null;
@@ -141,6 +146,37 @@
 					<button type="submit" class="btn-primary">Enregistrer</button>
 				</div>
 			</form>
+
+			<div class="pj-section">
+				<div class="pj-section-title">Personnages associés</div>
+				{#if assignedChars(editPlayer).length === 0}
+					<p class="pj-empty">Aucun PJ associé.</p>
+				{:else}
+					{#each assignedChars(editPlayer) as c}
+						<div class="pj-row">
+							<span class="pj-name">{c.name}</span>
+							<span class="pj-meta">{c.class} niv.{c.level}</span>
+							<form method="POST" action="?/assignChar" use:enhance>
+								<input type="hidden" name="char_id" value={c.id} />
+								<input type="hidden" name="player_id" value="" />
+								<button type="submit" class="btn-unassign" title="Désassocier">✕</button>
+							</form>
+						</div>
+					{/each}
+				{/if}
+				{#if unassignedChars.length > 0}
+					<form method="POST" action="?/assignChar" use:enhance class="assign-form">
+						<input type="hidden" name="player_id" value={editPlayer.id} />
+						<select name="char_id" class="assign-select">
+							<option value="">Associer un PJ…</option>
+							{#each unassignedChars as c}
+								<option value={c.id}>{c.name} ({c.class} niv.{c.level})</option>
+							{/each}
+						</select>
+						<button type="submit" class="btn-assign">Associer</button>
+					</form>
+				{/if}
+			</div>
 		</div>
 	</div>
 {/if}
@@ -191,4 +227,17 @@
 	input:focus, select:focus { outline: none; border-color: #C2374A; }
 	select option { background: #111; }
 	.form-actions { margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end; }
+	.pj-section { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #1A1A1A; }
+	.pj-section-title { font-family: 'Cinzel', serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.4); margin-bottom: 0.75rem; }
+	.pj-empty { font-size: 0.82rem; color: rgba(240,237,234,0.3); margin: 0 0 0.75rem; }
+	.pj-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0; border-bottom: 1px solid #1A1A1A; }
+	.pj-name { font-family: 'Cinzel', serif; font-size: 0.8rem; font-weight: 700; color: #FFF; text-transform: uppercase; flex: 1; }
+	.pj-meta { font-size: 0.78rem; color: rgba(240,237,234,0.4); flex-shrink: 0; }
+	.btn-unassign { background: transparent; border: 1px solid #2A2A2A; color: rgba(240,237,234,0.25); width: 22px; height: 22px; border-radius: 3px; font-size: 0.6rem; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+	.btn-unassign:hover { border-color: #C2374A; color: #E05060; }
+	.assign-form { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+	.assign-select { flex: 1; background: #0A0A0A; border: 1px solid #2A2A2A; color: #F0EDEA; padding: 0.45rem 0.6rem; border-radius: 3px; font-family: 'Crimson Text', serif; font-size: 0.9rem; }
+	.assign-select:focus { outline: none; border-color: #C2374A; }
+	.btn-assign { background: transparent; border: 1px solid #2B8FD4; color: #2B8FD4; padding: 0.4rem 0.85rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+	.btn-assign:hover { background: rgba(43,143,212,0.15); }
 </style>
