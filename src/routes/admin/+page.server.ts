@@ -14,7 +14,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		campaignRes,
 		{ data: kills },
 		{ data: monsters },
-		{ data: invitations }
+		{ data: invitations },
+		{ data: allCharacters }
 	] = await Promise.all([
 		locals.supabase.rpc('admin_get_dashboard_stats', { p_user_id: user.id }),
 		locals.supabase.rpc('admin_get_players_with_chars', { p_user_id: user.id }),
@@ -35,7 +36,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.maybeSingle(),
 		locals.supabase.rpc('get_kills_for_user', { p_user_id: user.id }),
 		locals.supabase.rpc('get_monsters_for_user', { p_user_id: user.id }),
-		locals.supabase.rpc('admin_list_invitations', { p_user_id: user.id })
+		locals.supabase.rpc('admin_list_invitations', { p_user_id: user.id }),
+		locals.supabase.rpc('admin_get_characters', { p_user_id: user.id })
 	]);
 
 	const stats = Array.isArray(statsArr) ? statsArr[0] : statsArr;
@@ -73,7 +75,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		campaign: campaignRes.data ?? null,
 		kills: kills ?? [],
 		monsters: monsters ?? [],
-		invitations: invitations ?? []
+		invitations: invitations ?? [],
+		allCharacters: allCharacters ?? []
 	};
 };
 
@@ -279,6 +282,29 @@ export const actions: Actions = {
 			p_player_id: id,
 			p_display_name: (form.get('display_name') as string)?.trim() || '',
 			p_role: (form.get('role') as string) || ''
+		});
+
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
+	assignChar: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+
+		const form = await request.formData();
+		const charId = form.get('char_id') as string;
+		const playerId = (form.get('player_id') as string)?.trim();
+		if (!charId) return fail(400, { error: 'ID personnage manquant' });
+
+		const { error } = await locals.supabase.rpc('admin_update_character', {
+			p_user_id: user.id,
+			p_char_id: charId,
+			p_player_id: playerId || null,
+			p_clear_player: !playerId,
+			p_name: null, p_race: null, p_class: null, p_level: null,
+			p_hp_max: null, p_hp_current: null, p_ac: null,
+			p_backstory: null, p_image_url: null, p_dm_backstory: null, p_status: null
 		});
 
 		if (error) return fail(500, { error: error.message });
