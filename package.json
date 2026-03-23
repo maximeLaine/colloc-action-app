@@ -6,15 +6,25 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "format": "prettier --write ."
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@sveltejs/adapter-netlify": "^4.3.0",
     "@sveltejs/kit": "^2.16.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@types/marked": "^6.0.0",
+    "eslint": "^10.1.0",
+    "eslint-plugin-svelte": "^3.16.0",
+    "globals": "^17.4.0",
+    "prettier": "^3.8.1",
+    "prettier-plugin-svelte": "^3.5.1",
     "svelte": "^5.0.0",
+    "svelte-eslint-parser": "^1.6.0",
     "typescript": "^5.5.0",
+    "typescript-eslint": "^8.57.1",
     "vite": "^6.0.0"
   },
   "dependencies": {
