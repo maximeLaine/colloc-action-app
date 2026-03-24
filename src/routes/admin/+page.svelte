@@ -156,7 +156,7 @@
 	let trackerRound = $state(1);
 	let trackerTurn = $state(0);
 	let showAddPanel = $state(false);
-	let addType = $state<'monster' | 'custom'>('monster');
+	let addType = $state<'monster' | 'custom' | 'pnj'>('monster');
 	let selectedMonsterId = $state('');
 	let monsterHp = $state(10);
 	let monsterAc = $state(10);
@@ -164,6 +164,10 @@
 	let customHp = $state(10);
 	let customAc = $state(10);
 	let customType = $state<'monster' | 'ally'>('monster');
+	let selectedPnjId = $state('');
+	let pnjHp = $state(10);
+	let pnjAc = $state(10);
+	let pnjType = $state<'monster' | 'ally'>('ally');
 	let addInitiative = $state(0);
 	let showKillForm = $state(false);
 
@@ -172,6 +176,10 @@
 	$effect(() => {
 		const m = data.monsters.find((m: { id: string }) => m.id === selectedMonsterId);
 		if (m) { monsterHp = m.hp ?? 10; monsterAc = m.ac ?? 10; }
+	});
+	$effect(() => {
+		const p = data.npcs.find((n: { id: string }) => n.id === selectedPnjId);
+		if (p) { pnjHp = (p as { hp?: number }).hp ?? 10; pnjAc = (p as { ac?: number }).ac ?? 10; }
 	});
 
 	function sortByInit() { trackerCombatants = [...trackerCombatants].sort((a, b) => b.initiative - a.initiative); }
@@ -184,6 +192,12 @@
 	function addCustom() {
 		trackerCombatants = [...trackerCombatants, { id: crypto.randomUUID(), name: customName || 'Inconnu', type: customType, initiative: addInitiative, hp_max: customHp, hp_current: customHp, ac: customAc, conditions: [] }];
 		sortByInit(); showAddPanel = false; customName = ''; customHp = 10; customAc = 10;
+	}
+	function addPnj() {
+		const p = data.npcs.find((n: { id: string }) => n.id === selectedPnjId);
+		if (!p) return;
+		trackerCombatants = [...trackerCombatants, { id: crypto.randomUUID(), name: p.name, type: pnjType, initiative: addInitiative, hp_max: pnjHp, hp_current: pnjHp, ac: pnjAc, conditions: [] }];
+		sortByInit(); showAddPanel = false; selectedPnjId = ''; pnjHp = 10; pnjAc = 10;
 	}
 	function changeHp(id: string, delta: number) {
 		trackerCombatants = trackerCombatants.map(c => c.id === id ? { ...c, hp_current: Math.max(0, Math.min(c.hp_max, c.hp_current + delta)) } : c);
@@ -206,10 +220,14 @@
 	function cHpPct(c: CombatantLocal) { return c.hp_max > 0 ? Math.round((c.hp_current / c.hp_max) * 100) : 0; }
 
 	type MonsterData = typeof data.monsters[0];
+	type NpcData = typeof data.npcs[0];
 	let sheetMonster = $state<MonsterData | null>(null);
+	let sheetNpc = $state<NpcData | null>(null);
 	function openMonsterSheet(name: string) {
 		const m = data.monsters.find((m: MonsterData) => m.name === name);
-		sheetMonster = m ?? null;
+		if (m) { sheetMonster = m; sheetNpc = null; return; }
+		const n = data.npcs.find((n: NpcData) => n.name === name);
+		if (n) { sheetNpc = n; sheetMonster = null; }
 	}
 
 	const PJ_ORDER = ['Valtim', 'Upkik', 'Freedah', 'Kova', 'Elian Thorne', 'Zik'];
@@ -455,6 +473,7 @@
 					<div class="add-tabs">
 						<button class="add-tab" class:add-tab-active={addType === 'monster'} onclick={() => addType = 'monster'}>🐉 Monstre</button>
 						<button class="add-tab" class:add-tab-active={addType === 'custom'} onclick={() => addType = 'custom'}>✏️ Personnalisé</button>
+						<button class="add-tab" class:add-tab-active={addType === 'pnj'} onclick={() => addType = 'pnj'}>🧑 PNJ</button>
 					</div>
 					<div class="field-inline">
 						<label>Initiative</label>
@@ -493,6 +512,26 @@
 								<button class="toggle-opt" class:toggle-ally={customType === 'ally'} onclick={() => customType = 'ally'}>🛡️ Allié</button>
 							</div>
 							<button class="btn-primary btn-sm" onclick={addCustom}>Ajouter</button>
+						</div>
+					{:else if addType === 'pnj'}
+						<div class="custom-grid">
+							<select bind:value={selectedPnjId}>
+								<option value="">Choisir un PNJ…</option>
+								{#each data.npcs as pnj}
+									<option value={pnj.id}>{pnj.name}{pnj.role ? ` — ${pnj.role}` : ''}</option>
+								{/each}
+							</select>
+							{#if selectedPnjId}
+								<div class="two-col">
+									<div><label>PV</label><input type="number" bind:value={pnjHp} /></div>
+									<div><label>CA</label><input type="number" bind:value={pnjAc} /></div>
+								</div>
+							{/if}
+							<div class="type-toggle">
+								<button class="toggle-opt" class:toggle-enemy={pnjType === 'monster'} onclick={() => pnjType = 'monster'}>🐉 Ennemi</button>
+								<button class="toggle-opt" class:toggle-ally={pnjType === 'ally'} onclick={() => pnjType = 'ally'}>🛡️ Allié</button>
+							</div>
+							<button class="btn-primary btn-sm" onclick={addPnj} disabled={!selectedPnjId}>Ajouter</button>
 						</div>
 					{/if}
 				</div>
@@ -1253,6 +1292,47 @@
 		{/if}
 		{#if sheetMonster.source_url}
 			<a href={sheetMonster.source_url} target="_blank" rel="noopener noreferrer" class="sheet-source-link">🔗 Voir la fiche complète</a>
+		{/if}
+	</div>
+{/if}
+
+<!-- Fiche PNJ (panneau latéral) -->
+{#if sheetNpc}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="drawer-backdrop" onclick={() => sheetNpc = null}></div>
+	<div class="char-drawer monster-sheet-drawer">
+		<button class="modal-close" onclick={() => sheetNpc = null}>✕</button>
+		{#if sheetNpc.image_url}
+			<img src={sheetNpc.image_url} alt={sheetNpc.name} class="sheet-img" />
+		{/if}
+		<h2 class="drawer-title">{sheetNpc.name}</h2>
+		{#if sheetNpc.role}<p class="sheet-subtitle">{sheetNpc.role}{sheetNpc.affiliation ? ` · ${sheetNpc.affiliation}` : ''}</p>{/if}
+		{#if sheetNpc.hp || sheetNpc.ac}
+			<div class="sheet-stats-row">
+				{#if sheetNpc.hp}<div class="sheet-stat-box"><span class="stat-lbl">PV</span><span class="stat-val">{sheetNpc.hp}</span></div>{/if}
+				{#if sheetNpc.ac}<div class="sheet-stat-box"><span class="stat-lbl">CA</span><span class="stat-val">{sheetNpc.ac}</span></div>{/if}
+				{#if sheetNpc.str_score}<div class="sheet-stat-box"><span class="stat-lbl">FOR</span><span class="stat-val">{sheetNpc.str_score}</span></div>{/if}
+				{#if sheetNpc.dex_score}<div class="sheet-stat-box"><span class="stat-lbl">DEX</span><span class="stat-val">{sheetNpc.dex_score}</span></div>{/if}
+				{#if sheetNpc.con_score}<div class="sheet-stat-box"><span class="stat-lbl">CON</span><span class="stat-val">{sheetNpc.con_score}</span></div>{/if}
+				{#if sheetNpc.int_score}<div class="sheet-stat-box"><span class="stat-lbl">INT</span><span class="stat-val">{sheetNpc.int_score}</span></div>{/if}
+				{#if sheetNpc.wis_score}<div class="sheet-stat-box"><span class="stat-lbl">SAG</span><span class="stat-val">{sheetNpc.wis_score}</span></div>{/if}
+				{#if sheetNpc.cha_score}<div class="sheet-stat-box"><span class="stat-lbl">CHA</span><span class="stat-val">{sheetNpc.cha_score}</span></div>{/if}
+			</div>
+		{/if}
+		{#if sheetNpc.description}
+			<div class="sheet-section"><h4 class="sheet-section-title">Description</h4><p class="sheet-text">{sheetNpc.description}</p></div>
+		{/if}
+		{#if sheetNpc.personality}
+			<div class="sheet-section"><h4 class="sheet-section-title">Personnalité</h4><p class="sheet-text">{sheetNpc.personality}</p></div>
+		{/if}
+		{#if sheetNpc.motivation}
+			<div class="sheet-section"><h4 class="sheet-section-title">Motivation</h4><p class="sheet-text">{sheetNpc.motivation}</p></div>
+		{/if}
+		{#if sheetNpc.secret}
+			<div class="sheet-section"><h4 class="sheet-section-title">Secret</h4><p class="sheet-text">{sheetNpc.secret}</p></div>
+		{/if}
+		{#if sheetNpc.dm_notes}
+			<div class="sheet-section"><h4 class="sheet-section-title">Notes MJ</h4><p class="sheet-text">{sheetNpc.dm_notes}</p></div>
 		{/if}
 	</div>
 {/if}
