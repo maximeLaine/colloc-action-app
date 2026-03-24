@@ -1416,6 +1416,47 @@
 	</div>
 {/if}
 
+<!-- Fiche PNJ (panneau latéral) -->
+{#if sheetNpc}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="drawer-backdrop" onclick={() => sheetNpc = null}></div>
+	<div class="char-drawer monster-sheet-drawer">
+		<button class="modal-close" onclick={() => sheetNpc = null}>✕</button>
+		{#if sheetNpc.image_url}
+			<img src={sheetNpc.image_url} alt={sheetNpc.name} class="sheet-img" />
+		{/if}
+		<h2 class="drawer-title">{sheetNpc.name}</h2>
+		{#if sheetNpc.role}<p class="sheet-subtitle">{sheetNpc.role}{sheetNpc.affiliation ? ` · ${sheetNpc.affiliation}` : ''}</p>{/if}
+		{#if sheetNpc.hp || sheetNpc.ac}
+			<div class="sheet-stats-row">
+				{#if sheetNpc.hp}<div class="sheet-stat-box"><span class="stat-lbl">PV</span><span class="stat-val">{sheetNpc.hp}</span></div>{/if}
+				{#if sheetNpc.ac}<div class="sheet-stat-box"><span class="stat-lbl">CA</span><span class="stat-val">{sheetNpc.ac}</span></div>{/if}
+				{#if sheetNpc.str_score}<div class="sheet-stat-box"><span class="stat-lbl">FOR</span><span class="stat-val">{sheetNpc.str_score}</span></div>{/if}
+				{#if sheetNpc.dex_score}<div class="sheet-stat-box"><span class="stat-lbl">DEX</span><span class="stat-val">{sheetNpc.dex_score}</span></div>{/if}
+				{#if sheetNpc.con_score}<div class="sheet-stat-box"><span class="stat-lbl">CON</span><span class="stat-val">{sheetNpc.con_score}</span></div>{/if}
+				{#if sheetNpc.int_score}<div class="sheet-stat-box"><span class="stat-lbl">INT</span><span class="stat-val">{sheetNpc.int_score}</span></div>{/if}
+				{#if sheetNpc.wis_score}<div class="sheet-stat-box"><span class="stat-lbl">SAG</span><span class="stat-val">{sheetNpc.wis_score}</span></div>{/if}
+				{#if sheetNpc.cha_score}<div class="sheet-stat-box"><span class="stat-lbl">CHA</span><span class="stat-val">{sheetNpc.cha_score}</span></div>{/if}
+			</div>
+		{/if}
+		{#if sheetNpc.description}
+			<div class="sheet-section"><h4 class="sheet-section-title">Description</h4><p class="sheet-text">{sheetNpc.description}</p></div>
+		{/if}
+		{#if sheetNpc.personality}
+			<div class="sheet-section"><h4 class="sheet-section-title">Personnalité</h4><p class="sheet-text">{sheetNpc.personality}</p></div>
+		{/if}
+		{#if sheetNpc.motivation}
+			<div class="sheet-section"><h4 class="sheet-section-title">Motivation</h4><p class="sheet-text">{sheetNpc.motivation}</p></div>
+		{/if}
+		{#if sheetNpc.secret}
+			<div class="sheet-section"><h4 class="sheet-section-title">Secret</h4><p class="sheet-text">{sheetNpc.secret}</p></div>
+		{/if}
+		{#if sheetNpc.dm_notes}
+			<div class="sheet-section"><h4 class="sheet-section-title">Notes MJ</h4><p class="sheet-text">{sheetNpc.dm_notes}</p></div>
+		{/if}
+	</div>
+{/if}
+
 <!-- Drawer modifier PJ -->
 {#if editChar}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
