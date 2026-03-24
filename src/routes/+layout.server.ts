@@ -8,23 +8,16 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 	const { session, user } = await locals.safeGetSession();
 
 	let profile = null;
-	if (user) {
-		const { data, error } = await locals.supabase
-			.rpc('get_profile_by_id', { user_id: user.id })
-			.single();
-		if (error) console.error('[layout] profile fetch error:', error.message, error.code);
-		profile = data as Profile;
-	}
-
 	let campaignId: string | null = null;
+
 	if (user) {
-		const { data: campaign } = await locals.supabase
-			.from('campaigns')
-			.select('id')
-			.order('created_at')
-			.limit(1)
-			.single();
-		campaignId = campaign?.id ?? null;
+		const [profileRes, campaignRes] = await Promise.all([
+			locals.supabase.rpc('get_profile_by_id', { user_id: user.id }).single(),
+			locals.supabase.from('campaigns').select('id').order('created_at').limit(1).single()
+		]);
+		if (profileRes.error) console.error('[layout] profile fetch error:', profileRes.error.message, profileRes.error.code);
+		profile = profileRes.data as Profile;
+		campaignId = campaignRes.data?.id ?? null;
 	}
 
 	return { session, user, profile, campaignId };

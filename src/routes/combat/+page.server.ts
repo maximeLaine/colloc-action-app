@@ -5,15 +5,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const { user } = await locals.safeGetSession();
 	if (!user) redirect(303, '/login');
 
-	const { data: profileArr } = await locals.supabase
-		.rpc('get_profile_by_id', { user_id: user.id });
-	const profile = Array.isArray(profileArr) ? profileArr[0] : profileArr;
-	const isDM = profile?.role === 'dm';
-
-	const [{ data: kills }, { data: monsters }] = await Promise.all([
+	const [{ data: profileArr }, { data: kills }, { data: monsters }] = await Promise.all([
+		locals.supabase.rpc('get_profile_by_id', { user_id: user.id }),
 		locals.supabase.rpc('get_kills_for_user', { p_user_id: user.id }),
 		locals.supabase.rpc('get_monsters_for_user', { p_user_id: user.id })
 	]);
+	const isDM = (Array.isArray(profileArr) ? profileArr[0] : profileArr)?.role === 'dm';
 
 	return { kills: kills ?? [], monsters: monsters ?? [], isDM };
 };
