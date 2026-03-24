@@ -4,6 +4,21 @@ import { anthropic, DEFAULT_MODEL } from '$lib/server/anthropic';
 import { buildCampaignContext } from '$lib/server/context';
 import { checkAndIncrementUsage } from '$lib/server/rateLimit';
 
+/** Extrait le premier objet JSON complet d'une chaîne (résistant aux balises markdown). */
+function extractFirstJson(text: string): string | null {
+	const start = text.indexOf('{');
+	if (start === -1) return null;
+	let depth = 0;
+	for (let i = start; i < text.length; i++) {
+		if (text[i] === '{') depth++;
+		else if (text[i] === '}') {
+			depth--;
+			if (depth === 0) return text.slice(start, i + 1);
+		}
+	}
+	return null;
+}
+
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const { data: { user } } = await locals.supabase.auth.getUser();
 	if (!user) throw error(401, 'Non connecté');
@@ -32,7 +47,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		system: [
 			context,
 			'',
-			'Réponds UNIQUEMENT avec un JSON valide (pas de markdown) avec les champs :',
+			'Réponds STRICTEMENT en JSON, sans markdown ni texte avant/après. Champs attendus :',
 			'{ "name": string, "role": string, "affiliation": string, "status": "vivant", "description": string (2-3 phrases, visible joueurs), "dm_notes": string (motivations secrètes, 1-2 phrases), "personality": string (3 traits), "secret": string, "motivation": string }'
 		].join('\n'),
 		messages: [{ role: 'user', content: prompt }]
@@ -44,10 +59,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		npc = JSON.parse(raw);
 	} catch {
-		// Try to extract JSON from response
-		const match = raw.match(/\{[\s\S]*\}/);
-		if (!match) throw error(500, 'Réponse IA invalide');
-		npc = JSON.parse(match[0]);
+		const extracted = extractFirstJson(raw);
+		if (!extracted) {
+			console.error('[npc] Parsing JSON échoué. Réponse brute :', raw);
+			throw error(500, 'Réponse IA invalide');
+		}
+		try {
+			npc = JSON.parse(extracted);
+		} catch {
+			console.error('[npc] Parsing JSON échoué après extraction. Réponse brute :', raw);
+			throw error(500, 'Réponse IA invalide');
+		}
 	}
 
 	return json({ npc });
