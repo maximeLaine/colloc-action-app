@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { onMount } from 'svelte';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -19,6 +20,25 @@
 	let combatants = $state<Combatant[]>([]);
 	let round = $state(1);
 	let turnIndex = $state(0);
+	let _combatReady = $state(false);
+
+	onMount(() => {
+		const saved = localStorage.getItem('combat_state');
+		if (saved) {
+			try {
+				const state = JSON.parse(saved);
+				combatants = state.combatants ?? [];
+				round = state.round ?? 1;
+				turnIndex = state.turnIndex ?? 0;
+			} catch {}
+		}
+		_combatReady = true;
+	});
+
+	$effect(() => {
+		if (!_combatReady) return;
+		localStorage.setItem('combat_state', JSON.stringify({ combatants, round, turnIndex }));
+	});
 
 	// ─── Fiche monstre ────────────────────────────────────────────────
 	type MonsterData = typeof data.monsters[0];
