@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/stores';
 	import type { PageData, ActionData } from './$types';
 	import type { Combatant } from '$lib/types/database';
 	import FileAttachments from '$lib/components/FileAttachments.svelte';
@@ -8,11 +9,13 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const { sessions, npcs, campaign, stats, players } = data;
 
-	type Tab = 'dashboard' | 'sessions' | 'npcs' | 'combat' | 'ia';
-	let activeTab = $state<Tab>('dashboard');
+	type Tab = 'dashboard' | 'sessions' | 'npcs' | 'pj' | 'combat' | 'ia';
+	const tabs: Tab[] = ['dashboard', 'sessions', 'npcs', 'pj', 'combat', 'ia'];
+	const urlTab = $page.url.searchParams.get('tab') as Tab | null;
+	let activeTab = $state<Tab>(urlTab && tabs.includes(urlTab) ? urlTab : 'dashboard');
 
 	// ─── Players modal + invite ───
-	interface Char { id: string; name: string; race: string; class: string; level: number; hp_current: number; hp_max: number; ac: number; status: string; visibility: string; }
+	interface Char { id: string; name: string; race: string; class: string; level: number; hp_current: number; hp_max: number; ac: number; status: string; visibility: string; player_id: string | null; player_name: string | null; image_url: string | null; backstory: string | null; dm_backstory: string | null; }
 	interface CharWithPlayer extends Char { player_id: string | null; }
 	interface Player { id: string; email: string; display_name: string; role: string; characters: Char[]; }
 	let editPlayer = $state<Player | null>(null);
@@ -156,7 +159,7 @@
 	let trackerRound = $state(1);
 	let trackerTurn = $state(0);
 	let showAddPanel = $state(false);
-	let addType = $state<'monster' | 'custom'>('monster');
+	let addType = $state<'monster' | 'custom' | 'pnj'>('monster');
 	let selectedMonsterId = $state('');
 	let monsterHp = $state(10);
 	let monsterAc = $state(10);
@@ -164,6 +167,10 @@
 	let customHp = $state(10);
 	let customAc = $state(10);
 	let customType = $state<'monster' | 'ally'>('monster');
+	let selectedPnjId = $state('');
+	let pnjHp = $state(10);
+	let pnjAc = $state(10);
+	let pnjType = $state<'monster' | 'ally'>('ally');
 	let addInitiative = $state(0);
 	let showKillForm = $state(false);
 
@@ -172,6 +179,10 @@
 	$effect(() => {
 		const m = data.monsters.find((m: { id: string }) => m.id === selectedMonsterId);
 		if (m) { monsterHp = m.hp ?? 10; monsterAc = m.ac ?? 10; }
+	});
+	$effect(() => {
+		const p = data.npcs.find((n: { id: string }) => n.id === selectedPnjId);
+		if (p) { pnjHp = (p as { hp?: number }).hp ?? 10; pnjAc = (p as { ac?: number }).ac ?? 10; }
 	});
 
 	function sortByInit() { trackerCombatants = [...trackerCombatants].sort((a, b) => b.initiative - a.initiative); }
@@ -184,6 +195,12 @@
 	function addCustom() {
 		trackerCombatants = [...trackerCombatants, { id: crypto.randomUUID(), name: customName || 'Inconnu', type: customType, initiative: addInitiative, hp_max: customHp, hp_current: customHp, ac: customAc, conditions: [] }];
 		sortByInit(); showAddPanel = false; customName = ''; customHp = 10; customAc = 10;
+	}
+	function addPnj() {
+		const p = data.npcs.find((n: { id: string }) => n.id === selectedPnjId);
+		if (!p) return;
+		trackerCombatants = [...trackerCombatants, { id: crypto.randomUUID(), name: p.name, type: pnjType, initiative: addInitiative, hp_max: pnjHp, hp_current: pnjHp, ac: pnjAc, conditions: [] }];
+		sortByInit(); showAddPanel = false; selectedPnjId = ''; pnjHp = 10; pnjAc = 10;
 	}
 	function changeHp(id: string, delta: number) {
 		trackerCombatants = trackerCombatants.map(c => c.id === id ? { ...c, hp_current: Math.max(0, Math.min(c.hp_max, c.hp_current + delta)) } : c);
@@ -206,10 +223,14 @@
 	function cHpPct(c: CombatantLocal) { return c.hp_max > 0 ? Math.round((c.hp_current / c.hp_max) * 100) : 0; }
 
 	type MonsterData = typeof data.monsters[0];
+	type NpcData = typeof data.npcs[0];
 	let sheetMonster = $state<MonsterData | null>(null);
+	let sheetNpc = $state<NpcData | null>(null);
 	function openMonsterSheet(name: string) {
 		const m = data.monsters.find((m: MonsterData) => m.name === name);
-		sheetMonster = m ?? null;
+		if (m) { sheetMonster = m; sheetNpc = null; return; }
+		const n = data.npcs.find((n: NpcData) => n.name === name);
+		if (n) { sheetNpc = n; sheetMonster = null; }
 	}
 
 	const PJ_ORDER = ['Valtim', 'Upkik', 'Freedah', 'Kova', 'Elian Thorne', 'Zik'];
@@ -289,6 +310,16 @@
 		} catch (e: unknown) { aiError = e instanceof Error ? e.message : 'Erreur'; }
 		finally { aiLoading = false; }
 	}
+
+	// ─── PJ tab ───
+	const CHAR_CLASSES = ['Barbare', 'Barde', 'Clerc', 'Druide', 'Ensorceleur', 'Guerrier', 'Mage',
+		'Moine', 'Occultiste', 'Paladin', 'Rôdeur', 'Roublard'];
+	const CHAR_RACES = ['Elfe', 'Nain', 'Halfelin', 'Humain', 'Tieffelin', 'Demi-Elfe', 'Gnome',
+		'Demi-Orque', 'Draconide', 'Aasimar', 'Autre'];
+	let showCharForm = $state(false);
+	function closeCharModal(e: MouseEvent) {
+		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) editChar = null;
+	}
 </script>
 
 <svelte:head><title>Console MJ — {campaign?.name ?? 'La Kolok-Action'}</title></svelte:head>
@@ -330,7 +361,8 @@
 		<button class="tab" class:tab-active={activeTab === 'dashboard'} onclick={() => activeTab = 'dashboard'}>👥 Joueurs</button>
 		<button class="tab" class:tab-active={activeTab === 'sessions'} onclick={() => activeTab = 'sessions'}>📜 Sessions <span class="tab-count">{sessions.length}</span></button>
 		<button class="tab" class:tab-active={activeTab === 'npcs'} onclick={() => activeTab = 'npcs'}>🎭 PNJ <span class="tab-count">{npcs.length}</span></button>
-		<button class="tab" class:tab-active={activeTab === 'combat'} onclick={() => activeTab = 'combat'}>⚔️ Combat</button>
+		<button class="tab" class:tab-active={activeTab === 'pj'} onclick={() => activeTab = 'pj'}>⚔️ PJ <span class="tab-count">{data.allCharacters.length}</span></button>
+		<button class="tab" class:tab-active={activeTab === 'combat'} onclick={() => activeTab = 'combat'}>🎯 Combat</button>
 		<button class="tab" class:tab-active={activeTab === 'ia'} onclick={() => activeTab = 'ia'}>✨ Outils IA</button>
 	</div>
 
@@ -455,6 +487,7 @@
 					<div class="add-tabs">
 						<button class="add-tab" class:add-tab-active={addType === 'monster'} onclick={() => addType = 'monster'}>🐉 Monstre</button>
 						<button class="add-tab" class:add-tab-active={addType === 'custom'} onclick={() => addType = 'custom'}>✏️ Personnalisé</button>
+						<button class="add-tab" class:add-tab-active={addType === 'pnj'} onclick={() => addType = 'pnj'}>🧑 PNJ</button>
 					</div>
 					<div class="field-inline">
 						<label>Initiative</label>
@@ -493,6 +526,26 @@
 								<button class="toggle-opt" class:toggle-ally={customType === 'ally'} onclick={() => customType = 'ally'}>🛡️ Allié</button>
 							</div>
 							<button class="btn-primary btn-sm" onclick={addCustom}>Ajouter</button>
+						</div>
+					{:else if addType === 'pnj'}
+						<div class="custom-grid">
+							<select bind:value={selectedPnjId}>
+								<option value="">Choisir un PNJ…</option>
+								{#each data.npcs as pnj}
+									<option value={pnj.id}>{pnj.name}{pnj.role ? ` — ${pnj.role}` : ''}</option>
+								{/each}
+							</select>
+							{#if selectedPnjId}
+								<div class="two-col">
+									<div><label>PV</label><input type="number" bind:value={pnjHp} /></div>
+									<div><label>CA</label><input type="number" bind:value={pnjAc} /></div>
+								</div>
+							{/if}
+							<div class="type-toggle">
+								<button class="toggle-opt" class:toggle-enemy={pnjType === 'monster'} onclick={() => pnjType = 'monster'}>🐉 Ennemi</button>
+								<button class="toggle-opt" class:toggle-ally={pnjType === 'ally'} onclick={() => pnjType = 'ally'}>🛡️ Allié</button>
+							</div>
+							<button class="btn-primary btn-sm" onclick={addPnj} disabled={!selectedPnjId}>Ajouter</button>
 						</div>
 					{/if}
 				</div>
@@ -867,6 +920,112 @@
 				{/each}
 			</div>
 		{/if}
+
+	<!-- ═══ PJ ═══ -->
+	{:else if activeTab === 'pj'}
+		<div class="section-head-row">
+			<div class="subsection-title">⚔️ Personnages Joueurs</div>
+			<button class="btn-primary btn-sm" onclick={() => (showCharForm = !showCharForm)}>
+				{showCharForm ? 'Annuler' : '+ Nouveau PJ'}
+			</button>
+		</div>
+
+		{#if showCharForm}
+			<div class="card form-card">
+				<div class="form-card-title">Nouveau Personnage Joueur</div>
+				{#if form?.error}
+					<div class="form-error">{form.error}</div>
+				{/if}
+				<form method="POST" action="?/createChar" use:enhance={() => ({ result, update }) => {
+					if (result.type === 'success') showCharForm = false;
+					update();
+				}}>
+					<div class="form-grid2">
+						<div class="field required"><label for="cf-name">Nom</label>
+							<input id="cf-name" name="name" type="text" required placeholder="Ex: Gnoméo" /></div>
+						<div class="field"><label for="cf-player">Joueur</label>
+							<select id="cf-player" name="player_id">
+								<option value="">— Sans joueur —</option>
+								{#each data.players as player}
+									<option value={player.id}>{player.display_name} ({player.email})</option>
+								{/each}
+							</select></div>
+						<div class="field required"><label for="cf-race">Race</label>
+							<input id="cf-race" name="race" type="text" required list="char-race-list" placeholder="Ex: Gnome" />
+							<datalist id="char-race-list">{#each CHAR_RACES as r}<option value={r}></option>{/each}</datalist></div>
+						<div class="field required"><label for="cf-class">Classe</label>
+							<input id="cf-class" name="class" type="text" required list="char-class-list" placeholder="Ex: Roublard" />
+							<datalist id="char-class-list">{#each CHAR_CLASSES as c}<option value={c}></option>{/each}</datalist></div>
+						<div class="field"><label for="cf-level">Niveau</label>
+							<input id="cf-level" name="level" type="number" min="1" max="20" value="1" /></div>
+						<div class="field"><label for="cf-hp">PV max</label>
+							<input id="cf-hp" name="hp_max" type="number" min="1" value="10" /></div>
+						<div class="field"><label for="cf-ac">CA</label>
+							<input id="cf-ac" name="ac" type="number" min="1" value="10" /></div>
+						<div class="field"><label for="cf-status">Statut</label>
+							<select id="cf-status" name="status">
+								<option value="vivant">✅ Vivant</option>
+								<option value="mort">💀 Mort</option>
+								<option value="malade">🤢 Malade</option>
+								<option value="pétrifié">🪨 Pétrifié</option>
+								<option value="prisonnière">⛓️ Prisonnier/ère</option>
+							</select></div>
+						<div class="field full"><label for="cf-backstory">Historique (partagé)</label>
+							<textarea id="cf-backstory" name="backstory" rows="3" placeholder="Origine, motivations…"></textarea></div>
+						<div class="field full"><label for="cf-dm">Notes MJ (privées)</label>
+							<textarea id="cf-dm" name="dm_backstory" rows="2" placeholder="Secrets, éléments cachés…"></textarea></div>
+					</div>
+					<div class="form-actions"><button type="submit" class="btn-primary">Créer le PJ</button></div>
+				</form>
+			</div>
+		{/if}
+
+		<div class="char-list">
+			{#if data.allCharacters.length === 0}
+				<div class="empty-state">Aucun personnage. Crée le premier !</div>
+			{:else}
+				<div class="list-count">{data.allCharacters.length} personnage{data.allCharacters.length > 1 ? 's' : ''}</div>
+				{#each data.allCharacters as char}
+					<div class="char-row card">
+						<div class="char-info">
+							<div class="char-name">{char.name}</div>
+							<div class="char-meta">
+								<span>{char.race} · {char.class}</span>
+								<span class="sep">·</span>
+								<span>Niv. {char.level}</span>
+								<span class="sep">·</span>
+								<span>{char.hp_current}/{char.hp_max} PV · CA {char.ac}</span>
+								{#if char.status && char.status !== 'vivant'}
+									<span class="sep">·</span>
+									<span class="status-chip">{char.status === 'mort' ? '💀' : char.status === 'malade' ? '🤢' : '🪨'} {char.status}</span>
+								{/if}
+							</div>
+							{#if char.player_name}
+								<div class="char-player">👤 {char.player_name}</div>
+							{:else}
+								<div class="char-player unassigned">Sans joueur</div>
+							{/if}
+						</div>
+						<div class="char-actions">
+							<form method="POST" action="?/shareChar" use:enhance>
+								<input type="hidden" name="id" value={char.id} />
+								<input type="hidden" name="visibility" value={char.visibility === 'players' ? 'dm_only' : 'players'} />
+								<button type="submit" class="btn-vis" class:vis-on={char.visibility === 'players'}>
+									{char.visibility === 'players' ? '👁 Visible' : '🔒 Masqué'}
+								</button>
+							</form>
+							<button class="btn-edit-sm" onclick={() => editChar = char as Char}>Modifier</button>
+							<form method="POST" action="?/deleteChar" use:enhance>
+								<input type="hidden" name="id" value={char.id} />
+								<button type="submit" class="btn-del-sm" onclick={(e) => {
+									if (!confirm(`Supprimer "${char.name}" ?`)) e.preventDefault();
+								}}>Supprimer</button>
+							</form>
+						</div>
+					</div>
+				{/each}
+			{/if}
+		</div>
 
 	<!-- ═══ IA ═══ -->
 	{:else if activeTab === 'ia'}
@@ -1260,53 +1419,115 @@
 <!-- Drawer modifier PJ -->
 {#if editChar}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="drawer-backdrop" onclick={() => editChar = null}></div>
+	<div class="drawer-backdrop" onclick={closeCharModal}></div>
 	<div class="char-drawer">
 		<button class="modal-close" onclick={() => editChar = null}>✕</button>
 		<h2 class="drawer-title">Modifier — {editChar.name}</h2>
 		<p class="drawer-sub">{editChar.race} {editChar.class}</p>
 		{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
-		<form method="POST" action="?/updateChar" use:enhance={() => ({ result, update }) => {
+		<form method="POST" action="?/updateCharFull" use:enhance={() => ({ result, update }) => {
 			if (result.type === 'success') editChar = null;
 			update();
 		}}>
 			<input type="hidden" name="id" value={editChar.id} />
-			<input type="hidden" name="name" value={editChar.name} />
-			<input type="hidden" name="race" value={editChar.race} />
-			<input type="hidden" name="class" value={editChar.class} />
 			<div class="drawer-grid">
-				<div class="field">
-					<label>Niveau</label>
-					<input name="level" type="number" min="1" max="20" value={editChar.level} />
-				</div>
-				<div class="field">
-					<label>Classe d'armure (CA)</label>
-					<input name="ac" type="number" min="1" value={editChar.ac} />
-				</div>
-				<div class="field">
-					<label>PV max</label>
-					<input name="hp_max" type="number" min="1" value={editChar.hp_max} />
-				</div>
-				<div class="field">
-					<label>PV actuels</label>
-					<input name="hp_current" type="number" min="0" value={editChar.hp_current} />
-				</div>
-				<div class="field full">
-					<label>Statut</label>
+				<div class="field full"><label>Nom</label>
+					<input name="name" type="text" value={editChar.name} /></div>
+				<div class="field"><label>Race</label>
+					<input name="race" type="text" list="ec-race-list" value={editChar.race} />
+					<datalist id="ec-race-list">{#each CHAR_RACES as r}<option value={r}></option>{/each}</datalist></div>
+				<div class="field"><label>Classe</label>
+					<input name="class" type="text" list="ec-class-list" value={editChar.class} />
+					<datalist id="ec-class-list">{#each CHAR_CLASSES as c}<option value={c}></option>{/each}</datalist></div>
+				<div class="field"><label>Joueur</label>
+					<select name="player_id">
+						<option value="">— Sans joueur —</option>
+						{#each data.players as player}
+							<option value={player.id} selected={player.id === editChar.player_id}>{player.display_name}</option>
+						{/each}
+					</select></div>
+				<div class="field"><label>Niveau</label>
+					<input name="level" type="number" min="1" max="20" value={editChar.level} /></div>
+				<div class="field"><label>PV max</label>
+					<input name="hp_max" type="number" min="1" value={editChar.hp_max} /></div>
+				<div class="field"><label>PV actuels</label>
+					<input name="hp_current" type="number" min="0" value={editChar.hp_current} /></div>
+				<div class="field"><label>CA</label>
+					<input name="ac" type="number" min="1" value={editChar.ac} /></div>
+				<div class="field full"><label>Statut</label>
 					<select name="status">
 						<option value="vivant" selected={editChar.status === 'vivant'}>✅ Vivant</option>
 						<option value="mort" selected={editChar.status === 'mort'}>💀 Mort</option>
 						<option value="malade" selected={editChar.status === 'malade'}>🤢 Malade</option>
 						<option value="pétrifié" selected={editChar.status === 'pétrifié'}>🪨 Pétrifié</option>
 						<option value="prisonnière" selected={editChar.status === 'prisonnière'}>⛓️ Prisonnier/ère</option>
-					</select>
-				</div>
+					</select></div>
+				<div class="field full"><label>Historique (partagé)</label>
+					<textarea name="backstory" rows="3">{editChar.backstory ?? ''}</textarea></div>
+				<div class="field full"><label>Notes MJ (privées)</label>
+					<textarea name="dm_backstory" rows="2">{editChar.dm_backstory ?? ''}</textarea></div>
 			</div>
 			<div class="form-actions">
 				<button type="button" class="btn-secondary" onclick={() => editChar = null}>Annuler</button>
 				<button type="submit" class="btn-primary">Enregistrer</button>
 			</div>
 		</form>
+	</div>
+{/if}
+
+<!-- Fiche PNJ (panneau latéral) -->
+{#if sheetNpc}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="drawer-backdrop" onclick={() => sheetNpc = null}></div>
+	<div class="char-drawer monster-sheet-drawer">
+		<button class="modal-close" onclick={() => sheetNpc = null}>✕</button>
+		{#if sheetNpc.image_url}
+			<img src={sheetNpc.image_url} alt={sheetNpc.name} class="sheet-img" />
+		{/if}
+		<h2 class="drawer-title">{sheetNpc.name}</h2>
+		{#if sheetNpc.role}<p class="sheet-subtitle">{sheetNpc.role}{sheetNpc.affiliation ? ` · ${sheetNpc.affiliation}` : ''}</p>{/if}
+		{#if sheetNpc.hp || sheetNpc.ac}
+			<div class="sheet-stats-row">
+				{#if sheetNpc.hp}<div class="sheet-stat-box"><span class="stat-lbl">PV</span><span class="stat-val">{sheetNpc.hp}</span></div>{/if}
+				{#if sheetNpc.ac}<div class="sheet-stat-box"><span class="stat-lbl">CA</span><span class="stat-val">{sheetNpc.ac}</span></div>{/if}
+				{#if sheetNpc.str_score}<div class="sheet-stat-box"><span class="stat-lbl">FOR</span><span class="stat-val">{sheetNpc.str_score}</span></div>{/if}
+				{#if sheetNpc.dex_score}<div class="sheet-stat-box"><span class="stat-lbl">DEX</span><span class="stat-val">{sheetNpc.dex_score}</span></div>{/if}
+				{#if sheetNpc.con_score}<div class="sheet-stat-box"><span class="stat-lbl">CON</span><span class="stat-val">{sheetNpc.con_score}</span></div>{/if}
+				{#if sheetNpc.int_score}<div class="sheet-stat-box"><span class="stat-lbl">INT</span><span class="stat-val">{sheetNpc.int_score}</span></div>{/if}
+				{#if sheetNpc.wis_score}<div class="sheet-stat-box"><span class="stat-lbl">SAG</span><span class="stat-val">{sheetNpc.wis_score}</span></div>{/if}
+				{#if sheetNpc.cha_score}<div class="sheet-stat-box"><span class="stat-lbl">CHA</span><span class="stat-val">{sheetNpc.cha_score}</span></div>{/if}
+			</div>
+		{/if}
+		{#if sheetNpc.description}
+			<div class="sheet-section">
+				<h4 class="sheet-section-title">Description</h4>
+				<p class="sheet-text">{sheetNpc.description}</p>
+			</div>
+		{/if}
+		{#if sheetNpc.personality}
+			<div class="sheet-section">
+				<h4 class="sheet-section-title">Personnalité</h4>
+				<p class="sheet-text">{sheetNpc.personality}</p>
+			</div>
+		{/if}
+		{#if sheetNpc.motivation}
+			<div class="sheet-section">
+				<h4 class="sheet-section-title">Motivation</h4>
+				<p class="sheet-text">{sheetNpc.motivation}</p>
+			</div>
+		{/if}
+		{#if sheetNpc.secret}
+			<div class="sheet-section">
+				<h4 class="sheet-section-title">Secret</h4>
+				<p class="sheet-text">{sheetNpc.secret}</p>
+			</div>
+		{/if}
+		{#if sheetNpc.dm_notes}
+			<div class="sheet-section">
+				<h4 class="sheet-section-title">Notes MJ</h4>
+				<p class="sheet-text">{sheetNpc.dm_notes}</p>
+			</div>
+		{/if}
 	</div>
 {/if}
 
@@ -1743,6 +1964,31 @@
 	.modal-close:hover { color: #FFF; border-color: #C2374A; }
 	.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
+	/* PJ tab */
+	.section-head-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+	.form-card { margin-bottom: 1.25rem; padding: 1.25rem; }
+	.form-card-title { font-family: 'Cinzel', serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C2374A; margin-bottom: 1rem; }
+	.form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+	.form-grid2 .field.full { grid-column: 1 / -1; }
+	.list-count { font-family: 'Cinzel', serif; font-size: 0.7rem; color: rgba(240,237,234,0.3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.6rem; }
+	.char-row { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; }
+	.char-info { flex: 1; min-width: 0; }
+	.char-name { font-family: 'Cinzel', serif; font-size: 0.8rem; font-weight: 700; color: #FFF; letter-spacing: 0.05em; text-transform: uppercase; }
+	.char-meta { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.2rem; flex-wrap: wrap; font-size: 0.8rem; color: rgba(240,237,234,0.5); }
+	.char-meta .sep { color: rgba(240,237,234,0.2); }
+	.status-chip { font-size: 0.75rem; color: #E05060; }
+	.char-player { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.06em; color: #2B8FD4; margin-top: 0.25rem; text-transform: uppercase; }
+	.char-player.unassigned { color: rgba(240,237,234,0.25); }
+	.char-actions { flex-shrink: 0; display: flex; gap: 0.4rem; align-items: center; }
+	.btn-vis { background: transparent; border: 1px solid #2A3A2A; color: rgba(240,237,234,0.4); padding: 0.22rem 0.55rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
+	.btn-vis.vis-on { border-color: #2A6A2A; color: #5CB85C; }
+	.btn-vis:hover { border-color: #5CB85C; color: #5CB85C; }
+	.btn-edit-sm { background: transparent; border: 1px solid #2A3A4A; color: rgba(240,237,234,0.5); padding: 0.22rem 0.55rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
+	.btn-edit-sm:hover { border-color: #2B8FD4; color: #2B8FD4; }
+	.btn-del-sm { background: transparent; border: 1px solid #3A1A1A; color: rgba(240,237,234,0.35); padding: 0.22rem 0.55rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
+	.btn-del-sm:hover { border-color: #C2374A; color: #E05060; }
+	.empty-state { text-align: center; padding: 3rem; color: rgba(240,237,234,0.3); font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
 	@media (max-width: 900px) {
 		.stats-row { grid-template-columns: repeat(3, 1fr); }
 		.combat-layout { grid-template-columns: 1fr; }
@@ -1752,5 +1998,6 @@
 		.stats-row { grid-template-columns: repeat(2, 1fr); }
 		.tabs { overflow-x: auto; }
 		.kill-form-grid { grid-template-columns: 1fr; }
+		.form-grid2 { grid-template-columns: 1fr; }
 	}
 </style>
