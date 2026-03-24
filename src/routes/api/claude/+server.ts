@@ -7,12 +7,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const body = await request.json().catch(() => null);
 	if (!body?.prompt) throw error(400, 'prompt requis');
 
-	// Rate limiting si l'utilisateur est connecté
 	const { data: { user } } = await locals.supabase.auth.getUser();
-	if (user) {
-		const { allowed, count, limit } = await checkAndIncrementUsage(locals.supabase, user.id);
-		if (!allowed) throw error(429, `Limite journalière atteinte (${count}/${limit} appels)`);
-	}
+	if (!user) throw error(401, 'Non connecté');
+
+	const { allowed, count, limit } = await checkAndIncrementUsage(locals.supabase, user.id);
+	if (!allowed) throw error(429, `Limite journalière atteinte (${count}/${limit} appels)`);
 
 	// Streaming
 	const stream = await anthropic.messages.stream({
