@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "predev": "node scripts/convert-bg.mjs",
     "prebuild": "node scripts/convert-bg.mjs",
     "build": "vite build",
     "preview": "vite preview",
