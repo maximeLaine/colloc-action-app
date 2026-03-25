@@ -150,7 +150,7 @@
 				{#each filtered as m}
 					<div class="monster-card card">
 						{#if m.image_url}
-							<img src={m.image_url} alt={m.name} class="monster-card-img" />
+							<img src={m.image_url} alt={m.name} class="monster-card-img" loading="lazy" />
 						{:else}
 							<div class="monster-card-placeholder">🐉</div>
 						{/if}

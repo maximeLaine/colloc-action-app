@@ -195,7 +195,7 @@
 		<div class="monster-sheet">
 			<button class="sheet-close" onclick={() => sheetMonster = null}>✕</button>
 			{#if sheetMonster.image_url}
-				<img src={sheetMonster.image_url} alt={sheetMonster.name} class="sheet-img" />
+				<img src={sheetMonster.image_url} alt={sheetMonster.name} class="sheet-img" loading="lazy" />
 			{/if}
 			<div class="sheet-header">
 				<h3 class="sheet-name">{sheetMonster.name}</h3>

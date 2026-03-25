@@ -230,7 +230,7 @@
 				<div class="npc-row card">
 					<div class="npc-img-wrap">
 						{#if npc.image_url}
-							<img src={npc.image_url} alt={npc.name} />
+							<img src={npc.image_url} alt={npc.name} loading="lazy" />
 						{:else}
 							<div class="img-placeholder">🎭</div>
 						{/if}
