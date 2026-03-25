@@ -117,7 +117,6 @@
 	const selectedMonster = $derived(data.monsters.find((m: { id: string }) => m.id === selectedMonsterId));
 
 	// ─── Kills ─────────────────────────────────────────────────────────
-	let showKillForm = $state(false);
 
 	const PJ_ORDER = ['Valtim', 'Upkik', 'Freedah', 'Kova', 'Elian Thorne', 'Zik'];
 
@@ -146,47 +145,8 @@
 	<div class="kills-section">
 		<div class="kills-header">
 			<h2>Tableau des kills</h2>
-			<button class="btn-primary" onclick={() => (showKillForm = !showKillForm)}>
-				{showKillForm ? 'Annuler' : '+ Ajouter un kill'}
-			</button>
 		</div>
-
-		{#if showKillForm}
-				<div class="kill-form card">
-					{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
-					<form method="POST" action="?/addKill" use:enhance={() => ({ result, update }) => {
-						if (result.type === 'success') showKillForm = false;
-						update();
-					}}>
-						<div class="form-grid">
-							<div class="field required">
-								<label for="monster_name">Monstre tué</label>
-								<input id="monster_name" name="monster_name" type="text" required
-									list="monster-list" placeholder="Ex: Gobelin" />
-								<datalist id="monster-list">
-									{#each data.monsters as m}<option value={m.name}></option>{/each}
-								</datalist>
-							</div>
-							<div class="field required">
-								<label for="killed_by">Par qui</label>
-								<input id="killed_by" name="killed_by" type="text" required placeholder="Ex: Gnoméo" />
-							</div>
-							<div class="field">
-								<label for="session_number">Session n°</label>
-								<input id="session_number" name="session_number" type="number" min="1" />
-							</div>
-							<div class="field">
-								<label for="notes">Notes</label>
-								<input id="notes" name="notes" type="text" placeholder="Ex: coup fatal à l'épée" />
-							</div>
-						</div>
-						<div class="form-actions">
-							<button type="submit" class="btn-primary">Enregistrer</button>
-						</div>
-					</form>
-				</div>
-			{/if}
-		</div>
+	</div>
 
 	<!-- Fiche monstre (panneau latéral) -->
 	{#if sheetMonster}
