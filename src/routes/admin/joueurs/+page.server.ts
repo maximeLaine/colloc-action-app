@@ -75,6 +75,23 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	deletePlayer: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		if (!id) return fail(400, { error: 'ID manquant' });
+
+		const { error } = await locals.supabase.rpc('admin_delete_player', {
+			p_user_id: user.id,
+			p_player_id: id
+		});
+
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
 	invite: async ({ request, locals }) => {
 		const { user } = await locals.safeGetSession();
 		if (!user) redirect(303, '/login');

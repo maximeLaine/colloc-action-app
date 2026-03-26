@@ -9,13 +9,17 @@
 	let editPlayer = $state<Player | null>(null);
 	let showInvite = $state(false);
 	let inviteLink = $state<string | null>(null);
+	let confirmDelete = $state(false);
 
 	const characters = $derived(data.characters as Character[]);
 	const assignedChars = $derived((p: Player) => characters.filter(c => c.player_id === p.id));
 	const unassignedChars = $derived(characters.filter(c => !c.player_id));
 
 	function closeOnBackdrop(e: MouseEvent) {
-		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) editPlayer = null;
+		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) {
+			editPlayer = null;
+			confirmDelete = false;
+		}
 	}
 
 	$effect(() => {
@@ -126,11 +130,11 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div class="modal-backdrop" onclick={closeOnBackdrop}>
 		<div class="modal">
-			<button class="modal-close" onclick={() => (editPlayer = null)}>✕</button>
+			<button class="modal-close" onclick={() => { editPlayer = null; confirmDelete = false; }}>✕</button>
 			<h2>Modifier — {editPlayer.display_name}</h2>
 			<p class="modal-email">{editPlayer.email}</p>
 			<form method="POST" action="?/update" use:enhance={() => ({ result, update }) => {
-				if (result.type === 'success') editPlayer = null;
+				if (result.type === 'success') { editPlayer = null; confirmDelete = false; }
 				update();
 			}}>
 				<input type="hidden" name="id" value={editPlayer.id} />
@@ -181,6 +185,26 @@
 						</select>
 						<button type="submit" class="btn-assign">Associer</button>
 					</form>
+				{/if}
+			</div>
+		<div class="danger-zone">
+				<div class="danger-title">Zone de danger</div>
+				{#if !confirmDelete}
+					<button class="btn-danger-outline" onclick={() => (confirmDelete = true)}>
+						Supprimer ce compte
+					</button>
+				{:else}
+					<p class="danger-confirm-text">
+						Supprimer définitivement <strong>{editPlayer.display_name}</strong> ?
+						Les personnages associés seront désassociés.
+					</p>
+					<div class="danger-actions">
+						<button class="btn-secondary" onclick={() => (confirmDelete = false)}>Annuler</button>
+						<form method="POST" action="?/deletePlayer" use:enhance={() => () => { editPlayer = null; confirmDelete = false; }}>
+							<input type="hidden" name="id" value={editPlayer.id} />
+							<button type="submit" class="btn-danger">Confirmer la suppression</button>
+						</form>
+					</div>
 				{/if}
 			</div>
 		</div>
@@ -249,4 +273,12 @@
 	.assign-select:focus { outline: none; border-color: #C2374A; }
 	.btn-assign { background: transparent; border: 1px solid #2B8FD4; color: #2B8FD4; padding: 0.4rem 0.85rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
 	.btn-assign:hover { background: rgba(43,143,212,0.15); }
+	.danger-zone { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid rgba(194,55,74,0.2); }
+	.danger-title { font-family: 'Cinzel', serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(194,55,74,0.6); margin-bottom: 0.75rem; }
+	.danger-confirm-text { font-size: 0.85rem; color: rgba(240,237,234,0.6); margin-bottom: 0.75rem; }
+	.danger-actions { display: flex; gap: 0.75rem; align-items: center; }
+	.btn-danger-outline { background: transparent; border: 1px solid rgba(194,55,74,0.4); color: rgba(194,55,74,0.7); padding: 0.35rem 0.75rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+	.btn-danger-outline:hover { border-color: #C2374A; color: #E05060; }
+	.btn-danger { background: rgba(194,55,74,0.15); border: 1px solid #C2374A; color: #E05060; padding: 0.35rem 0.75rem; border-radius: 3px; font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+	.btn-danger:hover { background: rgba(194,55,74,0.3); }
 </style>
