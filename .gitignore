@@ -6,3 +6,4 @@ dist
 !.env.example
 .netlify
 package-lock.json
+public/background.webp

@@ -42,7 +42,7 @@
 			<button class="npc-card" onclick={() => (selected = npc)}>
 				<div class="npc-portrait">
 					{#if npc.image_url}
-						<img src={npc.image_url} alt={npc.name} class:dimmed={(npc.status ?? 'vivant').toLowerCase() !== 'vivant'} />
+						<img src={npc.image_url} alt={npc.name} loading="lazy" class:dimmed={(npc.status ?? 'vivant').toLowerCase() !== 'vivant'} />
 					{:else}
 						<div class="portrait-placeholder">🎭</div>
 					{/if}
@@ -79,7 +79,7 @@
 			<div class="modal-layout">
 				<div class="modal-img-col">
 					{#if selected.image_url}
-						<img src={selected.image_url} alt={selected.name} class="modal-img" />
+						<img src={selected.image_url} alt={selected.name} class="modal-img" loading="lazy" />
 					{:else}
 						<div class="modal-img-placeholder">🎭</div>
 					{/if}

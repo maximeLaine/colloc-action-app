@@ -47,7 +47,7 @@
 			{#each value as att, i}
 				<div class="attachment-item">
 					{#if att.type === 'image'}
-						<img src={att.url} alt={att.name} class="att-thumb" />
+						<img src={att.url} alt={att.name} class="att-thumb" loading="lazy" />
 					{:else}
 						<div class="att-pdf-icon">📄</div>
 					{/if}

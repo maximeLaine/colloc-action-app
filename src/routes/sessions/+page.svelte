@@ -66,7 +66,7 @@
 										{#each s.attachments as att}
 											{#if att.type === 'image'}
 												<a href={att.url} target="_blank" class="att-img-link">
-													<img src={att.url} alt={att.name} class="att-img" />
+													<img src={att.url} alt={att.name} class="att-img" loading="lazy" />
 													<span class="att-caption">{att.name}</span>
 												</a>
 											{:else}
