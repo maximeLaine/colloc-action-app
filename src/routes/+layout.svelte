@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { createClient } from '$lib/supabase';
+	import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
@@ -40,13 +41,14 @@
 
 <svelte:head>
 	<title>La Kolok-Action</title>
+	<link rel="preconnect" href={PUBLIC_SUPABASE_URL} crossorigin="anonymous" />
 </svelte:head>
 
 <div class="app">
 	<header class="site-header" class:hidden={isConsole}>
 		<div class="header-inner">
 			<a href="/" class="logo">
-				<img src="/logo-kolok-action.jpg" alt="Kolok-Action" />
+				<img src="/logo-kolok-action.jpg" alt="Kolok-Action" fetchpriority="high" />
 				<span>La Kolok-Action</span>
 			</a>
 
@@ -125,25 +127,16 @@
 	:global(em) { font-style: italic; }
 
 	:global(body) {
+		background:
+			linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.55) 100%),
+			image-set(url('/background.webp') type('image/webp'), url('/background.png') type('image/png'))
+			center center / cover fixed;
 		background-color: #0A0A0A;
 		color: #F0EDEA;
 		font-family: 'Crimson Text', Georgia, serif;
 		font-size: 1.1rem;
 		line-height: 1.7;
 		min-height: 100vh;
-	}
-
-	/* Pseudo-element évite le repaint au scroll causé par background-attachment:fixed */
-	:global(body::before) {
-		content: '';
-		position: fixed;
-		inset: 0;
-		z-index: -1;
-		background-image:
-			linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.55) 100%),
-			image-set(url('/background.webp') type('image/webp'), url('/background.png') type('image/png'));
-		background-size: cover;
-		background-position: center center;
 	}
 
 	:global(h1, h2, h3, h4) {

@@ -57,7 +57,7 @@
 					<button class="char-card" onclick={() => (selected = c)}>
 						<div class="char-portrait">
 							{#if c.image_url}
-								<img src={c.image_url} alt={c.name} loading="lazy" class:dimmed={(c as any).status && (c as any).status.toLowerCase() !== 'vivant'} />
+								<img src={c.image_url} alt={c.name} loading="lazy" decoding="async" class:dimmed={(c as any).status && (c as any).status.toLowerCase() !== 'vivant'} />
 							{:else}
 								<div class="portrait-placeholder">⚔️</div>
 							{/if}
@@ -95,7 +95,7 @@
 			<div class="modal-layout">
 				<div class="modal-img-col">
 					{#if selected.image_url}
-						<img src={selected.image_url} alt={selected.name} class="modal-img" loading="lazy" />
+						<img src={selected.image_url} alt={selected.name} class="modal-img" loading="lazy" decoding="async" />
 					{:else}
 						<div class="modal-img-placeholder">⚔️</div>
 					{/if}
