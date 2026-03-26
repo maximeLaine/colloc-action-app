@@ -177,21 +177,42 @@
 			<button class="modal-close" onclick={() => (editOwn = null)}>✕</button>
 			<h2>Modifier — {editOwn.name}</h2>
 			{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
-			<form method="POST" action="?/updateOwn" use:enhance={() => ({ result, update }) => {
+			<form method="POST" action="?/updateCharacterFull" use:enhance={() => ({ result, update }) => {
 				if (result.type === 'success') editOwn = null;
 				update();
-			}}>
-				<input type="hidden" name="char_id" value={editOwn.id} />
+		}}>
 				<div class="edit-form-grid">
-					<div class="field">
-						<label>Image</label>
-						<ImageUpload name="image_url" value={editOwn.image_url ?? ''} placeholder="URL ou upload" />
+					<div class="field full">
+						<label>Nom *</label>
+						<input name="name" type="text" required value={editOwn.name} />
+					</div>
+					<div class="field-group">
+						<div class="field">
+							<label>Race</label>
+							<input name="race" type="text" value={editOwn.race} />
+						</div>
+						<div class="field">
+							<label>Classe</label>
+							<input name="class" type="text" value={editOwn.class} />
+						</div>
 					</div>
 					<div class="field-group">
 						<div class="field">
 							<label>Niveau</label>
 							<input name="level" type="number" min="1" max="20" value={editOwn.level} />
 						</div>
+						<div class="field">
+							<label>Statut</label>
+							<select name="status" value={(editOwn as any).status ?? 'vivant'}>
+								<option value="vivant">✅ Vivant</option>
+								<option value="mort">💀 Mort</option>
+								<option value="malade">🤢 Malade</option>
+								<option value="pétrifié">🪨 Pétrifié</option>
+								<option value="prisonnière">⛓️ Prisonnier</option>
+							</select>
+						</div>
+					</div>
+					<div class="field-group">
 						<div class="field">
 							<label>PV max</label>
 							<input name="hp_max" type="number" min="1" value={editOwn.hp_max} />
@@ -206,8 +227,16 @@
 						</div>
 					</div>
 					<div class="field full">
-						<label>Historique / Backstory</label>
-						<textarea name="backstory" rows="5">{editOwn.backstory ?? ''}</textarea>
+						<label>Historique / Backstory (partagé)</label>
+						<textarea name="backstory" rows="4">{editOwn.backstory ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Notes MJ (privées)</label>
+						<textarea name="dm_backstory" rows="3">{(editOwn as any).dm_backstory ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Image</label>
+						<ImageUpload name="image_url" value={editOwn.image_url ?? ''} placeholder="URL ou upload" />
 					</div>
 				</div>
 				<div class="form-actions">
@@ -354,13 +383,14 @@
 
 	/* Edit modal */
 	.edit-form-grid { display: flex; flex-direction: column; gap: 1rem; }
-	.field-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+	.field-group { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
 	.field { display: flex; flex-direction: column; gap: 0.35rem; }
 	.field.full { grid-column: 1 / -1; }
 	label { font-family: 'Cinzel', serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(240,237,234,0.55); }
-	input[type="number"], textarea { background: #0A0A0A; border: 1px solid #2A2A2A; color: #F0EDEA; padding: 0.55rem 0.75rem; border-radius: 3px; font-family: 'Crimson Text', serif; font-size: 1rem; width: 100%; }
-	input[type="number"]:focus, textarea:focus { outline: none; border-color: #C2374A; }
+	input[type="number"], textarea, select { background: #0A0A0A; border: 1px solid #2A2A2A; color: #F0EDEA; padding: 0.55rem 0.75rem; border-radius: 3px; font-family: 'Crimson Text', serif; font-size: 1rem; width: 100%; }
+	input[type="number"]:focus, textarea:focus, select:focus { outline: none; border-color: #C2374A; }
 	textarea { resize: vertical; }
+	select option { background: #1A1A1A; color: #F0EDEA; }
 	.form-actions { margin-top: 1.25rem; display: flex; gap: 0.75rem; justify-content: flex-end; }
 	.error-msg { background: #1A0508; border: 1px solid #C2374A44; color: #E05060; padding: 0.6rem 0.85rem; border-radius: 3px; font-size: 0.9rem; margin-bottom: 1rem; }
 	.modal h2 { font-size: 1rem; font-weight: 900; color: #C2374A; margin-bottom: 1.25rem; letter-spacing: 0.05em; text-transform: uppercase; }
@@ -370,5 +400,6 @@
 		.modal-img, .modal-img-placeholder { width: 100%; height: 200px; }
 		.stats-grid { grid-template-columns: repeat(3, 1fr); }
 		.combat-row { flex-wrap: wrap; }
+		.field-group { grid-template-columns: 1fr; }
 	}
 </style>
