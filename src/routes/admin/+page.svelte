@@ -1215,183 +1215,6 @@
 			{/if}
 		</div>
 		{/if}
-	{/if}
-
-</div>
-
-<!-- Modal modifier PNJ -->
-{#if npcEditTarget}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal-backdrop" onclick={closeNpcOnBackdrop}>
-		<div class="modal modal-lg">
-			<button class="modal-close" onclick={() => npcEditTarget = null}>✕</button>
-			<h2 class="modal-title">Modifier — {npcEditTarget.name}</h2>
-			{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
-			<form method="POST" action="?/updateNpc" use:enhance={() => ({ result, update }) => {
-				if (result.type === 'success') npcEditTarget = null;
-				update();
-			}}>
-				<input type="hidden" name="id" value={npcEditTarget.id} />
-				<div class="form-grid">
-					<div class="field required">
-						<label>Nom</label>
-						<input name="name" type="text" required value={npcEditTarget.name} />
-					</div>
-					<div class="field required">
-						<label>Rôle / Titre</label>
-						<input name="role" type="text" required value={npcEditTarget.role} />
-					</div>
-					<div class="field">
-						<label>Affiliation</label>
-						<input name="affiliation" type="text" value={npcEditTarget.affiliation ?? ''} />
-					</div>
-					<div class="field">
-						<label>Statut</label>
-						<select name="status">
-							<option value="vivant" selected={npcEditTarget.status === 'vivant'}>✅ Vivant</option>
-							<option value="mort" selected={npcEditTarget.status === 'mort'}>💀 Mort</option>
-							<option value="malade" selected={npcEditTarget.status === 'malade'}>🤢 Malade</option>
-							<option value="pétrifié" selected={npcEditTarget.status === 'pétrifié'}>🪨 Pétrifié</option>
-							<option value="prisonnière" selected={npcEditTarget.status === 'prisonnière'}>⛓️ Prisonnier/ère</option>
-						</select>
-					</div>
-					<div class="field">
-						<label>Visibilité</label>
-						<select name="visibility">
-							<option value="dm_only" selected={npcEditTarget.visibility === 'dm_only'}>🔒 MJ uniquement</option>
-							<option value="players" selected={npcEditTarget.visibility === 'players'}>👥 Joueurs</option>
-							<option value="public" selected={npcEditTarget.visibility === 'public'}>🌐 Public</option>
-						</select>
-					</div>
-					<div class="field">
-						<label>Image</label>
-						<ImageUpload name="image_url" placeholder="/img/pnj/nom.png" value={npcEditTarget.image_url ?? ''} />
-					</div>
-					<div class="field full">
-						<label>Description (visible joueurs)</label>
-						<textarea name="description" rows="3">{npcEditTarget.description ?? ''}</textarea>
-					</div>
-					<div class="field full">
-						<label>Notes MJ (privées)</label>
-						<textarea name="dm_notes" rows="3">{npcEditTarget.dm_notes ?? ''}</textarea>
-					</div>
-					<div class="field full npc-stats-section">
-						<div class="npc-stats-label">Stats de combat <span class="npc-stats-hint">(optionnel)</span></div>
-						<div class="npc-stats-grid">
-							<div class="field"><label>PV</label><input name="hp" type="number" min="1" value={npcEditTarget.hp ?? ''} placeholder="—" /></div>
-							<div class="field"><label>CA</label><input name="ac" type="number" min="1" value={npcEditTarget.ac ?? ''} placeholder="—" /></div>
-							<div class="field"><label>FOR</label><input name="str_score" type="number" min="1" max="30" value={npcEditTarget.str_score ?? ''} placeholder="—" /></div>
-							<div class="field"><label>DEX</label><input name="dex_score" type="number" min="1" max="30" value={npcEditTarget.dex_score ?? ''} placeholder="—" /></div>
-							<div class="field"><label>CON</label><input name="con_score" type="number" min="1" max="30" value={npcEditTarget.con_score ?? ''} placeholder="—" /></div>
-							<div class="field"><label>INT</label><input name="int_score" type="number" min="1" max="30" value={npcEditTarget.int_score ?? ''} placeholder="—" /></div>
-							<div class="field"><label>SAG</label><input name="wis_score" type="number" min="1" max="30" value={npcEditTarget.wis_score ?? ''} placeholder="—" /></div>
-							<div class="field"><label>CHA</label><input name="cha_score" type="number" min="1" max="30" value={npcEditTarget.cha_score ?? ''} placeholder="—" /></div>
-						</div>
-					</div>
-				</div>
-				<div class="form-actions">
-					<button type="submit" class="btn-primary">Enregistrer</button>
-					<button type="button" class="btn-secondary" onclick={() => npcEditTarget = null}>Annuler</button>
-				</div>
-			</form>
-		</div>
-	</div>
-{/if}
-
-<!-- Modal session création / édition -->
-{#if sessionShowModal}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal-backdrop" onclick={closeSessionOnBackdrop}>
-		<div class="modal modal-lg">
-			<button class="modal-close" onclick={closeSessionForm}>✕</button>
-			<h2 class="modal-title">{sessionEditing ? `Session ${sessionEditing.number} — Modifier` : 'Nouvelle Session'}</h2>
-
-			{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
-
-			<form method="POST" action="?/saveSession" use:enhance={() => ({ result, update }) => {
-				if (result.type === 'success') closeSessionForm();
-				update();
-			}}>
-				{#if sessionEditing}<input type="hidden" name="id" value={sessionEditing.id} />{/if}
-
-				<div class="form-grid">
-					<div class="field">
-						<label for="s-number">N° de session</label>
-						<input id="s-number" name="number" type="number" min="1" value={sessionEditing?.number ?? (sessions.length + 1)} />
-					</div>
-					<div class="field">
-						<label for="s-date">Date jouée</label>
-						<input id="s-date" name="date_played" type="date" value={toInputDate(sessionEditing?.date_played ?? null)} />
-					</div>
-					<div class="field full">
-						<label for="s-campaign">Campagne</label>
-						<input id="s-campaign" name="campaign" type="text" value={sessionEditing?.campaign ?? 'Colloc-Action'} placeholder="Ex: Colloc-Action, Arc 2…" />
-					</div>
-					<div class="field full required">
-						<label for="s-title">Titre</label>
-						<input id="s-title" name="title" type="text" required value={sessionEditing?.title ?? ''} placeholder="Ex: L'Attaque dans la Forêt" />
-					</div>
-					<div class="field full">
-						<div class="summary-field-header">
-							<label for="s-summary">Résumé (visible joueurs)</label>
-							<button type="button" class="btn-ai-toggle" onclick={() => sessionShowAi = !sessionShowAi}>
-								{sessionShowAi ? '✕ IA' : '✨ Générer via IA'}
-							</button>
-						</div>
-						{#if sessionShowAi}
-							<div class="ai-summary-block">
-								<textarea class="ai-notes-input" rows="4"
-									placeholder="Collez vos notes brutes de session ici — l'IA rédigera un résumé narratif…"
-									bind:value={sessionAiRawNotes}></textarea>
-								<div class="ai-sum-actions">
-									<button type="button" class="btn-generate" onclick={generateSessionSummary}
-										disabled={sessionAiLoading || !sessionAiRawNotes.trim()}>
-										{sessionAiLoading ? '⏳ Rédaction…' : '✨ Rédiger le résumé'}
-									</button>
-								</div>
-								{#if sessionAiError}<div class="error-msg">{sessionAiError}</div>{/if}
-								{#if sessionGeneratedSummary}
-									<div class="ai-summary-preview">
-										<p>{sessionGeneratedSummary}</p>
-										<button type="button" class="btn-use-summary" onclick={useSessionSummary}>↳ Utiliser ce résumé</button>
-									</div>
-								{/if}
-							</div>
-						{/if}
-						<textarea id="s-summary" name="summary" rows="7"
-							placeholder="Ce que les joueurs ont vécu…"
-							bind:this={sessionSummaryEl}>{sessionEditing?.summary ?? ''}</textarea>
-					</div>
-					<div class="field full">
-						<label for="s-dm-notes">Notes MJ (privées)</label>
-						<textarea id="s-dm-notes" name="dm_notes" rows="4" placeholder="Coulisses, révélations à venir…">{sessionEditing?.dm_notes ?? ''}</textarea>
-					</div>
-					<div class="field">
-						<label for="s-xp">XP accordés</label>
-						<input id="s-xp" name="xp_awarded" type="number" min="0" value={sessionEditing?.xp_awarded ?? 0} />
-					</div>
-					<div class="field">
-						<label for="s-vis">Visibilité</label>
-						<select id="s-vis" name="visibility">
-							<option value="dm_only" selected={sessionEditing?.visibility === 'dm_only'}>🔒 MJ uniquement</option>
-							<option value="players" selected={!sessionEditing || sessionEditing.visibility === 'players'}>👥 Joueurs</option>
-							<option value="public" selected={sessionEditing?.visibility === 'public'}>🌐 Public</option>
-						</select>
-					</div>
-					<div class="field full">
-						<label>Images & Documents</label>
-						<FileAttachments bind:value={sessionAttachments} uploadUrl="/api/upload/session" />
-					</div>
-				</div>
-
-				<div class="form-actions">
-					<button type="submit" class="btn-primary">{sessionEditing ? 'Enregistrer' : 'Créer'}</button>
-					<button type="button" class="btn-secondary" onclick={closeSessionForm}>Annuler</button>
-				</div>
-			</form>
-		</div>
-	</div>
-{/if}
 
 	<!-- ═══ MONSTRES ═══ -->
 	{:else if activeTab === 'monstres'}
@@ -1639,6 +1462,182 @@
 			</div>
 		</div>
 	{/if}
+	{/if}
+
+</div>
+
+<!-- Modal modifier PNJ -->
+{#if npcEditTarget}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="modal-backdrop" onclick={closeNpcOnBackdrop}>
+		<div class="modal modal-lg">
+			<button class="modal-close" onclick={() => npcEditTarget = null}>✕</button>
+			<h2 class="modal-title">Modifier — {npcEditTarget.name}</h2>
+			{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+			<form method="POST" action="?/updateNpc" use:enhance={() => ({ result, update }) => {
+				if (result.type === 'success') npcEditTarget = null;
+				update();
+			}}>
+				<input type="hidden" name="id" value={npcEditTarget.id} />
+				<div class="form-grid">
+					<div class="field required">
+						<label>Nom</label>
+						<input name="name" type="text" required value={npcEditTarget.name} />
+					</div>
+					<div class="field required">
+						<label>Rôle / Titre</label>
+						<input name="role" type="text" required value={npcEditTarget.role} />
+					</div>
+					<div class="field">
+						<label>Affiliation</label>
+						<input name="affiliation" type="text" value={npcEditTarget.affiliation ?? ''} />
+					</div>
+					<div class="field">
+						<label>Statut</label>
+						<select name="status">
+							<option value="vivant" selected={npcEditTarget.status === 'vivant'}>✅ Vivant</option>
+							<option value="mort" selected={npcEditTarget.status === 'mort'}>💀 Mort</option>
+							<option value="malade" selected={npcEditTarget.status === 'malade'}>🤢 Malade</option>
+							<option value="pétrifié" selected={npcEditTarget.status === 'pétrifié'}>🪨 Pétrifié</option>
+							<option value="prisonnière" selected={npcEditTarget.status === 'prisonnière'}>⛓️ Prisonnier/ère</option>
+						</select>
+					</div>
+					<div class="field">
+						<label>Visibilité</label>
+						<select name="visibility">
+							<option value="dm_only" selected={npcEditTarget.visibility === 'dm_only'}>🔒 MJ uniquement</option>
+							<option value="players" selected={npcEditTarget.visibility === 'players'}>👥 Joueurs</option>
+							<option value="public" selected={npcEditTarget.visibility === 'public'}>🌐 Public</option>
+						</select>
+					</div>
+					<div class="field">
+						<label>Image</label>
+						<ImageUpload name="image_url" placeholder="/img/pnj/nom.png" value={npcEditTarget.image_url ?? ''} />
+					</div>
+					<div class="field full">
+						<label>Description (visible joueurs)</label>
+						<textarea name="description" rows="3">{npcEditTarget.description ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label>Notes MJ (privées)</label>
+						<textarea name="dm_notes" rows="3">{npcEditTarget.dm_notes ?? ''}</textarea>
+					</div>
+					<div class="field full npc-stats-section">
+						<div class="npc-stats-label">Stats de combat <span class="npc-stats-hint">(optionnel)</span></div>
+						<div class="npc-stats-grid">
+							<div class="field"><label>PV</label><input name="hp" type="number" min="1" value={npcEditTarget.hp ?? ''} placeholder="—" /></div>
+							<div class="field"><label>CA</label><input name="ac" type="number" min="1" value={npcEditTarget.ac ?? ''} placeholder="—" /></div>
+							<div class="field"><label>FOR</label><input name="str_score" type="number" min="1" max="30" value={npcEditTarget.str_score ?? ''} placeholder="—" /></div>
+							<div class="field"><label>DEX</label><input name="dex_score" type="number" min="1" max="30" value={npcEditTarget.dex_score ?? ''} placeholder="—" /></div>
+							<div class="field"><label>CON</label><input name="con_score" type="number" min="1" max="30" value={npcEditTarget.con_score ?? ''} placeholder="—" /></div>
+							<div class="field"><label>INT</label><input name="int_score" type="number" min="1" max="30" value={npcEditTarget.int_score ?? ''} placeholder="—" /></div>
+							<div class="field"><label>SAG</label><input name="wis_score" type="number" min="1" max="30" value={npcEditTarget.wis_score ?? ''} placeholder="—" /></div>
+							<div class="field"><label>CHA</label><input name="cha_score" type="number" min="1" max="30" value={npcEditTarget.cha_score ?? ''} placeholder="—" /></div>
+						</div>
+					</div>
+				</div>
+				<div class="form-actions">
+					<button type="submit" class="btn-primary">Enregistrer</button>
+					<button type="button" class="btn-secondary" onclick={() => npcEditTarget = null}>Annuler</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
+
+<!-- Modal session création / édition -->
+{#if sessionShowModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="modal-backdrop" onclick={closeSessionOnBackdrop}>
+		<div class="modal modal-lg">
+			<button class="modal-close" onclick={closeSessionForm}>✕</button>
+			<h2 class="modal-title">{sessionEditing ? `Session ${sessionEditing.number} — Modifier` : 'Nouvelle Session'}</h2>
+
+			{#if form?.error}<div class="error-msg">{form.error}</div>{/if}
+
+			<form method="POST" action="?/saveSession" use:enhance={() => ({ result, update }) => {
+				if (result.type === 'success') closeSessionForm();
+				update();
+			}}>
+				{#if sessionEditing}<input type="hidden" name="id" value={sessionEditing.id} />{/if}
+
+				<div class="form-grid">
+					<div class="field">
+						<label for="s-number">N° de session</label>
+						<input id="s-number" name="number" type="number" min="1" value={sessionEditing?.number ?? (sessions.length + 1)} />
+					</div>
+					<div class="field">
+						<label for="s-date">Date jouée</label>
+						<input id="s-date" name="date_played" type="date" value={toInputDate(sessionEditing?.date_played ?? null)} />
+					</div>
+					<div class="field full">
+						<label for="s-campaign">Campagne</label>
+						<input id="s-campaign" name="campaign" type="text" value={sessionEditing?.campaign ?? 'Colloc-Action'} placeholder="Ex: Colloc-Action, Arc 2…" />
+					</div>
+					<div class="field full required">
+						<label for="s-title">Titre</label>
+						<input id="s-title" name="title" type="text" required value={sessionEditing?.title ?? ''} placeholder="Ex: L'Attaque dans la Forêt" />
+					</div>
+					<div class="field full">
+						<div class="summary-field-header">
+							<label for="s-summary">Résumé (visible joueurs)</label>
+							<button type="button" class="btn-ai-toggle" onclick={() => sessionShowAi = !sessionShowAi}>
+								{sessionShowAi ? '✕ IA' : '✨ Générer via IA'}
+							</button>
+						</div>
+						{#if sessionShowAi}
+							<div class="ai-summary-block">
+								<textarea class="ai-notes-input" rows="4"
+									placeholder="Collez vos notes brutes de session ici — l'IA rédigera un résumé narratif…"
+									bind:value={sessionAiRawNotes}></textarea>
+								<div class="ai-sum-actions">
+									<button type="button" class="btn-generate" onclick={generateSessionSummary}
+										disabled={sessionAiLoading || !sessionAiRawNotes.trim()}>
+										{sessionAiLoading ? '⏳ Rédaction…' : '✨ Rédiger le résumé'}
+									</button>
+								</div>
+								{#if sessionAiError}<div class="error-msg">{sessionAiError}</div>{/if}
+								{#if sessionGeneratedSummary}
+									<div class="ai-summary-preview">
+										<p>{sessionGeneratedSummary}</p>
+										<button type="button" class="btn-use-summary" onclick={useSessionSummary}>↳ Utiliser ce résumé</button>
+									</div>
+								{/if}
+							</div>
+						{/if}
+						<textarea id="s-summary" name="summary" rows="7"
+							placeholder="Ce que les joueurs ont vécu…"
+							bind:this={sessionSummaryEl}>{sessionEditing?.summary ?? ''}</textarea>
+					</div>
+					<div class="field full">
+						<label for="s-dm-notes">Notes MJ (privées)</label>
+						<textarea id="s-dm-notes" name="dm_notes" rows="4" placeholder="Coulisses, révélations à venir…">{sessionEditing?.dm_notes ?? ''}</textarea>
+					</div>
+					<div class="field">
+						<label for="s-xp">XP accordés</label>
+						<input id="s-xp" name="xp_awarded" type="number" min="0" value={sessionEditing?.xp_awarded ?? 0} />
+					</div>
+					<div class="field">
+						<label for="s-vis">Visibilité</label>
+						<select id="s-vis" name="visibility">
+							<option value="dm_only" selected={sessionEditing?.visibility === 'dm_only'}>🔒 MJ uniquement</option>
+							<option value="players" selected={!sessionEditing || sessionEditing.visibility === 'players'}>👥 Joueurs</option>
+							<option value="public" selected={sessionEditing?.visibility === 'public'}>🌐 Public</option>
+						</select>
+					</div>
+					<div class="field full">
+						<label>Images & Documents</label>
+						<FileAttachments bind:value={sessionAttachments} uploadUrl="/api/upload/session" />
+					</div>
+				</div>
+
+				<div class="form-actions">
+					<button type="submit" class="btn-primary">{sessionEditing ? 'Enregistrer' : 'Créer'}</button>
+					<button type="button" class="btn-secondary" onclick={closeSessionForm}>Annuler</button>
+				</div>
+			</form>
+		</div>
+	</div>
 {/if}
 
 <!-- Fiche monstre (panneau latéral) -->
