@@ -37,5 +37,33 @@ export const actions: Actions = {
 
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
+	},
+
+	updateCharacterFull: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+
+		const form = await request.formData();
+		const charId = form.get('char_id') as string;
+		if (!charId) return fail(400, { error: 'ID manquant' });
+
+		const { error } = await locals.supabase.rpc('player_update_character_full', {
+			p_user_id: user.id,
+			p_char_id: charId,
+			p_name: (form.get('name') as string) || null,
+			p_race: (form.get('race') as string) || null,
+			p_class: (form.get('class') as string) || null,
+			p_level: parseInt(form.get('level') as string) || null,
+			p_hp_max: parseInt(form.get('hp_max') as string) || null,
+			p_hp_current: parseInt(form.get('hp_current') as string) || null,
+			p_ac: parseInt(form.get('ac') as string) || null,
+			p_status: (form.get('status') as string) || null,
+			p_backstory: (form.get('backstory') as string) || null,
+			p_image_url: (form.get('image_url') as string) || null,
+			p_dm_backstory: (form.get('dm_backstory') as string) || null
+		});
+
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
 	}
 };
