@@ -182,6 +182,7 @@
 				update();
 		}}>
 				<div class="edit-form-grid">
+					<input type="hidden" name="char_id" value={editOwn.id} />
 					<div class="field full">
 						<label>Nom *</label>
 						<input name="name" type="text" required value={editOwn.name} />
