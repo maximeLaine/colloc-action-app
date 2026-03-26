@@ -3,7 +3,7 @@
 		<h1>Carte d'Aerendor</h1>
 	</div>
 	<div class="map-wrap">
-		<img src="/img/carte-originale.jpg" alt="Carte du monde d'Aerendor" class="world-map" loading="lazy" />
+		<img src="/img/carte-originale.jpg" alt="Carte du monde d'Aerendor" class="world-map" loading="lazy" decoding="async" />
 	</div>
 	<div class="legend">
 		<h2>Légende</h2>
