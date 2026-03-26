@@ -127,15 +127,10 @@
 	:global(em) { font-style: italic; }
 
 	:global(body) {
-		/* Fallback universel — PNG toujours affiché */
 		background:
 			linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.55) 100%),
 			url('/background.png') center center / cover fixed;
 		background-color: #0A0A0A;
-		/* Progressive enhancement : WebP pour les navigateurs compatibles */
-		background-image:
-			linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.55) 100%),
-			image-set(url('/background.webp') type('image/webp'), url('/background.png') type('image/png'));
 		color: #F0EDEA;
 		font-family: 'Crimson Text', Georgia, serif;
 		font-size: 1.1rem;
