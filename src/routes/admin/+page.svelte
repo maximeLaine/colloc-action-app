@@ -56,6 +56,16 @@
 	let monsterEdit = $state<Monster | null>(null);
 	let monsterSearch = $state('');
 	let monsterFilterType = $state('');
+	let monsterCrMax = $state(30);
+
+	function parseCr(cr: string | null | undefined): number {
+		if (!cr) return 0;
+		if (cr.includes('/')) {
+			const [num, den] = cr.split('/');
+			return parseInt(num) / parseInt(den);
+		}
+		return parseFloat(cr) || 0;
+	}
 
 	const monsterCountByType = $derived(
 		TYPES.reduce((acc, t) => { acc[t] = data.monsters.filter((m: Monster) => m.type === t).length; return acc; }, {} as Record<string, number>)
@@ -67,9 +77,12 @@
 				m.name.toLowerCase().includes(monsterSearch.toLowerCase()) ||
 				(m.type ?? '').toLowerCase().includes(monsterSearch.toLowerCase());
 			const matchType = monsterFilterType === '' || m.type === monsterFilterType;
-			return matchSearch && matchType;
+			const matchCr = parseCr(m.cr) <= monsterCrMax;
+			return matchSearch && matchType && matchCr;
 		})
 	);
+
+	let combatMonsterSearch = $state('');
 
 	function closeOnBackdrop(e: MouseEvent) {
 		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) editPlayer = null;
@@ -222,6 +235,14 @@
 	let showKillForm = $state(false);
 
 	const selectedMonster = $derived(data.monsters.find((m: { id: string }) => m.id === selectedMonsterId));
+	const combatMonstersFiltered = $derived(
+		combatMonsterSearch.trim() === ''
+			? data.monsters
+			: data.monsters.filter((m: { name: string; type?: string | null }) =>
+				m.name.toLowerCase().includes(combatMonsterSearch.toLowerCase()) ||
+				(m.type ?? '').toLowerCase().includes(combatMonsterSearch.toLowerCase())
+			)
+	);
 
 	$effect(() => {
 		const m = data.monsters.find((m: { id: string }) => m.id === selectedMonsterId);
@@ -542,9 +563,15 @@
 						<input type="number" bind:value={addInitiative} style="width:70px" />
 					</div>
 					{#if addType === 'monster'}
+						<input
+							class="combat-monster-search"
+							type="text"
+							bind:value={combatMonsterSearch}
+							placeholder="🔍 Filtrer les monstres…"
+						/>
 						<select bind:value={selectedMonsterId}>
 							<option value="">Choisir un monstre…</option>
-							{#each data.monsters as m}
+							{#each combatMonstersFiltered as m}
 								<option value={m.id}>{m.name} — PV {m.hp} CA {m.ac} (FP {m.cr})</option>
 							{/each}
 						</select>
@@ -1279,6 +1306,19 @@
 
 		<div class="filters">
 			<input class="search-input" type="text" bind:value={monsterSearch} placeholder="🔍 Rechercher…" />
+			<div class="cr-filter">
+				<label class="cr-label">
+					FP max : <span class="cr-value">{monsterCrMax === 30 ? '30+' : monsterCrMax}</span>
+				</label>
+				<input
+					class="cr-slider"
+					type="range"
+					min="0"
+					max="30"
+					step="1"
+					bind:value={monsterCrMax}
+				/>
+			</div>
 			<div class="type-filters">
 				<button class="type-btn" class:active={monsterFilterType === ''} onclick={() => monsterFilterType = ''}>
 					Tous <span class="type-count">{data.monsters.length}</span>
@@ -2339,6 +2379,13 @@
 
 	.filters { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.25rem; }
 	.search-input { width: 100%; }
+	.cr-filter { display: flex; align-items: center; gap: 0.75rem; }
+	.cr-label { font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(240,237,234,0.5); white-space: nowrap; }
+	.cr-value { color: #C2374A; }
+	.cr-slider { flex: 1; appearance: none; height: 3px; background: #2A2A2A; border-radius: 2px; outline: none; padding: 0; width: auto; border: none; cursor: pointer; }
+	.cr-slider::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #C2374A; cursor: pointer; }
+	.cr-slider::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #C2374A; border: none; cursor: pointer; }
+	.combat-monster-search { margin-bottom: 0.4rem; }
 	.type-filters { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 	.type-btn {
 		background: transparent; border: 1px solid #2A2A2A; color: rgba(240,237,234,0.45);
