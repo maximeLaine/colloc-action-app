@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.limit(1)
 			.maybeSingle(),
 		locals.supabase.rpc('get_kills_for_user', { p_user_id: user.id }),
-		locals.supabase.rpc('admin_get_monsters', { p_user_id: user.id }),
+		locals.supabase.rpc('get_monsters_for_user', { p_user_id: user.id }),
 		locals.supabase.rpc('admin_list_invitations', { p_user_id: user.id }),
 		locals.supabase.rpc('admin_get_characters', { p_user_id: user.id })
 	]);
