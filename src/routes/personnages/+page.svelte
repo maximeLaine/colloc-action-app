@@ -42,10 +42,7 @@
 				<h1>Personnages</h1>
 				<p class="subtitle">{data.characters.length} personnage{data.characters.length > 1 ? 's' : ''}</p>
 			</div>
-			{#if data.isDM}
-				<a href="/admin?tab=pj" class="btn-primary">+ Gérer les PJ</a>
-			{/if}
-		</div>
+			</div>
 	</div>
 
 	{#if data.characters.length === 0}
