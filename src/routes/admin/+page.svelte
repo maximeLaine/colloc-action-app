@@ -9,6 +9,10 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const { sessions, npcs, campaign, stats, players } = data;
 
+	$effect(() => {
+		console.log('🐉 Monsters loaded:', data.monsters);
+	});
+
 	type Tab = 'dashboard' | 'sessions' | 'npcs' | 'pj' | 'combat' | 'ia' | 'monstres';
 	const tabs: Tab[] = ['dashboard', 'sessions', 'npcs', 'pj', 'combat', 'ia', 'monstres'];
 	const urlTab = $page.url.searchParams.get('tab') as Tab | null;
