@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 
-	interface Props { data: PageData }
+	interface Props {
+		data: PageData;
+	}
 	let { data }: Props = $props();
 
 	const { campaign, sessions, npcs, isDm, profile } = data;
@@ -16,7 +18,8 @@
 
 	async function askRules() {
 		if (!rulesQuestion.trim()) return;
-		aiLoading = true; aiError = '';
+		aiLoading = true;
+		aiError = '';
 		try {
 			const res = await fetch('/api/claude/rules', {
 				method: 'POST',
@@ -38,7 +41,8 @@
 
 	async function askImprov() {
 		if (!improvSituation.trim()) return;
-		aiLoading = true; aiError = '';
+		aiLoading = true;
+		aiError = '';
 		try {
 			const res = await fetch('/api/claude/improv', {
 				method: 'POST',
@@ -61,7 +65,8 @@
 	let generatedNpc: Record<string, string> | null = $state(null);
 
 	async function generateNpc() {
-		aiLoading = true; aiError = '';
+		aiLoading = true;
+		aiError = '';
 		try {
 			const res = await fetch('/api/claude/npc', {
 				method: 'POST',
@@ -80,7 +85,13 @@
 	let activeTab = $state<'sessions' | 'npcs' | 'rules' | 'improv' | 'npc-gen'>('sessions');
 
 	function statusEmoji(status: string) {
-		const map: Record<string, string> = { alive: '🟢', dead: '💀', sick: '🤒', petrified: '🪨', unknown: '❓' };
+		const map: Record<string, string> = {
+			alive: '🟢',
+			dead: '💀',
+			sick: '🤒',
+			petrified: '🪨',
+			unknown: '❓'
+		};
 		return map[status] ?? '❓';
 	}
 </script>
@@ -97,20 +108,36 @@
 
 	<!-- Tabs -->
 	<nav class="tabs">
-		<button class="tab" class:active={activeTab === 'sessions'} onclick={() => activeTab = 'sessions'}>
+		<button
+			class="tab"
+			class:active={activeTab === 'sessions'}
+			onclick={() => (activeTab = 'sessions')}
+		>
 			📖 Sessions
 		</button>
-		<button class="tab" class:active={activeTab === 'npcs'} onclick={() => activeTab = 'npcs'}>
+		<button class="tab" class:active={activeTab === 'npcs'} onclick={() => (activeTab = 'npcs')}>
 			🎭 PNJ ({npcs.length})
 		</button>
 		{#if isDm}
-			<button class="tab tab-ai" class:active={activeTab === 'rules'} onclick={() => activeTab = 'rules'}>
+			<button
+				class="tab tab-ai"
+				class:active={activeTab === 'rules'}
+				onclick={() => (activeTab = 'rules')}
+			>
 				📜 Oracle
 			</button>
-			<button class="tab tab-ai" class:active={activeTab === 'improv'} onclick={() => activeTab = 'improv'}>
+			<button
+				class="tab tab-ai"
+				class:active={activeTab === 'improv'}
+				onclick={() => (activeTab = 'improv')}
+			>
 				⚡ Improvisation
 			</button>
-			<button class="tab tab-ai" class:active={activeTab === 'npc-gen'} onclick={() => activeTab = 'npc-gen'}>
+			<button
+				class="tab tab-ai"
+				class:active={activeTab === 'npc-gen'}
+				onclick={() => (activeTab = 'npc-gen')}
+			>
 				✨ Générer PNJ
 			</button>
 		{/if}
@@ -121,7 +148,6 @@
 	{/if}
 
 	<div class="content">
-
 		<!-- Sessions -->
 		{#if activeTab === 'sessions'}
 			<div class="section-top">
@@ -168,7 +194,10 @@
 							<div class="card-meta">
 								<span>{statusEmoji(npc.status)}</span>
 								{#if npc.generated_by_ai}
-									<span class="visibility-badge" style="background:#1a0a2e;color:#a78bfa;border:1px solid #7c3aed44">✨ IA</span>
+									<span
+										class="visibility-badge"
+										style="background:#1a0a2e;color:#a78bfa;border:1px solid #7c3aed44">✨ IA</span
+									>
 								{/if}
 								{#if npc.visibility === 'dm_only'}
 									<span class="visibility-badge vis-dm">DM</span>
@@ -188,7 +217,9 @@
 			<div class="ai-panel">
 				<div class="ai-panel-header">
 					<h2>📜 Oracle de règles D&D 5e</h2>
-					<p>Pose n'importe quelle question sur les règles, obtiens une réponse précise et citée.</p>
+					<p>
+						Pose n'importe quelle question sur les règles, obtiens une réponse précise et citée.
+					</p>
 				</div>
 				<div class="ai-input-row">
 					<input
@@ -215,7 +246,9 @@
 			<div class="ai-panel">
 				<div class="ai-panel-header">
 					<h2>⚡ Aide à l'improvisation</h2>
-					<p>Décris la situation actuelle, obtiens 3 directions narratives avec contexte campagne.</p>
+					<p>
+						Décris la situation actuelle, obtiens 3 directions narratives avec contexte campagne.
+					</p>
 				</div>
 				<textarea
 					bind:value={improvSituation}
@@ -248,20 +281,37 @@
 			<div class="ai-panel">
 				<div class="ai-panel-header">
 					<h2>✨ Générateur de PNJ</h2>
-					<p>Laisse des champs vides pour laisser Claude improviser avec le contexte de la campagne.</p>
+					<p>
+						Laisse des champs vides pour laisser Claude improviser avec le contexte de la campagne.
+					</p>
 				</div>
 				<div class="npc-form">
 					<label>
 						Race
-						<input type="text" bind:value={npcRace} placeholder="Elfe, Humain, Nain…" class="ai-input" />
+						<input
+							type="text"
+							bind:value={npcRace}
+							placeholder="Elfe, Humain, Nain…"
+							class="ai-input"
+						/>
 					</label>
 					<label>
 						Rôle
-						<input type="text" bind:value={npcRole} placeholder="Aubergiste, Garde, Assassin…" class="ai-input" />
+						<input
+							type="text"
+							bind:value={npcRole}
+							placeholder="Aubergiste, Garde, Assassin…"
+							class="ai-input"
+						/>
 					</label>
 					<label>
 						Lieu
-						<input type="text" bind:value={npcLocation} placeholder="Port-Hiver, Forêt…" class="ai-input" />
+						<input
+							type="text"
+							bind:value={npcLocation}
+							placeholder="Port-Hiver, Forêt…"
+							class="ai-input"
+						/>
 					</label>
 				</div>
 				<button onclick={generateNpc} disabled={aiLoading} class="btn-primary">
@@ -296,7 +346,6 @@
 				{/if}
 			</div>
 		{/if}
-
 	</div>
 </div>
 
@@ -307,7 +356,7 @@
 		font-weight: 700;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: #C2374A;
+		color: #c2374a;
 		margin-bottom: 0.5rem;
 	}
 
@@ -315,7 +364,7 @@
 	.tabs {
 		display: flex;
 		gap: 0.125rem;
-		border-bottom: 1px solid #1A1A1A;
+		border-bottom: 1px solid #1a1a1a;
 		margin-bottom: 2rem;
 		flex-wrap: wrap;
 	}
@@ -329,23 +378,35 @@
 		font-weight: 700;
 		letter-spacing: 0.07em;
 		text-transform: uppercase;
-		color: rgba(240,237,234,0.45);
+		color: rgba(240, 237, 234, 0.45);
 		cursor: pointer;
 		border-bottom: 2px solid transparent;
 		margin-bottom: -1px;
-		transition: color 0.15s, border-color 0.15s;
+		transition:
+			color 0.15s,
+			border-color 0.15s;
 	}
 
-	.tab:hover { color: rgba(240,237,234,0.8); }
-	.tab.active { color: #FFFFFF; border-bottom-color: #C2374A; }
-	.tab-ai { color: rgba(194,55,74,0.6); }
-	.tab-ai.active { color: #E05060; border-bottom-color: #C2374A; }
+	.tab:hover {
+		color: rgba(240, 237, 234, 0.8);
+	}
+	.tab.active {
+		color: #ffffff;
+		border-bottom-color: #c2374a;
+	}
+	.tab-ai {
+		color: rgba(194, 55, 74, 0.6);
+	}
+	.tab-ai.active {
+		color: #e05060;
+		border-bottom-color: #c2374a;
+	}
 
 	/* Error */
 	.error-banner {
-		background: #3A0A12;
-		color: #E05060;
-		border: 1px solid #C2374A44;
+		background: #3a0a12;
+		color: #e05060;
+		border: 1px solid #c2374a44;
 		padding: 0.75rem 1rem;
 		border-radius: 3px;
 		margin-bottom: 1.5rem;
@@ -354,7 +415,9 @@
 	}
 
 	/* Content */
-	.content { padding-bottom: 4rem; }
+	.content {
+		padding-bottom: 4rem;
+	}
 
 	.section-top {
 		display: flex;
@@ -363,15 +426,18 @@
 		margin-bottom: 1.5rem;
 	}
 
-	.section-top h2 { font-size: 1.1rem; }
+	.section-top h2 {
+		font-size: 1.1rem;
+	}
 
 	.empty {
-		color: rgba(240,237,234,0.3);
+		color: rgba(240, 237, 234, 0.3);
 		font-style: italic;
 	}
 
 	/* Cards */
-	.session-card, .npc-card {
+	.session-card,
+	.npc-card {
 		display: block;
 		text-decoration: none;
 		color: inherit;
@@ -390,36 +456,36 @@
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: rgba(240,237,234,0.4);
+		color: rgba(240, 237, 234, 0.4);
 	}
 
 	.card h3 {
 		font-size: 0.95rem;
 		margin-bottom: 0.3rem;
-		color: #FFFFFF;
+		color: #ffffff;
 	}
 
 	.date {
 		font-size: 0.8rem;
-		color: rgba(240,237,234,0.35);
+		color: rgba(240, 237, 234, 0.35);
 		margin-bottom: 0.4rem;
 	}
 
 	.summary {
 		font-size: 0.9rem;
-		color: rgba(240,237,234,0.55);
+		color: rgba(240, 237, 234, 0.55);
 		line-height: 1.5;
 	}
 
 	.npc-role {
 		font-size: 0.85rem;
-		color: rgba(240,237,234,0.5);
+		color: rgba(240, 237, 234, 0.5);
 		margin-top: 0.2rem;
 	}
 
 	.npc-affil {
 		font-size: 0.8rem;
-		color: rgba(240,237,234,0.35);
+		color: rgba(240, 237, 234, 0.35);
 		margin-top: 0.1rem;
 	}
 
@@ -431,22 +497,28 @@
 		max-width: 760px;
 	}
 
-	.ai-panel-header h2 { font-size: 1.1rem; margin-bottom: 0.4rem; }
+	.ai-panel-header h2 {
+		font-size: 1.1rem;
+		margin-bottom: 0.4rem;
+	}
 
 	.ai-panel-header p {
 		font-size: 0.95rem;
-		color: rgba(240,237,234,0.5);
+		color: rgba(240, 237, 234, 0.5);
 	}
 
-	.ai-input-row { display: flex; gap: 0.75rem; }
+	.ai-input-row {
+		display: flex;
+		gap: 0.75rem;
+	}
 
 	.ai-input {
 		flex: 1;
 		padding: 0.6rem 0.875rem;
 		background: #111111;
-		border: 1px solid #2A2A2A;
+		border: 1px solid #2a2a2a;
 		border-radius: 3px;
-		color: #F0EDEA;
+		color: #f0edea;
 		font-family: 'Crimson Text', Georgia, serif;
 		font-size: 1rem;
 		transition: border-color 0.15s;
@@ -454,18 +526,20 @@
 
 	.ai-input:focus {
 		outline: none;
-		border-color: #C2374A;
+		border-color: #c2374a;
 	}
 
-	.ai-input::placeholder { color: rgba(240,237,234,0.25); }
+	.ai-input::placeholder {
+		color: rgba(240, 237, 234, 0.25);
+	}
 
 	.ai-textarea {
 		width: 100%;
 		padding: 0.6rem 0.875rem;
 		background: #111111;
-		border: 1px solid #2A2A2A;
+		border: 1px solid #2a2a2a;
 		border-radius: 3px;
-		color: #F0EDEA;
+		color: #f0edea;
 		font-family: 'Crimson Text', Georgia, serif;
 		font-size: 1rem;
 		resize: vertical;
@@ -473,22 +547,31 @@
 		box-sizing: border-box;
 	}
 
-	.ai-textarea:focus { outline: none; border-color: #C2374A; }
-	.ai-textarea::placeholder { color: rgba(240,237,234,0.25); }
+	.ai-textarea:focus {
+		outline: none;
+		border-color: #c2374a;
+	}
+	.ai-textarea::placeholder {
+		color: rgba(240, 237, 234, 0.25);
+	}
 
 	.ai-result {
 		background: #111111;
-		border: 1px solid #2A2A2A;
-		border-left: 3px solid #C2374A;
+		border: 1px solid #2a2a2a;
+		border-left: 3px solid #c2374a;
 		border-radius: 3px;
 		padding: 1.25rem;
 		font-size: 1rem;
 		line-height: 1.7;
-		color: rgba(240,237,234,0.85);
+		color: rgba(240, 237, 234, 0.85);
 	}
 
 	/* Improv */
-	.improv-options { display: flex; flex-direction: column; gap: 0.75rem; }
+	.improv-options {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
 
 	.improv-card {
 		display: flex;
@@ -500,7 +583,7 @@
 		font-family: 'Cinzel Decorative', serif;
 		font-size: 1.5rem;
 		font-weight: 900;
-		color: #C2374A;
+		color: #c2374a;
 		flex-shrink: 0;
 		line-height: 1;
 		margin-top: 0.1rem;
@@ -509,16 +592,19 @@
 	.improv-card h4 {
 		font-size: 0.9rem;
 		margin-bottom: 0.35rem;
-		color: #FFFFFF;
+		color: #ffffff;
 	}
 
 	.improv-card p {
 		font-size: 0.95rem;
-		color: rgba(240,237,234,0.7);
+		color: rgba(240, 237, 234, 0.7);
 		margin: 0.2rem 0;
 	}
 
-	.consequence { color: rgba(240,237,234,0.4) !important; font-style: italic; }
+	.consequence {
+		color: rgba(240, 237, 234, 0.4) !important;
+		font-style: italic;
+	}
 
 	/* NPC gen */
 	.npc-form {
@@ -536,24 +622,31 @@
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: rgba(240,237,234,0.5);
+		color: rgba(240, 237, 234, 0.5);
 	}
 
-	.npc-result { display: flex; flex-direction: column; gap: 1rem; }
+	.npc-result {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
 
 	.npc-result-header {
 		display: flex;
 		align-items: baseline;
 		gap: 1rem;
 		padding-bottom: 0.75rem;
-		border-bottom: 1px solid #2A2A2A;
+		border-bottom: 1px solid #2a2a2a;
 	}
 
-	.npc-result-header h3 { font-size: 1.25rem; color: #FFFFFF; }
+	.npc-result-header h3 {
+		font-size: 1.25rem;
+		color: #ffffff;
+	}
 
 	.npc-meta {
 		font-size: 0.85rem;
-		color: rgba(240,237,234,0.4);
+		color: rgba(240, 237, 234, 0.4);
 		font-family: 'Cinzel', serif;
 		font-size: 0.7rem;
 		letter-spacing: 0.05em;
@@ -566,7 +659,11 @@
 		gap: 1rem;
 	}
 
-	.npc-field { display: flex; flex-direction: column; gap: 0.3rem; }
+	.npc-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
 
 	.field-label {
 		font-family: 'Cinzel', serif;
@@ -574,35 +671,43 @@
 		font-weight: 700;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
-		color: rgba(240,237,234,0.35);
+		color: rgba(240, 237, 234, 0.35);
 	}
 
 	.npc-field p {
 		font-size: 0.95rem;
-		color: rgba(240,237,234,0.75);
+		color: rgba(240, 237, 234, 0.75);
 		line-height: 1.5;
 		margin: 0;
 	}
 
 	.secret-field {
-		background: #1A0A0D;
-		border: 1px solid #C2374A22;
+		background: #1a0a0d;
+		border: 1px solid #c2374a22;
 		border-radius: 3px;
 		padding: 0.75rem;
 	}
 
-	.secret-field .field-label { color: #C2374A; }
+	.secret-field .field-label {
+		color: #c2374a;
+	}
 
 	.saved-note {
 		font-family: 'Cinzel', serif;
 		font-size: 0.65rem;
 		letter-spacing: 0.06em;
-		color: #5CB85C;
+		color: #5cb85c;
 	}
 
 	@media (max-width: 640px) {
-		.npc-form { grid-template-columns: 1fr; }
-		.npc-fields { grid-template-columns: 1fr; }
-		.ai-input-row { flex-direction: column; }
+		.npc-form {
+			grid-template-columns: 1fr;
+		}
+		.npc-fields {
+			grid-template-columns: 1fr;
+		}
+		.ai-input-row {
+			flex-direction: column;
+		}
 	}
 </style>

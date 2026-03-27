@@ -1,0 +1,8 @@
+.svelte-kit/
+.netlify/
+node_modules/
+build/
+package-lock.json
+
+# Bug connu du parser svelte-eslint-parser avec {@html} comme nœud enfant
+src/lib/components/MarkdownEditor.svelte

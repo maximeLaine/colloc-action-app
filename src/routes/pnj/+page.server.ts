@@ -20,8 +20,9 @@ export const actions = {
 		const { user } = await locals.safeGetSession();
 		if (!user) redirect(303, '/login');
 
-		const { data: profileArr } = await locals.supabase
-			.rpc('get_profile_by_id', { user_id: user.id });
+		const { data: profileArr } = await locals.supabase.rpc('get_profile_by_id', {
+			user_id: user.id
+		});
 		const profile = Array.isArray(profileArr) ? profileArr[0] : profileArr;
 		if (profile?.role !== 'dm') return { error: 'Non autorisé' };
 

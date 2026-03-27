@@ -30,7 +30,14 @@ describe('buildCampaignContext', () => {
 
 	it('inclut les sessions dans le contexte', async () => {
 		const supabase = makeSupabase(
-			[{ number: 3, title: 'Le Donjon', date_played: '2024-01-01', summary: 'Les héros explorent.' }],
+			[
+				{
+					number: 3,
+					title: 'Le Donjon',
+					date_played: '2024-01-01',
+					summary: 'Les héros explorent.'
+				}
+			],
 			[]
 		);
 		const ctx = await buildCampaignContext(supabase as never);
@@ -41,9 +48,19 @@ describe('buildCampaignContext', () => {
 	});
 
 	it('inclut les PNJ actifs dans le contexte', async () => {
-		const supabase = makeSupabase([], [
-			{ name: 'Aldric', role: 'Forgeron', affiliation: 'Guilde', personality: 'Bourru', motivation: 'Protéger sa famille', description: 'Un vieil homme robuste.' }
-		]);
+		const supabase = makeSupabase(
+			[],
+			[
+				{
+					name: 'Aldric',
+					role: 'Forgeron',
+					affiliation: 'Guilde',
+					personality: 'Bourru',
+					motivation: 'Protéger sa famille',
+					description: 'Un vieil homme robuste.'
+				}
+			]
+		);
 		const ctx = await buildCampaignContext(supabase as never);
 
 		expect(ctx).toContain('Aldric');
@@ -51,9 +68,19 @@ describe('buildCampaignContext', () => {
 	});
 
 	it('gère les PNJ avec des champs partiels', async () => {
-		const supabase = makeSupabase([], [
-			{ name: 'Inconnu', role: null, affiliation: null, personality: null, motivation: null, description: null }
-		]);
+		const supabase = makeSupabase(
+			[],
+			[
+				{
+					name: 'Inconnu',
+					role: null,
+					affiliation: null,
+					personality: null,
+					motivation: null,
+					description: null
+				}
+			]
+		);
 		const ctx = await buildCampaignContext(supabase as never);
 
 		expect(ctx).toContain('Inconnu');

@@ -15,7 +15,7 @@ for (let i = 0; i < 26; i++) {
 }
 
 function toFraktur(text: string): string {
-	return [...text].map(c => FRAKTUR_MAP[c] ?? c).join('');
+	return [...text].map((c) => FRAKTUR_MAP[c] ?? c).join('');
 }
 
 function escapeHtml(str: string): string {

@@ -36,7 +36,10 @@ export interface Database {
 					created_at: string;
 					updated_at: string;
 				};
-				Insert: Omit<Database['public']['Tables']['characters']['Row'], 'id' | 'created_at' | 'updated_at'>;
+				Insert: Omit<
+					Database['public']['Tables']['characters']['Row'],
+					'id' | 'created_at' | 'updated_at'
+				>;
 				Update: Partial<Database['public']['Tables']['characters']['Insert']>;
 			};
 			npcs: {
@@ -59,7 +62,10 @@ export interface Database {
 					created_at: string;
 					updated_at: string;
 				};
-				Insert: Omit<Database['public']['Tables']['npcs']['Row'], 'id' | 'created_at' | 'updated_at'>;
+				Insert: Omit<
+					Database['public']['Tables']['npcs']['Row'],
+					'id' | 'created_at' | 'updated_at'
+				>;
 				Update: Partial<Database['public']['Tables']['npcs']['Insert']>;
 			};
 			sessions: {
@@ -77,7 +83,10 @@ export interface Database {
 					created_at: string;
 					updated_at: string;
 				};
-				Insert: Omit<Database['public']['Tables']['sessions']['Row'], 'id' | 'created_at' | 'updated_at'>;
+				Insert: Omit<
+					Database['public']['Tables']['sessions']['Row'],
+					'id' | 'created_at' | 'updated_at'
+				>;
 				Update: Partial<Database['public']['Tables']['sessions']['Insert']>;
 			};
 			campaigns: {
@@ -141,7 +150,10 @@ export interface Database {
 					created_at: string;
 					updated_at: string;
 				};
-				Insert: Omit<Database['public']['Tables']['lore_entries']['Row'], 'id' | 'created_at' | 'updated_at'>;
+				Insert: Omit<
+					Database['public']['Tables']['lore_entries']['Row'],
+					'id' | 'created_at' | 'updated_at'
+				>;
 				Update: Partial<Database['public']['Tables']['lore_entries']['Insert']>;
 			};
 			monsters: {
@@ -174,7 +186,10 @@ export interface Database {
 					created_at: string;
 					updated_at: string;
 				};
-				Insert: Omit<Database['public']['Tables']['combat_encounters']['Row'], 'id' | 'created_at' | 'updated_at'>;
+				Insert: Omit<
+					Database['public']['Tables']['combat_encounters']['Row'],
+					'id' | 'created_at' | 'updated_at'
+				>;
 				Update: Partial<Database['public']['Tables']['combat_encounters']['Insert']>;
 			};
 		};

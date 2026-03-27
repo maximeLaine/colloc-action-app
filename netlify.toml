@@ -1,6 +1,41 @@
 [build]
-  command = "npm run build"
+  # run.mjs appelle Vite directement, ce qui est plus fiable en CI Netlify
+  # que npm run build (propagation des variables d'environnement)
+  command = "node run.mjs"
   publish = ".svelte-kit/netlify"
 
 [build.environment]
   NODE_VERSION = "22"
+
+# Deploy previews (pull requests)
+[context.deploy-preview]
+  command = "node run.mjs"
+
+# Branch deploys (branches autres que main/master)
+[context.branch-deploy]
+  command = "node run.mjs"
+
+# Headers de sécurité appliqués à toutes les routes
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Cache long durée pour les assets statiques
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

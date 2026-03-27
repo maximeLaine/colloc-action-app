@@ -49,19 +49,19 @@
 				<h2>Lore</h2>
 				<p>Histoire du monde, royaumes, factions et mystères</p>
 			</a>
-<a href="/combat" class="section-card highlight">
+			<a href="/combat" class="section-card highlight">
 				<div class="section-icon">🎲</div>
 				<h2>Combat</h2>
 				<p>Tracker d'initiative, PV, monstres et alliés</p>
 				{#if isDM}<span class="dm-only">MJ</span>{/if}
 			</a>
 			{#if isDM}
-			<a href="/admin" class="section-card admin-card">
-				<div class="section-icon">🛡️</div>
-				<h2>Admin</h2>
-				<p>Gérer les sessions, PNJ, joueurs et outils MJ</p>
-				<span class="dm-only">MJ</span>
-			</a>
+				<a href="/admin" class="section-card admin-card">
+					<div class="section-icon">🛡️</div>
+					<h2>Admin</h2>
+					<p>Gérer les sessions, PNJ, joueurs et outils MJ</p>
+					<span class="dm-only">MJ</span>
+				</a>
 			{/if}
 		</div>
 	{/if}
@@ -70,14 +70,16 @@
 <style>
 	.hero-section {
 		background:
-			linear-gradient(to bottom, rgba(10,10,10,0) 0%, #0A0A0A 100%),
-			radial-gradient(ellipse at 30% 50%, rgba(194,55,74,0.12) 0%, transparent 60%),
-			#0A0A0A;
+			linear-gradient(to bottom, rgba(10, 10, 10, 0) 0%, #0a0a0a 100%),
+			radial-gradient(ellipse at 30% 50%, rgba(194, 55, 74, 0.12) 0%, transparent 60%), #0a0a0a;
 		padding: 5rem 0 4rem;
-		border-bottom: 1px solid #1A1A1A;
+		border-bottom: 1px solid #1a1a1a;
 	}
 
-	.hero-content { display: flex; align-items: center; }
+	.hero-content {
+		display: flex;
+		align-items: center;
+	}
 
 	.campaign-label {
 		font-family: 'Cinzel', serif;
@@ -85,7 +87,7 @@
 		font-weight: 700;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: #C2374A;
+		color: #c2374a;
 		margin-bottom: 0.75rem;
 	}
 
@@ -94,7 +96,7 @@
 		font-size: clamp(2.5rem, 6vw, 4.5rem);
 		font-weight: 900;
 		line-height: 1.05;
-		color: #FFFFFF;
+		color: #ffffff;
 		margin-bottom: 1.5rem;
 	}
 
@@ -103,20 +105,24 @@
 		display: block;
 		width: 5rem;
 		height: 4px;
-		background: #C2374A;
+		background: #c2374a;
 		margin-top: 1rem;
 	}
 
 	.welcome {
 		font-size: 1.25rem;
-		color: rgba(240,237,234,0.75);
+		color: rgba(240, 237, 234, 0.75);
 		margin-bottom: 2rem;
 		max-width: 500px;
 	}
 
-	.welcome strong { color: #FFFFFF; }
+	.welcome strong {
+		color: #ffffff;
+	}
 
-	.sections { padding: 3rem 1.5rem; }
+	.sections {
+		padding: 3rem 1.5rem;
+	}
 
 	.section-grid {
 		display: grid;
@@ -132,18 +138,28 @@
 		text-decoration: none;
 		display: block;
 		position: relative;
-		transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+		transition:
+			border-color 0.2s,
+			box-shadow 0.2s,
+			transform 0.2s;
 	}
 
 	.section-card:hover {
-		border-color: #C2374A;
-		box-shadow: 0 4px 24px rgba(194,55,74,0.15);
+		border-color: #c2374a;
+		box-shadow: 0 4px 24px rgba(194, 55, 74, 0.15);
 		transform: translateY(-2px);
 	}
 
-	.section-card.highlight { border-color: #C2374A33; }
-	.section-card.admin-card { border-color: rgba(240,165,0,0.2); }
-	.section-card.admin-card:hover { border-color: rgba(240,165,0,0.5); background: rgba(240,165,0,0.04); }
+	.section-card.highlight {
+		border-color: #c2374a33;
+	}
+	.section-card.admin-card {
+		border-color: rgba(240, 165, 0, 0.2);
+	}
+	.section-card.admin-card:hover {
+		border-color: rgba(240, 165, 0, 0.5);
+		background: rgba(240, 165, 0, 0.04);
+	}
 
 	.section-icon {
 		font-size: 2rem;
@@ -155,12 +171,12 @@
 		font-weight: 700;
 		letter-spacing: 0.06em;
 		margin-bottom: 0.4rem;
-		color: #FFFFFF;
+		color: #ffffff;
 	}
 
 	.section-card p {
 		font-size: 0.95rem;
-		color: rgba(240,237,234,0.55);
+		color: rgba(240, 237, 234, 0.55);
 		line-height: 1.5;
 	}
 
@@ -168,7 +184,7 @@
 		position: absolute;
 		top: 1rem;
 		right: 1rem;
-		background: #C2374A;
+		background: #c2374a;
 		color: #fff;
 		font-family: 'Cinzel', serif;
 		font-size: 0.6rem;
@@ -178,5 +194,4 @@
 		padding: 0.15rem 0.5rem;
 		border-radius: 3px;
 	}
-
 </style>

@@ -12,15 +12,15 @@ The application is in French. All UI text, AI prompts, and generated content tar
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | SvelteKit 5 (Svelte 5 with runes syntax) |
-| Language | TypeScript 5.5 (strict mode) |
-| Database + Auth | Supabase (PostgreSQL + RLS) |
-| AI | Anthropic API (Claude Haiku 4.5 / Sonnet 4.6) |
-| Deployment | Netlify (serverless functions via adapter-netlify) |
-| Build | Vite 6 |
-| Testing | Vitest 4 + happy-dom + @testing-library/svelte |
+| Layer           | Technology                                         |
+| --------------- | -------------------------------------------------- |
+| Framework       | SvelteKit 5 (Svelte 5 with runes syntax)           |
+| Language        | TypeScript 5.5 (strict mode)                       |
+| Database + Auth | Supabase (PostgreSQL + RLS)                        |
+| AI              | Anthropic API (Claude Haiku 4.5 / Sonnet 4.6)      |
+| Deployment      | Netlify (serverless functions via adapter-netlify) |
+| Build           | Vite 6                                             |
+| Testing         | Vitest 4 + happy-dom + @testing-library/svelte     |
 
 ---
 
@@ -156,6 +156,7 @@ All AI routes follow this pattern:
 5. Return response (streaming for `/api/claude`, JSON-parsed for structured endpoints)
 
 **Model selection:**
+
 - `DEFAULT_MODEL = 'claude-haiku-4-5-20251001'` — fast, cheap, for most features
 - `LONG_MODEL = 'claude-sonnet-4-6'` — better quality, for session summaries
 
@@ -178,20 +179,20 @@ Tests live next to the files they test (e.g., `rateLimit.ts` → `rateLimit.test
 
 ## Database Schema (key tables)
 
-| Table | Purpose |
-|---|---|
-| `profiles` | User info: `email`, `display_name`, `role` ('dm' or 'player') |
-| `characters` | Player characters: stats, abilities, backstory, image |
-| `npcs` | NPCs: role, personality, motivation, location, `generated_by_ai` flag |
-| `sessions` | Campaign sessions: summary, raw_notes, visibility |
-| `campaigns` | Campaign metadata |
-| `locations` | Locations: `public_description`, `hidden_details` (DM-only) |
-| `npc_relations` | Relations between NPCs: ally/enemy/family |
-| `ai_usage` | Rate limiting: `(user_id, date, count)` |
-| `campaign_members` | Maps users to campaigns |
-| `lore_entries` | Wiki entries with visibility control |
-| `monsters` | Bestiary: CR, AC, HP, abilities, damage types |
-| `combat_encounters` | Combat state (persisted) |
+| Table               | Purpose                                                               |
+| ------------------- | --------------------------------------------------------------------- |
+| `profiles`          | User info: `email`, `display_name`, `role` ('dm' or 'player')         |
+| `characters`        | Player characters: stats, abilities, backstory, image                 |
+| `npcs`              | NPCs: role, personality, motivation, location, `generated_by_ai` flag |
+| `sessions`          | Campaign sessions: summary, raw_notes, visibility                     |
+| `campaigns`         | Campaign metadata                                                     |
+| `locations`         | Locations: `public_description`, `hidden_details` (DM-only)           |
+| `npc_relations`     | Relations between NPCs: ally/enemy/family                             |
+| `ai_usage`          | Rate limiting: `(user_id, date, count)`                               |
+| `campaign_members`  | Maps users to campaigns                                               |
+| `lore_entries`      | Wiki entries with visibility control                                  |
+| `monsters`          | Bestiary: CR, AC, HP, abilities, damage types                         |
+| `combat_encounters` | Combat state (persisted)                                              |
 
 ---
 

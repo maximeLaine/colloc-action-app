@@ -19,7 +19,10 @@ export async function checkAndIncrementUsage(
 		if (data.count >= DAILY_LIMIT) {
 			return { allowed: false, count: data.count, limit: DAILY_LIMIT };
 		}
-		await supabase.from('ai_usage').update({ count: data.count + 1 }).eq('id', data.id);
+		await supabase
+			.from('ai_usage')
+			.update({ count: data.count + 1 })
+			.eq('id', data.id);
 		return { allowed: true, count: data.count + 1, limit: DAILY_LIMIT };
 	}
 

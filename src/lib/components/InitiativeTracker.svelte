@@ -46,7 +46,11 @@
 
 	function applyHpChange(id: string) {
 		const delta = parseInt(hpDelta);
-		if (isNaN(delta)) { editingHp = null; hpDelta = ''; return; }
+		if (isNaN(delta)) {
+			editingHp = null;
+			hpDelta = '';
+			return;
+		}
 		combatants = combatants.map((c) => {
 			if (c.id !== id) return c;
 			const newHp = Math.max(0, Math.min(c.hp_max, c.hp_current + delta));
@@ -112,12 +116,19 @@
 					<span class="initiative">{combatant.initiative}</span>
 					<span class="name">
 						{combatant.name}
-						{#if combatant.type === 'player'} 👤{:else if combatant.type === 'monster'} 👾{:else} 🤝{/if}
+						{#if combatant.type === 'player'}
+							👤{:else if combatant.type === 'monster'}
+							👾{:else}
+							🤝{/if}
 					</span>
 
 					<div class="hp-section">
 						<div class="hp-bar">
-							<div class="hp-fill" style="width: {hpPercent(combatant)}%" class:low={hpPercent(combatant) < 30}></div>
+							<div
+								class="hp-fill"
+								style="width: {hpPercent(combatant)}%"
+								class:low={hpPercent(combatant) < 30}
+							></div>
 						</div>
 						{#if editingHp === combatant.id}
 							<input
@@ -131,7 +142,12 @@
 						{:else}
 							<button
 								class="hp-text"
-								onclick={() => { if (isDm) { editingHp = combatant.id; hpDelta = ''; } }}
+								onclick={() => {
+									if (isDm) {
+										editingHp = combatant.id;
+										hpDelta = '';
+									}
+								}}
 								disabled={!isDm}
 							>
 								{combatant.hp_current}/{combatant.hp_max}
@@ -144,7 +160,9 @@
 					{#if isDm}
 						<button
 							class="conditions-toggle"
-							onclick={() => { showConditions = showConditions === combatant.id ? null : combatant.id; }}
+							onclick={() => {
+								showConditions = showConditions === combatant.id ? null : combatant.id;
+							}}
 						>
 							🩺
 						</button>
@@ -208,7 +226,9 @@
 		cursor: pointer;
 		font-weight: 600;
 	}
-	.next-btn:hover { background: #b91c1c; }
+	.next-btn:hover {
+		background: #b91c1c;
+	}
 	.combatants {
 		display: flex;
 		flex-direction: column;
@@ -262,7 +282,9 @@
 		background: #22c55e;
 		transition: width 0.3s;
 	}
-	.hp-fill.low { background: #ef4444; }
+	.hp-fill.low {
+		background: #ef4444;
+	}
 	.hp-text {
 		font-size: 0.8rem;
 		color: #374151;
@@ -271,7 +293,9 @@
 		cursor: pointer;
 		padding: 0;
 	}
-	.hp-text:disabled { cursor: default; }
+	.hp-text:disabled {
+		cursor: default;
+	}
 	.hp-input {
 		width: 50px;
 		padding: 0.125rem 0.25rem;

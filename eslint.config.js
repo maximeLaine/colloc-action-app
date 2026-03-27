@@ -30,7 +30,10 @@ export default [
 			// Règles avec violations dans le code existant → warn (à corriger progressivement)
 			'svelte/require-each-key': 'warn',
 			'@typescript-eslint/no-explicit-any': 'warn',
-			'@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+			'@typescript-eslint/no-unused-vars': [
+				'warn',
+				{ argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+			],
 			'@typescript-eslint/no-this-alias': 'warn',
 			'@typescript-eslint/ban-ts-comment': 'warn',
 			'@typescript-eslint/no-unused-expressions': 'warn',
@@ -44,6 +47,12 @@ export default [
 	},
 	{
 		// MarkdownEditor utilise {@html content} comme nœud enfant — bug connu du parser svelte-eslint-parser
-		ignores: ['.svelte-kit/', '.netlify/', 'build/', 'node_modules/', 'src/lib/components/MarkdownEditor.svelte']
+		ignores: [
+			'.svelte-kit/',
+			'.netlify/',
+			'build/',
+			'node_modules/',
+			'src/lib/components/MarkdownEditor.svelte'
+		]
 	}
 ];

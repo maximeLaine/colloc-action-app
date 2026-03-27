@@ -28,12 +28,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.order('created_at', { ascending: false })
 			.limit(1)
 			.maybeSingle(),
-		locals.supabase
-			.from('campaigns')
-			.select('id, name')
-			.order('created_at')
-			.limit(1)
-			.maybeSingle(),
+		locals.supabase.from('campaigns').select('id, name').order('created_at').limit(1).maybeSingle(),
 		locals.supabase.rpc('get_kills_for_user', { p_user_id: user.id }),
 		locals.supabase.rpc('get_monsters_for_user', { p_user_id: user.id }),
 		locals.supabase.rpc('admin_list_invitations', { p_user_id: user.id }),
@@ -42,32 +37,63 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const stats = Array.isArray(statsArr) ? statsArr[0] : statsArr;
 
-	const playersMap = new Map<string, {
-		id: string; email: string; display_name: string; role: string;
-		characters: { id: string; name: string; race: string; class: string; level: number; hp_current: number; hp_max: number; ac: number; status: string; visibility: string }[];
-	}>();
+	const playersMap = new Map<
+		string,
+		{
+			id: string;
+			email: string;
+			display_name: string;
+			role: string;
+			characters: {
+				id: string;
+				name: string;
+				race: string;
+				class: string;
+				level: number;
+				hp_current: number;
+				hp_max: number;
+				ac: number;
+				status: string;
+				visibility: string;
+			}[];
+		}
+	>();
 
 	for (const row of rows ?? []) {
 		if (!playersMap.has(row.player_id)) {
 			playersMap.set(row.player_id, {
-				id: row.player_id, email: row.email,
-				display_name: row.display_name, role: row.role,
+				id: row.player_id,
+				email: row.email,
+				display_name: row.display_name,
+				role: row.role,
 				characters: []
 			});
 		}
 		if (row.char_id) {
 			playersMap.get(row.player_id)!.characters.push({
-				id: row.char_id, name: row.char_name, race: row.char_race ?? '',
-				class: row.char_class, level: row.char_level,
-				hp_current: row.char_hp_current, hp_max: row.char_hp_max,
-				ac: row.char_ac ?? 10, status: row.char_status ?? 'vivant',
+				id: row.char_id,
+				name: row.char_name,
+				race: row.char_race ?? '',
+				class: row.char_class,
+				level: row.char_level,
+				hp_current: row.char_hp_current,
+				hp_max: row.char_hp_max,
+				ac: row.char_ac ?? 10,
+				status: row.char_status ?? 'vivant',
 				visibility: row.char_visibility
 			});
 		}
 	}
 
 	return {
-		stats: stats ?? { sessions_count: 0, characters_count: 0, pnj_count: 0, lore_count: 0, monsters_count: 0, kills_count: 0 },
+		stats: stats ?? {
+			sessions_count: 0,
+			characters_count: 0,
+			pnj_count: 0,
+			lore_count: 0,
+			monsters_count: 0,
+			kills_count: 0
+		},
 		players: Array.from(playersMap.values()),
 		sessions: (sessionsRes as { data: unknown[] | null }).data ?? [],
 		npcs: npcsRes.data ?? [],
@@ -89,7 +115,9 @@ export const actions: Actions = {
 		const role = (form.get('role') as string)?.trim();
 		if (!name || !role) return fail(400, { error: 'Nom et rôle requis' });
 		const { error } = await locals.supabase.rpc('admin_create_npc', {
-			p_user_id: user.id, p_name: name, p_role: role,
+			p_user_id: user.id,
+			p_name: name,
+			p_role: role,
 			p_affiliation: (form.get('affiliation') as string)?.trim() || null,
 			p_status: (form.get('status') as string)?.trim() || 'vivant',
 			p_description: (form.get('description') as string)?.trim() || null,
@@ -118,7 +146,10 @@ export const actions: Actions = {
 		const role = (form.get('role') as string)?.trim();
 		if (!id || !name || !role) return fail(400, { error: 'Données manquantes' });
 		const { error } = await locals.supabase.rpc('admin_update_npc', {
-			p_user_id: user.id, p_npc_id: id, p_name: name, p_role: role,
+			p_user_id: user.id,
+			p_npc_id: id,
+			p_name: name,
+			p_role: role,
 			p_affiliation: (form.get('affiliation') as string)?.trim() || null,
 			p_status: (form.get('status') as string)?.trim() || 'vivant',
 			p_description: (form.get('description') as string)?.trim() || null,
@@ -146,7 +177,9 @@ export const actions: Actions = {
 		const visibility = (form.get('visibility') as string) || 'players';
 		if (!id) return fail(400, { error: 'ID manquant' });
 		const { error } = await locals.supabase.rpc('admin_set_npc_visibility', {
-			p_user_id: user.id, p_npc_id: id, p_visibility: visibility
+			p_user_id: user.id,
+			p_npc_id: id,
+			p_visibility: visibility
 		});
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
@@ -159,7 +192,8 @@ export const actions: Actions = {
 		const id = form.get('id') as string;
 		if (!id) return fail(400, { error: 'ID manquant' });
 		const { error } = await locals.supabase.rpc('admin_delete_npc', {
-			p_user_id: user.id, p_npc_id: id
+			p_user_id: user.id,
+			p_npc_id: id
 		});
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
@@ -180,7 +214,9 @@ export const actions: Actions = {
 		try {
 			const raw = (form.get('attachments') as string)?.trim();
 			if (raw) attachments = JSON.parse(raw);
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 
 		const { error } = await locals.supabase.rpc('admin_upsert_session', {
 			p_user_id: user.id,
@@ -246,8 +282,11 @@ export const actions: Actions = {
 		const session_number = parseInt(form.get('session_number') as string) || null;
 		const notes = (form.get('notes') as string)?.trim() || null;
 		const { error } = await locals.supabase.rpc('admin_add_kill', {
-			p_user_id: user.id, p_monster_name: monster_name,
-			p_killed_by: killed_by, p_session_number: session_number, p_notes: notes
+			p_user_id: user.id,
+			p_monster_name: monster_name,
+			p_killed_by: killed_by,
+			p_session_number: session_number,
+			p_notes: notes
 		});
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
@@ -260,7 +299,8 @@ export const actions: Actions = {
 		const id = form.get('id') as string;
 		if (!id) return fail(400, { error: 'ID manquant' });
 		const { error } = await locals.supabase.rpc('admin_delete_kill', {
-			p_user_id: user.id, p_kill_id: id
+			p_user_id: user.id,
+			p_kill_id: id
 		});
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
@@ -318,9 +358,17 @@ export const actions: Actions = {
 			p_char_id: charId,
 			p_player_id: playerId || null,
 			p_clear_player: !playerId,
-			p_name: null, p_race: null, p_class: null, p_level: null,
-			p_hp_max: null, p_hp_current: null, p_ac: null,
-			p_backstory: null, p_image_url: null, p_dm_backstory: null, p_status: null
+			p_name: null,
+			p_race: null,
+			p_class: null,
+			p_level: null,
+			p_hp_max: null,
+			p_hp_current: null,
+			p_ac: null,
+			p_backstory: null,
+			p_image_url: null,
+			p_dm_backstory: null,
+			p_status: null
 		});
 
 		if (error) return fail(500, { error: error.message });
@@ -367,7 +415,9 @@ export const actions: Actions = {
 		if (!name || !race || !charClass) return fail(400, { error: 'Nom, race et classe requis' });
 		const { error } = await locals.supabase.rpc('admin_create_character', {
 			p_user_id: user.id,
-			p_name: name, p_race: race, p_class: charClass,
+			p_name: name,
+			p_race: race,
+			p_class: charClass,
 			p_level: parseInt(form.get('level') as string) || 1,
 			p_hp_max: parseInt(form.get('hp_max') as string) || 10,
 			p_ac: parseInt(form.get('ac') as string) || 10,
@@ -389,7 +439,9 @@ export const actions: Actions = {
 		const visibility = form.get('visibility') as string;
 		if (!id || !visibility) return fail(400, { error: 'Paramètres manquants' });
 		const { error } = await locals.supabase.rpc('admin_set_character_visibility', {
-			p_user_id: user.id, p_char_id: id, p_visibility: visibility
+			p_user_id: user.id,
+			p_char_id: id,
+			p_visibility: visibility
 		});
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
@@ -403,7 +455,8 @@ export const actions: Actions = {
 		if (!id) return fail(400, { error: 'ID manquant' });
 		const player_id = (form.get('player_id') as string)?.trim();
 		const { error } = await locals.supabase.rpc('admin_update_character', {
-			p_user_id: user.id, p_char_id: id,
+			p_user_id: user.id,
+			p_char_id: id,
 			p_name: (form.get('name') as string)?.trim() || null,
 			p_race: (form.get('race') as string)?.trim() || null,
 			p_class: (form.get('class') as string)?.trim() || null,
@@ -429,7 +482,8 @@ export const actions: Actions = {
 		const id = form.get('id') as string;
 		if (!id) return fail(400, { error: 'ID manquant' });
 		const { error } = await locals.supabase.rpc('admin_delete_character', {
-			p_user_id: user.id, p_char_id: id
+			p_user_id: user.id,
+			p_char_id: id
 		});
 		if (error) return fail(500, { error: error.message });
 		return { success: true };
@@ -486,18 +540,37 @@ export const actions: Actions = {
 		const g = (k: string) => (form.get(k) as string)?.trim() || null;
 		const gi = (k: string) => parseInt(form.get(k) as string) || null;
 		const { error } = await locals.supabase.rpc('admin_update_monster', {
-			p_user_id: user.id, p_monster_id: id,
-			p_name: g('name'), p_type: g('type'), p_cr: g('cr'),
-			p_hp: gi('hp'), p_ac: gi('ac'),
-			p_notes: g('notes'), p_image_url: g('image_url'),
-			p_description: g('description'), p_actions: g('actions'), p_special_abilities: g('special_abilities'),
-			p_size: g('size'), p_alignment: g('alignment'), p_speed: g('speed'),
-			p_str_score: gi('str_score'), p_dex_score: gi('dex_score'), p_con_score: gi('con_score'),
-			p_int_score: gi('int_score'), p_wis_score: gi('wis_score'), p_cha_score: gi('cha_score'),
-			p_saving_throws: g('saving_throws'), p_skills_text: g('skills_text'),
-			p_damage_resistances: g('damage_resistances'), p_damage_immunities: g('damage_immunities'),
-			p_condition_immunities: g('condition_immunities'), p_senses: g('senses'),
-			p_languages: g('languages'), p_legendary_actions: g('legendary_actions'), p_reactions: g('reactions'), p_source_url: g('source_url')
+			p_user_id: user.id,
+			p_monster_id: id,
+			p_name: g('name'),
+			p_type: g('type'),
+			p_cr: g('cr'),
+			p_hp: gi('hp'),
+			p_ac: gi('ac'),
+			p_notes: g('notes'),
+			p_image_url: g('image_url'),
+			p_description: g('description'),
+			p_actions: g('actions'),
+			p_special_abilities: g('special_abilities'),
+			p_size: g('size'),
+			p_alignment: g('alignment'),
+			p_speed: g('speed'),
+			p_str_score: gi('str_score'),
+			p_dex_score: gi('dex_score'),
+			p_con_score: gi('con_score'),
+			p_int_score: gi('int_score'),
+			p_wis_score: gi('wis_score'),
+			p_cha_score: gi('cha_score'),
+			p_saving_throws: g('saving_throws'),
+			p_skills_text: g('skills_text'),
+			p_damage_resistances: g('damage_resistances'),
+			p_damage_immunities: g('damage_immunities'),
+			p_condition_immunities: g('condition_immunities'),
+			p_senses: g('senses'),
+			p_languages: g('languages'),
+			p_legendary_actions: g('legendary_actions'),
+			p_reactions: g('reactions'),
+			p_source_url: g('source_url')
 		});
 
 		if (error) return fail(500, { error: error.message });

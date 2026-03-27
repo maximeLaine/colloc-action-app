@@ -7,7 +7,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const body = await request.json().catch(() => null);
 	if (!body?.location_id) throw error(400, 'location_id requis');
 
-	const { data: { user } } = await locals.supabase.auth.getUser();
+	const {
+		data: { user }
+	} = await locals.supabase.auth.getUser();
 	if (user) {
 		const { allowed, count, limit } = await checkAndIncrementUsage(locals.supabase, user.id);
 		if (!allowed) throw error(429, `Limite journalière atteinte (${count}/${limit} appels)`);
@@ -35,7 +37,8 @@ Réponds UNIQUEMENT en JSON valide :
 	const message = await anthropic.messages.create({
 		model: DEFAULT_MODEL,
 		max_tokens: 1024,
-		system: 'Tu es un auteur spécialisé en univers de fantasy médiévale pour D&D 5e. Tu crées des descriptions sensorielles et atmosphériques. Tu réponds uniquement en français et en JSON valide.',
+		system:
+			'Tu es un auteur spécialisé en univers de fantasy médiévale pour D&D 5e. Tu crées des descriptions sensorielles et atmosphériques. Tu réponds uniquement en français et en JSON valide.',
 		messages: [{ role: 'user', content: prompt }]
 	});
 

@@ -5,8 +5,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const { user } = await locals.safeGetSession();
 	if (user) redirect(303, '/');
 
-	const { data, error } = await locals.supabase
-		.rpc('get_invitation_by_token', { p_token: params.token });
+	const { data, error } = await locals.supabase.rpc('get_invitation_by_token', {
+		p_token: params.token
+	});
 
 	// RPC returns a TABLE — data is an array
 	const invitation = Array.isArray(data) ? data[0] : data;
@@ -25,7 +26,8 @@ export const actions: Actions = {
 		const password = (form.get('password') as string)?.trim();
 		const display_name = (form.get('display_name') as string)?.trim();
 
-		if (!password || password.length < 6) return fail(400, { error: 'Mot de passe trop court (min 6 caractères)' });
+		if (!password || password.length < 6)
+			return fail(400, { error: 'Mot de passe trop court (min 6 caractères)' });
 		if (!display_name) return fail(400, { error: 'Nom affiché requis' });
 
 		// Sign up — handle_new_user trigger will create the profile with display_name

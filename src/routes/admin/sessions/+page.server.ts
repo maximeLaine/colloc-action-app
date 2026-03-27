@@ -5,8 +5,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const { user } = await locals.safeGetSession();
 	if (!user) redirect(303, '/login');
 
-	const { data: sessions, error } = await locals.supabase
-		.rpc('get_sessions_for_user', { p_user_id: user.id });
+	const { data: sessions, error } = await locals.supabase.rpc('get_sessions_for_user', {
+		p_user_id: user.id
+	});
 
 	if (error) console.error('[admin/sessions] load error:', error.message);
 	return { sessions: sessions ?? [] };
@@ -30,7 +31,9 @@ export const actions: Actions = {
 		try {
 			const raw = (form.get('attachments') as string)?.trim();
 			if (raw) attachments = JSON.parse(raw);
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 
 		const { error } = await locals.supabase.rpc('admin_upsert_session', {
 			p_user_id: user.id,
@@ -43,7 +46,7 @@ export const actions: Actions = {
 			p_xp_awarded: parseInt(form.get('xp_awarded') as string) || 0,
 			p_visibility: (form.get('visibility') as string) || 'players',
 			p_attachments: attachments,
-		p_campaign: (form.get('campaign') as string)?.trim() || 'Colloc-Action'
+			p_campaign: (form.get('campaign') as string)?.trim() || 'Colloc-Action'
 		});
 
 		if (error) return fail(500, { error: error.message });
