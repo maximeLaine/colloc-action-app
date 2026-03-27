@@ -114,6 +114,16 @@
 	let monsterEdit = $state<Monster | null>(null);
 	let monsterSearch = $state('');
 	let monsterFilterType = $state('');
+	let monsterCrMax = $state(30);
+
+	function parseCr(cr: string | null | undefined): number {
+		if (!cr) return 0;
+		if (cr.includes('/')) {
+			const [num, den] = cr.split('/');
+			return parseInt(num) / parseInt(den);
+		}
+		return parseFloat(cr) || 0;
+	}
 
 	const monsterCountByType = $derived(
 		TYPES.reduce(
@@ -132,9 +142,12 @@
 				m.name.toLowerCase().includes(monsterSearch.toLowerCase()) ||
 				(m.type ?? '').toLowerCase().includes(monsterSearch.toLowerCase());
 			const matchType = monsterFilterType === '' || m.type === monsterFilterType;
-			return matchSearch && matchType;
+			const matchCr = parseCr(m.cr) <= monsterCrMax;
+			return matchSearch && matchType && matchCr;
 		})
 	);
+
+	let combatMonsterSearch = $state('');
 
 	function closeOnBackdrop(e: MouseEvent) {
 		if ((e.target as HTMLElement).classList.contains('modal-backdrop')) editPlayer = null;
@@ -376,7 +389,7 @@
 	let trackerRound = $state(1);
 	let trackerTurn = $state(0);
 	let showAddPanel = $state(false);
-	let addType = $state<'monster' | 'custom' | 'pnj'>('monster');
+	let addType = $state<'monster' | 'custom' | 'pnj' | 'pj'>('monster');
 	let selectedMonsterId = $state('');
 	let monsterHp = $state(10);
 	let monsterAc = $state(10);
@@ -388,11 +401,23 @@
 	let pnjHp = $state(10);
 	let pnjAc = $state(10);
 	let pnjType = $state<'monster' | 'ally'>('ally');
+	let selectedPjId = $state('');
+	let pjHp = $state(10);
+	let pjAc = $state(10);
 	let addInitiative = $state(0);
 	let showKillForm = $state(false);
 
 	const selectedMonster = $derived(
 		data.monsters.find((m: { id: string }) => m.id === selectedMonsterId)
+	);
+	const combatMonstersFiltered = $derived(
+		combatMonsterSearch.trim() === ''
+			? data.monsters
+			: data.monsters.filter(
+					(m: { name: string; type?: string | null }) =>
+						m.name.toLowerCase().includes(combatMonsterSearch.toLowerCase()) ||
+						(m.type ?? '').toLowerCase().includes(combatMonsterSearch.toLowerCase())
+				)
 	);
 
 	$effect(() => {
@@ -407,6 +432,16 @@
 		if (p) {
 			pnjHp = (p as { hp?: number }).hp ?? 10;
 			pnjAc = (p as { ac?: number }).ac ?? 10;
+		}
+	});
+	$effect(() => {
+		const allChars = data.players.flatMap(
+			(pl: { characters: { id: string; hp_max: number; ac: number }[] }) => pl.characters
+		);
+		const c = allChars.find((c: { id: string }) => c.id === selectedPjId);
+		if (c) {
+			pjHp = c.hp_max;
+			pjAc = c.ac;
 		}
 	});
 
@@ -473,6 +508,32 @@
 		selectedPnjId = '';
 		pnjHp = 10;
 		pnjAc = 10;
+	}
+	function addPj() {
+		const allChars = data.players.flatMap(
+			(pl: { characters: { id: string; name: string; hp_max: number; ac: number }[] }) =>
+				pl.characters
+		);
+		const c = allChars.find((c: { id: string }) => c.id === selectedPjId);
+		if (!c) return;
+		trackerCombatants = [
+			...trackerCombatants,
+			{
+				id: crypto.randomUUID(),
+				name: c.name,
+				type: 'player',
+				initiative: addInitiative,
+				hp_max: pjHp,
+				hp_current: pjHp,
+				ac: pjAc,
+				conditions: []
+			}
+		];
+		sortByInit();
+		showAddPanel = false;
+		selectedPjId = '';
+		pjHp = 10;
+		pjAc = 10;
 	}
 	function changeHp(id: string, delta: number) {
 		trackerCombatants = trackerCombatants.map((c) =>
@@ -923,15 +984,26 @@
 								class:add-tab-active={addType === 'pnj'}
 								onclick={() => (addType = 'pnj')}>🧑 PNJ</button
 							>
+							<button
+								class="add-tab"
+								class:add-tab-active={addType === 'pj'}
+								onclick={() => (addType = 'pj')}>⚔️ PJ</button
+							>
 						</div>
 						<div class="field-inline">
 							<label>Initiative</label>
 							<input type="number" bind:value={addInitiative} style="width:70px" />
 						</div>
 						{#if addType === 'monster'}
+							<input
+								class="combat-monster-search"
+								type="text"
+								bind:value={combatMonsterSearch}
+								placeholder="🔍 Filtrer les monstres…"
+							/>
 							<select bind:value={selectedMonsterId}>
 								<option value="">Choisir un monstre…</option>
-								{#each data.monsters as m}
+								{#each combatMonstersFiltered as m}
 									<option value={m.id}>{m.name} — PV {m.hp} CA {m.ac} (FP {m.cr})</option>
 								{/each}
 							</select>
@@ -983,6 +1055,47 @@
 								<button class="btn-primary btn-sm" onclick={addPnj} disabled={!selectedPnjId}
 									>Ajouter</button
 								>
+							</div>
+						{:else if addType === 'pj'}
+							<div class="custom-grid">
+								<select bind:value={selectedPjId}>
+									<option value="">Choisir un PJ…</option>
+									{#each data.players as player}
+										{#each player.characters as c}
+											<option value={c.id}>{c.name} — {c.class} Niv.{c.level}</option>
+										{/each}
+									{/each}
+								</select>
+								{#if selectedPjId}
+									<div class="two-col">
+										<div><label>PV</label><input type="number" bind:value={pjHp} /></div>
+										<div><label>CA</label><input type="number" bind:value={pjAc} /></div>
+									</div>
+								{/if}
+								<button class="btn-primary btn-sm" onclick={addPj} disabled={!selectedPjId}
+									>Ajouter au combat</button
+								>
+							</div>
+						{:else}
+							<div class="custom-grid">
+								<input placeholder="Nom" bind:value={customName} />
+								<div class="two-col">
+									<div><label>PV</label><input type="number" bind:value={customHp} /></div>
+									<div><label>CA</label><input type="number" bind:value={customAc} /></div>
+								</div>
+								<div class="type-toggle">
+									<button
+										class="toggle-opt"
+										class:toggle-enemy={customType === 'monster'}
+										onclick={() => (customType = 'monster')}>🐉 Ennemi</button
+									>
+									<button
+										class="toggle-opt"
+										class:toggle-ally={customType === 'ally'}
+										onclick={() => (customType = 'ally')}>🛡️ Allié</button
+									>
+								</div>
+								<button class="btn-primary btn-sm" onclick={addCustom}>Ajouter</button>
 							</div>
 						{/if}
 					</div>
@@ -2086,6 +2199,19 @@
 					bind:value={monsterSearch}
 					placeholder="🔍 Rechercher…"
 				/>
+				<div class="cr-filter">
+					<label class="cr-label">
+						FP max : <span class="cr-value">{monsterCrMax === 30 ? '30+' : monsterCrMax}</span>
+					</label>
+					<input
+						class="cr-slider"
+						type="range"
+						min="0"
+						max="30"
+						step="1"
+						bind:value={monsterCrMax}
+					/>
+				</div>
 				<div class="type-filters">
 					<button
 						class="type-btn"
@@ -5533,6 +5659,54 @@
 	}
 	.search-input {
 		width: 100%;
+	}
+	.cr-filter {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+	.cr-label {
+		font-family: 'Cinzel', serif;
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: rgba(240, 237, 234, 0.5);
+		white-space: nowrap;
+	}
+	.cr-value {
+		color: #c2374a;
+	}
+	.cr-slider {
+		flex: 1;
+		appearance: none;
+		height: 3px;
+		background: #2a2a2a;
+		border-radius: 2px;
+		outline: none;
+		padding: 0;
+		width: auto;
+		border: none;
+		cursor: pointer;
+	}
+	.cr-slider::-webkit-slider-thumb {
+		appearance: none;
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		background: #c2374a;
+		cursor: pointer;
+	}
+	.cr-slider::-moz-range-thumb {
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		background: #c2374a;
+		border: none;
+		cursor: pointer;
+	}
+	.combat-monster-search {
+		margin-bottom: 0.4rem;
 	}
 	.type-filters {
 		display: flex;
