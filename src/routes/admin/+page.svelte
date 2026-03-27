@@ -219,7 +219,7 @@
 	let trackerRound = $state(1);
 	let trackerTurn = $state(0);
 	let showAddPanel = $state(false);
-	let addType = $state<'monster' | 'custom' | 'pnj'>('monster');
+	let addType = $state<'monster' | 'custom' | 'pnj' | 'pj'>('monster');
 	let selectedMonsterId = $state('');
 	let monsterHp = $state(10);
 	let monsterAc = $state(10);
@@ -231,6 +231,9 @@
 	let pnjHp = $state(10);
 	let pnjAc = $state(10);
 	let pnjType = $state<'monster' | 'ally'>('ally');
+	let selectedPjId = $state('');
+	let pjHp = $state(10);
+	let pjAc = $state(10);
 	let addInitiative = $state(0);
 	let showKillForm = $state(false);
 
@@ -252,6 +255,11 @@
 		const p = data.npcs.find((n: { id: string }) => n.id === selectedPnjId);
 		if (p) { pnjHp = (p as { hp?: number }).hp ?? 10; pnjAc = (p as { ac?: number }).ac ?? 10; }
 	});
+	$effect(() => {
+		const allChars = data.players.flatMap((pl: { characters: { id: string; hp_max: number; ac: number }[] }) => pl.characters);
+		const c = allChars.find((c: { id: string }) => c.id === selectedPjId);
+		if (c) { pjHp = c.hp_max; pjAc = c.ac; }
+	});
 
 	function sortByInit() { trackerCombatants = [...trackerCombatants].sort((a, b) => b.initiative - a.initiative); }
 	function addMonster() {
@@ -269,6 +277,13 @@
 		if (!p) return;
 		trackerCombatants = [...trackerCombatants, { id: crypto.randomUUID(), name: p.name, type: pnjType, initiative: addInitiative, hp_max: pnjHp, hp_current: pnjHp, ac: pnjAc, conditions: [] }];
 		sortByInit(); showAddPanel = false; selectedPnjId = ''; pnjHp = 10; pnjAc = 10;
+	}
+	function addPj() {
+		const allChars = data.players.flatMap((pl: { characters: { id: string; name: string; hp_max: number; ac: number }[] }) => pl.characters);
+		const c = allChars.find((c: { id: string }) => c.id === selectedPjId);
+		if (!c) return;
+		trackerCombatants = [...trackerCombatants, { id: crypto.randomUUID(), name: c.name, type: 'player', initiative: addInitiative, hp_max: pjHp, hp_current: pjHp, ac: pjAc, conditions: [] }];
+		sortByInit(); showAddPanel = false; selectedPjId = ''; pjHp = 10; pjAc = 10;
 	}
 	function changeHp(id: string, delta: number) {
 		trackerCombatants = trackerCombatants.map(c => c.id === id ? { ...c, hp_current: Math.max(0, Math.min(c.hp_max, c.hp_current + delta)) } : c);
@@ -557,6 +572,7 @@
 						<button class="add-tab" class:add-tab-active={addType === 'monster'} onclick={() => addType = 'monster'}>🐉 Monstre</button>
 						<button class="add-tab" class:add-tab-active={addType === 'custom'} onclick={() => addType = 'custom'}>✏️ Personnalisé</button>
 						<button class="add-tab" class:add-tab-active={addType === 'pnj'} onclick={() => addType = 'pnj'}>🧑 PNJ</button>
+						<button class="add-tab" class:add-tab-active={addType === 'pj'} onclick={() => addType = 'pj'}>⚔️ PJ</button>
 					</div>
 					<div class="field-inline">
 						<label>Initiative</label>
@@ -589,19 +605,6 @@
 							</div>
 						{/if}
 						<button class="btn-primary btn-sm" style="margin-top:0.5rem" onclick={addMonster} disabled={!selectedMonsterId}>Ajouter au combat</button>
-					{:else}
-						<div class="custom-grid">
-							<input placeholder="Nom" bind:value={customName} />
-							<div class="two-col">
-								<div><label>PV</label><input type="number" bind:value={customHp} /></div>
-								<div><label>CA</label><input type="number" bind:value={customAc} /></div>
-							</div>
-							<div class="type-toggle">
-								<button class="toggle-opt" class:toggle-enemy={customType === 'monster'} onclick={() => customType = 'monster'}>🐉 Ennemi</button>
-								<button class="toggle-opt" class:toggle-ally={customType === 'ally'} onclick={() => customType = 'ally'}>🛡️ Allié</button>
-							</div>
-							<button class="btn-primary btn-sm" onclick={addCustom}>Ajouter</button>
-						</div>
 					{:else if addType === 'pnj'}
 						<div class="custom-grid">
 							<select bind:value={selectedPnjId}>
@@ -621,6 +624,37 @@
 								<button class="toggle-opt" class:toggle-ally={pnjType === 'ally'} onclick={() => pnjType = 'ally'}>🛡️ Allié</button>
 							</div>
 							<button class="btn-primary btn-sm" onclick={addPnj} disabled={!selectedPnjId}>Ajouter</button>
+						</div>
+					{:else if addType === 'pj'}
+						<div class="custom-grid">
+							<select bind:value={selectedPjId}>
+								<option value="">Choisir un PJ…</option>
+								{#each data.players as player}
+									{#each player.characters as c}
+										<option value={c.id}>{c.name} — {c.class} Niv.{c.level}</option>
+									{/each}
+								{/each}
+							</select>
+							{#if selectedPjId}
+								<div class="two-col">
+									<div><label>PV</label><input type="number" bind:value={pjHp} /></div>
+									<div><label>CA</label><input type="number" bind:value={pjAc} /></div>
+								</div>
+							{/if}
+							<button class="btn-primary btn-sm" onclick={addPj} disabled={!selectedPjId}>Ajouter au combat</button>
+						</div>
+					{:else}
+						<div class="custom-grid">
+							<input placeholder="Nom" bind:value={customName} />
+							<div class="two-col">
+								<div><label>PV</label><input type="number" bind:value={customHp} /></div>
+								<div><label>CA</label><input type="number" bind:value={customAc} /></div>
+							</div>
+							<div class="type-toggle">
+								<button class="toggle-opt" class:toggle-enemy={customType === 'monster'} onclick={() => customType = 'monster'}>🐉 Ennemi</button>
+								<button class="toggle-opt" class:toggle-ally={customType === 'ally'} onclick={() => customType = 'ally'}>🛡️ Allié</button>
+							</div>
+							<button class="btn-primary btn-sm" onclick={addCustom}>Ajouter</button>
 						</div>
 					{/if}
 				</div>
