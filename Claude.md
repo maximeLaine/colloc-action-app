@@ -37,6 +37,7 @@ Statut : [ ] à faire · [x] fait · [~] en cours
 ### 🔧 Fondation
 
 - [x] **INFRA-1** Installer le SDK Anthropic
+
   ```bash
   npm install @anthropic-ai/sdk
   ```
@@ -52,6 +53,7 @@ Statut : [ ] à faire · [x] fait · [~] en cours
   - NE PAS relancer l'ALTER TABLE (planterait)
 
 - [x] **DB-1** Migrations Supabase (data-safe)
+
   ```sql
   -- ✅ Nouvelle table campaigns (n'existait pas)
   CREATE TABLE IF NOT EXISTS campaigns (
@@ -160,13 +162,16 @@ Statut : [ ] à faire · [x] fait · [~] en cours
 ### 📚 Wiki
 
 - [ ] **UI-4** Éditeur Markdown pour les entrées wiki
+
   ```bash
   npm install marked
   ```
+
   - Syntaxe de lien interne : `[[npc:Aldric]]`, `[[location:Port-Hiver]]`
   - Résolution automatique vers les fiches Supabase
 
 - [ ] **DB-2** Fiches PNJ avec relations
+
   ```sql
   CREATE TABLE npc_relations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -183,6 +188,7 @@ Statut : [ ] à faire · [x] fait · [~] en cours
 ### 🏗️ Architecture
 
 - [ ] **INFRA-3** Rate limiting des appels Claude
+
   ```sql
   CREATE TABLE ai_usage (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -192,6 +198,7 @@ Statut : [ ] à faire · [x] fait · [~] en cours
     UNIQUE(user_id, date)
   );
   ```
+
   - Limite : 50 appels/jour/utilisateur
   - Vérifier avant chaque appel Claude, incrémenter après
 

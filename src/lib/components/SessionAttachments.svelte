@@ -1,5 +1,9 @@
 <script lang="ts">
-	interface Attachment { name: string; url: string; type: 'image' | 'pdf'; }
+	interface Attachment {
+		name: string;
+		url: string;
+		type: 'image' | 'pdf';
+	}
 
 	let { value = $bindable<Attachment[]>([]) }: { value?: Attachment[] } = $props();
 
@@ -60,43 +64,108 @@
 
 	<label class="file-btn" class:loading={uploading}>
 		{uploading ? 'Envoi…' : '📎 Ajouter image / PDF'}
-		<input type="file" accept="image/*,.pdf" onchange={handleFile} style="display:none" disabled={uploading} />
+		<input
+			type="file"
+			accept="image/*,.pdf"
+			onchange={handleFile}
+			style="display:none"
+			disabled={uploading}
+		/>
 	</label>
 
 	{#if uploadError}<p class="upload-err">{uploadError}</p>{/if}
 </div>
 
 <style>
-	.attachments { display: flex; flex-direction: column; gap: 0.6rem; }
+	.attachments {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+	}
 
-	.attachment-list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+	.attachment-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6rem;
+	}
 
 	.attachment-item {
-		display: flex; align-items: center; gap: 0.4rem;
-		background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
-		border-radius: 4px; padding: 0.3rem 0.5rem; max-width: 200px;
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 4px;
+		padding: 0.3rem 0.5rem;
+		max-width: 200px;
 	}
-	.att-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 3px; flex-shrink: 0; }
-	.att-pdf-icon { font-size: 1.4rem; flex-shrink: 0; line-height: 1; }
-	.att-name { font-size: 0.75rem; color: rgba(240,237,234,0.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+	.att-thumb {
+		width: 36px;
+		height: 36px;
+		object-fit: cover;
+		border-radius: 3px;
+		flex-shrink: 0;
+	}
+	.att-pdf-icon {
+		font-size: 1.4rem;
+		flex-shrink: 0;
+		line-height: 1;
+	}
+	.att-name {
+		font-size: 0.75rem;
+		color: rgba(240, 237, 234, 0.6);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		flex: 1;
+		min-width: 0;
+	}
 	.att-remove {
-		background: transparent; border: none; color: rgba(240,237,234,0.3);
-		cursor: pointer; font-size: 0.65rem; padding: 0; flex-shrink: 0;
+		background: transparent;
+		border: none;
+		color: rgba(240, 237, 234, 0.3);
+		cursor: pointer;
+		font-size: 0.65rem;
+		padding: 0;
+		flex-shrink: 0;
 		transition: color 0.15s;
 	}
-	.att-remove:hover { color: #C2374A; }
+	.att-remove:hover {
+		color: #c2374a;
+	}
 
 	.file-btn {
-		display: inline-flex; align-items: center;
-		background: #1A1A1A; border: 1px solid #333; color: rgba(240,237,234,0.6);
-		padding: 0.4rem 0.75rem; border-radius: 3px;
-		font-family: 'Cinzel', serif; font-size: 0.65rem; font-weight: 700;
-		letter-spacing: 0.06em; text-transform: uppercase;
-		cursor: pointer; transition: border-color 0.2s, color 0.2s; white-space: nowrap;
+		display: inline-flex;
+		align-items: center;
+		background: #1a1a1a;
+		border: 1px solid #333;
+		color: rgba(240, 237, 234, 0.6);
+		padding: 0.4rem 0.75rem;
+		border-radius: 3px;
+		font-family: 'Cinzel', serif;
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		cursor: pointer;
+		transition:
+			border-color 0.2s,
+			color 0.2s;
+		white-space: nowrap;
 		align-self: flex-start;
 	}
-	.file-btn:hover { border-color: #C2374A; color: #E05060; }
-	.file-btn.loading { opacity: 0.5; cursor: wait; }
+	.file-btn:hover {
+		border-color: #c2374a;
+		color: #e05060;
+	}
+	.file-btn.loading {
+		opacity: 0.5;
+		cursor: wait;
+	}
 
-	.upload-err { color: #E05060; font-size: 0.8rem; margin: 0; }
+	.upload-err {
+		color: #e05060;
+		font-size: 0.8rem;
+		margin: 0;
+	}
 </style>

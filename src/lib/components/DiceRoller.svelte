@@ -112,7 +112,10 @@
 					<div class="roll-entry" class:secret={roll.isSecret}>
 						<span class="roll-expr">{roll.expression}</span>
 						<span class="roll-breakdown">{roll.breakdown}</span>
-						<span class="roll-result" class:nat20={roll.result === 20 && roll.expression.includes('d20')}>
+						<span
+							class="roll-result"
+							class:nat20={roll.result === 20 && roll.expression.includes('d20')}
+						>
 							{roll.result}
 						</span>
 						{#if roll.isSecret}

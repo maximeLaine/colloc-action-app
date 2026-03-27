@@ -5,7 +5,9 @@ import { buildCampaignContext } from '$lib/server/context';
 import { checkAndIncrementUsage } from '$lib/server/rateLimit';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const { data: { user } } = await locals.supabase.auth.getUser();
+	const {
+		data: { user }
+	} = await locals.supabase.auth.getUser();
 	if (!user) throw error(401, 'Non connecté');
 
 	const { allowed } = await checkAndIncrementUsage(locals.supabase, user.id);

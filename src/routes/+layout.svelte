@@ -24,13 +24,15 @@
 	const isLoggedIn = $derived(!!data.user);
 	const isConsole = $derived(false);
 
-	const navItems = $derived([
-		{ href: '/personnages', label: '⚔️ PJ', show: true },
-		{ href: '/pnj', label: '🎭 PNJ', show: true },
-		{ href: '/sessions', label: '📜 Sessions', show: true },
-		{ href: '/lore', label: '📚 Lore', show: true },
-		{ href: '/combat', label: '⚔️ Combat', show: true },
-	].filter(i => i.show));
+	const navItems = $derived(
+		[
+			{ href: '/personnages', label: '⚔️ PJ', show: true },
+			{ href: '/pnj', label: '🎭 PNJ', show: true },
+			{ href: '/sessions', label: '📜 Sessions', show: true },
+			{ href: '/lore', label: '📚 Lore', show: true },
+			{ href: '/combat', label: '⚔️ Combat', show: true }
+		].filter((i) => i.show)
+	);
 
 	// Ferme le menu quand on change de page
 	$effect(() => {
@@ -53,14 +55,14 @@
 			</a>
 
 			{#if isLoggedIn}
-			<nav class="main-nav">
-				{#each navItems as item}
-					<a href={item.href} class="nav-link">{item.label}</a>
-				{/each}
-				{#if isDM}
-					<a href="/admin" class="nav-link dm-badge">🎲 MJ</a>
-				{/if}
-			</nav>
+				<nav class="main-nav">
+					{#each navItems as item}
+						<a href={item.href} class="nav-link">{item.label}</a>
+					{/each}
+					{#if isDM}
+						<a href="/admin" class="nav-link dm-badge">🎲 MJ</a>
+					{/if}
+				</nav>
 			{/if}
 
 			<div class="header-actions">
@@ -74,7 +76,7 @@
 					<form method="POST" action="/auth?/logout" class="logout-form">
 						<button type="submit" class="btn-logout" title="Déconnexion">🔓</button>
 					</form>
-					<button class="burger" onclick={() => menuOpen = !menuOpen} aria-label="Menu">
+					<button class="burger" onclick={() => (menuOpen = !menuOpen)} aria-label="Menu">
 						<span class:open={menuOpen}></span>
 						<span class:open={menuOpen}></span>
 						<span class:open={menuOpen}></span>
@@ -88,7 +90,7 @@
 
 	{#if menuOpen && isLoggedIn}
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="mobile-overlay" onclick={() => menuOpen = false}>
+		<div class="mobile-overlay" onclick={() => (menuOpen = false)}>
 			<nav class="mobile-nav" onclick={(e) => e.stopPropagation()}>
 				{#each navItems as item}
 					<a href={item.href} class="mobile-nav-link">{item.label}</a>
@@ -123,15 +125,19 @@
 		padding: 0;
 	}
 
-	:global(strong) { font-weight: 600; }
-	:global(em) { font-style: italic; }
+	:global(strong) {
+		font-weight: 600;
+	}
+	:global(em) {
+		font-style: italic;
+	}
 
 	:global(body) {
 		background:
-			linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.55) 100%),
+			linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.55) 100%),
 			url('/background.png') center center / cover fixed;
-		background-color: #0A0A0A;
-		color: #F0EDEA;
+		background-color: #0a0a0a;
+		color: #f0edea;
 		font-family: 'Crimson Text', Georgia, serif;
 		font-size: 1.1rem;
 		line-height: 1.7;
@@ -143,7 +149,7 @@
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
-		color: #FFFFFF;
+		color: #ffffff;
 	}
 
 	:global(a) {
@@ -157,7 +163,7 @@
 	}
 
 	:global(.btn-primary) {
-		background: #C2374A;
+		background: #c2374a;
 		color: #fff;
 		border: none;
 		padding: 0.65rem 1.5rem;
@@ -171,12 +177,14 @@
 		transition: background 0.2s;
 	}
 
-	:global(.btn-primary:hover) { background: #E05060; }
+	:global(.btn-primary:hover) {
+		background: #e05060;
+	}
 
 	:global(.btn-secondary) {
 		background: transparent;
-		color: #F0EDEA;
-		border: 2px solid rgba(240,237,234,0.3);
+		color: #f0edea;
+		border: 2px solid rgba(240, 237, 234, 0.3);
 		padding: 0.65rem 1.5rem;
 		font-family: 'Cinzel', serif;
 		font-size: 0.8rem;
@@ -185,30 +193,34 @@
 		text-transform: uppercase;
 		border-radius: 3px;
 		cursor: pointer;
-		transition: border-color 0.2s, color 0.2s;
+		transition:
+			border-color 0.2s,
+			color 0.2s;
 	}
 
 	:global(.btn-secondary:hover) {
-		border-color: #C2374A;
-		color: #E05060;
+		border-color: #c2374a;
+		color: #e05060;
 	}
 
 	:global(.card) {
-		background: rgba(10,10,10,0.75);
+		background: rgba(10, 10, 10, 0.75);
 		backdrop-filter: blur(4px);
-		border: 1px solid rgba(255,255,255,0.08);
+		border: 1px solid rgba(255, 255, 255, 0.08);
 		border-radius: 4px;
 		padding: 1.5rem;
-		transition: border-color 0.2s, box-shadow 0.2s;
+		transition:
+			border-color 0.2s,
+			box-shadow 0.2s;
 	}
 
 	:global(.card:hover) {
-		border-color: #C2374A;
-		box-shadow: 0 4px 24px rgba(194,55,74,0.15);
+		border-color: #c2374a;
+		box-shadow: 0 4px 24px rgba(194, 55, 74, 0.15);
 	}
 
 	:global(.badge-dm) {
-		background: #C2374A;
+		background: #c2374a;
 		color: #fff;
 		padding: 0.15rem 0.5rem;
 		font-family: 'Cinzel', serif;
@@ -220,7 +232,7 @@
 	}
 
 	:global(.badge-player) {
-		background: #2B8FD4;
+		background: #2b8fd4;
 		color: #fff;
 		padding: 0.15rem 0.5rem;
 		font-family: 'Cinzel', serif;
@@ -233,7 +245,7 @@
 
 	:global(.page-header) {
 		padding: 3rem 0 2rem;
-		border-bottom: 1px solid #1A1A1A;
+		border-bottom: 1px solid #1a1a1a;
 		margin-bottom: 2rem;
 	}
 
@@ -247,7 +259,7 @@
 		display: block;
 		width: 4rem;
 		height: 3px;
-		background: #C2374A;
+		background: #c2374a;
 		margin-top: 0.6rem;
 	}
 
@@ -279,9 +291,21 @@
 		border-radius: 3px;
 	}
 
-	:global(.vis-dm) { background: #3A0A12; color: #E05060; border: 1px solid #C2374A44; }
-	:global(.vis-players) { background: #0A1A2A; color: #4AAAE8; border: 1px solid #2B8FD444; }
-	:global(.vis-public) { background: #0A2A12; color: #5CB85C; border: 1px solid #5CB85C44; }
+	:global(.vis-dm) {
+		background: #3a0a12;
+		color: #e05060;
+		border: 1px solid #c2374a44;
+	}
+	:global(.vis-players) {
+		background: #0a1a2a;
+		color: #4aaae8;
+		border: 1px solid #2b8fd444;
+	}
+	:global(.vis-public) {
+		background: #0a2a12;
+		color: #5cb85c;
+		border: 1px solid #5cb85c44;
+	}
 
 	.app {
 		display: flex;
@@ -296,9 +320,9 @@
 		left: 0;
 		right: 0;
 		z-index: 100;
-		background: rgba(0,0,0,0.6);
+		background: rgba(0, 0, 0, 0.6);
 		backdrop-filter: blur(12px);
-		border-bottom: 1px solid rgba(255,255,255,0.07);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 		height: 4rem;
 	}
 
@@ -329,7 +353,7 @@
 		font-family: 'Cinzel Decorative', serif;
 		font-size: 0.9rem;
 		font-weight: 700;
-		color: #FFFFFF;
+		color: #ffffff;
 		white-space: nowrap;
 	}
 
@@ -342,7 +366,9 @@
 		scrollbar-width: none;
 	}
 
-	.main-nav::-webkit-scrollbar { display: none; }
+	.main-nav::-webkit-scrollbar {
+		display: none;
+	}
 
 	.nav-link {
 		display: inline-flex;
@@ -354,15 +380,24 @@
 		font-weight: 700;
 		letter-spacing: 0.07em;
 		text-transform: uppercase;
-		color: rgba(240,237,234,0.7);
+		color: rgba(240, 237, 234, 0.7);
 		white-space: nowrap;
-		transition: background 0.15s, color 0.15s;
+		transition:
+			background 0.15s,
+			color 0.15s;
 	}
 
-	.nav-link:hover { background: rgba(194,55,74,0.15); color: #FFFFFF; }
+	.nav-link:hover {
+		background: rgba(194, 55, 74, 0.15);
+		color: #ffffff;
+	}
 
-	.dm-badge { color: #C2374A !important; }
-	.dm-badge:hover { background: rgba(194,55,74,0.2) !important; }
+	.dm-badge {
+		color: #c2374a !important;
+	}
+	.dm-badge:hover {
+		background: rgba(194, 55, 74, 0.2) !important;
+	}
 
 	.header-actions {
 		display: flex;
@@ -374,7 +409,7 @@
 	.user-name {
 		font-family: 'Cinzel', serif;
 		font-size: 0.72rem;
-		color: rgba(240,237,234,0.6);
+		color: rgba(240, 237, 234, 0.6);
 	}
 
 	.role-badge {
@@ -387,18 +422,26 @@
 		border-radius: 3px;
 	}
 
-	.role-badge.dm { background: #C2374A; color: #fff; }
-	.role-badge.player { background: #2B8FD4; color: #fff; }
+	.role-badge.dm {
+		background: #c2374a;
+		color: #fff;
+	}
+	.role-badge.player {
+		background: #2b8fd4;
+		color: #fff;
+	}
 
 	.btn-logout {
 		background: transparent;
 		border: 1px solid #333;
-		color: rgba(240,237,234,0.4);
+		color: rgba(240, 237, 234, 0.4);
 		padding: 0.25rem 0.5rem;
 		font-size: 0.85rem;
 		line-height: 1;
 		border-radius: 3px;
-		transition: border-color 0.2s, color 0.2s;
+		transition:
+			border-color 0.2s,
+			color 0.2s;
 		width: 1.8rem;
 		height: 1.8rem;
 		display: flex;
@@ -406,10 +449,13 @@
 		justify-content: center;
 	}
 
-	.btn-logout:hover { border-color: #C2374A; color: #E05060; }
+	.btn-logout:hover {
+		border-color: #c2374a;
+		color: #e05060;
+	}
 
 	.btn-login {
-		background: #C2374A;
+		background: #c2374a;
 		color: #fff;
 		padding: 0.4rem 1rem;
 		font-family: 'Cinzel', serif;
@@ -421,25 +467,31 @@
 		transition: background 0.2s;
 	}
 
-	.btn-login:hover { background: #E05060; }
+	.btn-login:hover {
+		background: #e05060;
+	}
 
 	/* ── Main ── */
 	.main-content {
 		flex: 1;
 		margin-top: 4rem;
 	}
-	.main-content.no-margin { margin-top: 0; }
-	.site-header.hidden { display: none; }
+	.main-content.no-margin {
+		margin-top: 0;
+	}
+	.site-header.hidden {
+		display: none;
+	}
 
 	/* ── Footer ── */
 	.site-footer {
-		border-top: 1px solid #1A1A1A;
+		border-top: 1px solid #1a1a1a;
 		padding: 1.5rem;
 		text-align: center;
 		font-family: 'Cinzel', serif;
 		font-size: 0.72rem;
 		letter-spacing: 0.06em;
-		color: rgba(240,237,234,0.3);
+		color: rgba(240, 237, 234, 0.3);
 		text-transform: uppercase;
 	}
 
@@ -450,7 +502,7 @@
 		justify-content: center;
 		gap: 5px;
 		background: transparent;
-		border: 1px solid rgba(255,255,255,0.15);
+		border: 1px solid rgba(255, 255, 255, 0.15);
 		border-radius: 3px;
 		padding: 0.4rem 0.5rem;
 		cursor: pointer;
@@ -460,29 +512,37 @@
 	.burger span {
 		display: block;
 		height: 2px;
-		background: rgba(240,237,234,0.7);
+		background: rgba(240, 237, 234, 0.7);
 		border-radius: 2px;
-		transition: transform 0.2s, opacity 0.2s;
+		transition:
+			transform 0.2s,
+			opacity 0.2s;
 		transform-origin: center;
 	}
-	.burger span.open:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-	.burger span.open:nth-child(2) { opacity: 0; }
-	.burger span.open:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+	.burger span.open:nth-child(1) {
+		transform: translateY(7px) rotate(45deg);
+	}
+	.burger span.open:nth-child(2) {
+		opacity: 0;
+	}
+	.burger span.open:nth-child(3) {
+		transform: translateY(-7px) rotate(-45deg);
+	}
 
 	/* Mobile overlay */
 	.mobile-overlay {
 		display: none;
 		position: fixed;
 		inset: 0;
-		background: rgba(0,0,0,0.6);
+		background: rgba(0, 0, 0, 0.6);
 		backdrop-filter: blur(4px);
 		z-index: 99;
 		align-items: flex-start;
 		justify-content: flex-end;
 	}
 	.mobile-nav {
-		background: rgba(8,8,8,0.98);
-		border-left: 1px solid rgba(255,255,255,0.08);
+		background: rgba(8, 8, 8, 0.98);
+		border-left: 1px solid rgba(255, 255, 255, 0.08);
 		width: min(300px, 85vw);
 		height: 100%;
 		padding: 5rem 1.5rem 2rem;
@@ -499,22 +559,51 @@
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: rgba(240,237,234,0.7);
+		color: rgba(240, 237, 234, 0.7);
 		border-radius: 3px;
-		transition: background 0.15s, color 0.15s;
-		border-bottom: 1px solid rgba(255,255,255,0.04);
+		transition:
+			background 0.15s,
+			color 0.15s;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 	}
-	.mobile-nav-link:hover { background: rgba(194,55,74,0.15); color: #FFF; }
-	.mobile-nav-link.dm { color: #C2374A; }
-	.mobile-nav-separator { height: 1px; background: rgba(255,255,255,0.08); margin: 1rem 0; }
-	.mobile-user { display: flex; flex-direction: column; gap: 0.75rem; }
-	.mobile-user-name { font-family: 'Cinzel', serif; font-size: 0.72rem; color: rgba(240,237,234,0.5); }
+	.mobile-nav-link:hover {
+		background: rgba(194, 55, 74, 0.15);
+		color: #fff;
+	}
+	.mobile-nav-link.dm {
+		color: #c2374a;
+	}
+	.mobile-nav-separator {
+		height: 1px;
+		background: rgba(255, 255, 255, 0.08);
+		margin: 1rem 0;
+	}
+	.mobile-user {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+	.mobile-user-name {
+		font-family: 'Cinzel', serif;
+		font-size: 0.72rem;
+		color: rgba(240, 237, 234, 0.5);
+	}
 
 	@media (max-width: 768px) {
-		.main-nav { display: none; }
-		.user-name { display: none; }
-		.logout-form { display: none; }
-		.burger { display: flex; }
-		.mobile-overlay { display: flex; }
+		.main-nav {
+			display: none;
+		}
+		.user-name {
+			display: none;
+		}
+		.logout-form {
+			display: none;
+		}
+		.burger {
+			display: flex;
+		}
+		.mobile-overlay {
+			display: flex;
+		}
 	}
 </style>

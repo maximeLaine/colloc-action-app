@@ -7,7 +7,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const body = await request.json().catch(() => null);
 	if (!body?.prompt) throw error(400, 'prompt requis');
 
-	const { data: { user } } = await locals.supabase.auth.getUser();
+	const {
+		data: { user }
+	} = await locals.supabase.auth.getUser();
 	if (!user) throw error(401, 'Non connecté');
 
 	const { allowed, count, limit } = await checkAndIncrementUsage(locals.supabase, user.id);
@@ -24,10 +26,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const readable = new ReadableStream({
 		async start(controller) {
 			for await (const chunk of stream) {
-				if (
-					chunk.type === 'content_block_delta' &&
-					chunk.delta.type === 'text_delta'
-				) {
+				if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
 					controller.enqueue(new TextEncoder().encode(chunk.delta.text));
 				}
 			}

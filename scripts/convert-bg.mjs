@@ -9,9 +9,7 @@ if (!existsSync(input)) {
 	process.exit(0);
 }
 
-await sharp(input)
-	.webp({ quality: 80 })
-	.toFile(output);
+await sharp(input).webp({ quality: 80 }).toFile(output);
 
 const { size: inSize } = (await import('fs')).statSync(input);
 const { size: outSize } = (await import('fs')).statSync(output);

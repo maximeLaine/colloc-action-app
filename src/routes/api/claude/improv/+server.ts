@@ -8,7 +8,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const body = await request.json().catch(() => null);
 	if (!body?.situation) throw error(400, 'situation requise');
 
-	const { data: { user } } = await locals.supabase.auth.getUser();
+	const {
+		data: { user }
+	} = await locals.supabase.auth.getUser();
 	if (user) {
 		const { allowed, count, limit } = await checkAndIncrementUsage(locals.supabase, user.id);
 		if (!allowed) throw error(429, `Limite journalière atteinte (${count}/${limit} appels)`);
@@ -35,7 +37,8 @@ Propose 3 directions narratives pour cette situation. Réponds UNIQUEMENT en JSO
 	const message = await anthropic.messages.create({
 		model: DEFAULT_MODEL,
 		max_tokens: 1024,
-		system: 'Tu es un Maître du Jeu D&D 5e expérimenté, expert en improvisation narrative. Tu réponds uniquement en français et en JSON valide.',
+		system:
+			'Tu es un Maître du Jeu D&D 5e expérimenté, expert en improvisation narrative. Tu réponds uniquement en français et en JSON valide.',
 		messages: [{ role: 'user', content: prompt }]
 	});
 

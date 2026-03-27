@@ -5,8 +5,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const { user } = await locals.safeGetSession();
 	if (!user) redirect(303, '/login');
 
-	const { data: entries, error } = await locals.supabase
-		.rpc('admin_get_lore', { p_user_id: user.id });
+	const { data: entries, error } = await locals.supabase.rpc('admin_get_lore', {
+		p_user_id: user.id
+	});
 
 	if (error) console.error('[admin/lore] load error:', error.message);
 	return { entries: entries ?? [] };
@@ -26,7 +27,9 @@ export const actions: Actions = {
 		try {
 			const raw = (form.get('attachments') as string)?.trim();
 			if (raw) attachments = JSON.parse(raw);
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 
 		const { error } = await locals.supabase.rpc('admin_upsert_lore', {
 			p_user_id: user.id,

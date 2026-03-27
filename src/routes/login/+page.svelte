@@ -49,7 +49,13 @@
 			</div>
 			<div class="field">
 				<label for="password">Mot de passe</label>
-				<input id="password" type="password" bind:value={password} required autocomplete="current-password" />
+				<input
+					id="password"
+					type="password"
+					bind:value={password}
+					required
+					autocomplete="current-password"
+				/>
 			</div>
 
 			{#if error}
@@ -99,13 +105,22 @@
 		font-size: 0.72rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: rgba(240,237,234,0.4);
+		color: rgba(240, 237, 234, 0.4);
 		margin-bottom: 2rem;
 	}
 
-	form { display: flex; flex-direction: column; gap: 1rem; text-align: left; }
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		text-align: left;
+	}
 
-	.field { display: flex; flex-direction: column; gap: 0.35rem; }
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
 
 	label {
 		font-family: 'Cinzel', serif;
@@ -113,13 +128,13 @@
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: rgba(240,237,234,0.6);
+		color: rgba(240, 237, 234, 0.6);
 	}
 
 	input {
-		background: #0A0A0A;
+		background: #0a0a0a;
 		border: 1px solid #333333;
-		color: #F0EDEA;
+		color: #f0edea;
 		padding: 0.65rem 0.85rem;
 		border-radius: 3px;
 		font-family: 'Crimson Text', serif;
@@ -130,22 +145,22 @@
 
 	input:focus {
 		outline: none;
-		border-color: #C2374A;
+		border-color: #c2374a;
 	}
 
 	.error-msg {
-		background: #1A0508;
-		border: 1px solid #C2374A44;
-		color: #E05060;
+		background: #1a0508;
+		border: 1px solid #c2374a44;
+		color: #e05060;
 		padding: 0.65rem 0.85rem;
 		border-radius: 3px;
 		font-size: 0.9rem;
 	}
 
 	.success-msg {
-		background: #0A1A0A;
-		border: 1px solid #5CB85C44;
-		color: #5CB85C;
+		background: #0a1a0a;
+		border: 1px solid #5cb85c44;
+		color: #5cb85c;
 		padding: 0.65rem 0.85rem;
 		border-radius: 3px;
 		font-size: 0.9rem;

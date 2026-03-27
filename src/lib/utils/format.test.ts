@@ -33,9 +33,7 @@ describe('formatText', () => {
 	});
 
 	it('échappe les balises HTML (protection XSS)', () => {
-		expect(formatText('<script>alert(1)</script>')).toBe(
-			'&lt;script&gt;alert(1)&lt;/script&gt;'
-		);
+		expect(formatText('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
 	});
 
 	it('échappe les guillemets doubles', () => {

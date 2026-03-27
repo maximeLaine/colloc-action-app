@@ -33,14 +33,14 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ## Scripts
 
-| Commande | Description |
-|---|---|
-| `npm run dev` | Serveur local (port 3000) |
-| `npm run build` | Build production |
+| Commande          | Description               |
+| ----------------- | ------------------------- |
+| `npm run dev`     | Serveur local (port 3000) |
+| `npm run build`   | Build production          |
 | `npm run preview` | Prévisualisation du build |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier |
-| `npm test` | Vitest (tests unitaires) |
+| `npm run lint`    | ESLint                    |
+| `npm run format`  | Prettier                  |
+| `npm test`        | Vitest (tests unitaires)  |
 
 ## Structure
 
