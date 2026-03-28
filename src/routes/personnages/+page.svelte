@@ -260,13 +260,32 @@
 						</div>
 					</div>
 					<div class="field full">
+						<label>Caractéristiques</label>
+						<div class="stats-edit-grid">
+							{#each ['for', 'dex', 'con', 'int', 'sag', 'cha'] as key}
+								<div class="stat-edit">
+									<label>{statNames[key]}</label>
+									<input
+										name="stats_{key}"
+										type="number"
+										min="1"
+										max="30"
+										value={editOwn.stats?.[key] ?? 10}
+									/>
+								</div>
+							{/each}
+						</div>
+					</div>
+					<div class="field full">
 						<label>Historique / Backstory (partagé)</label>
 						<textarea name="backstory" rows="4">{editOwn.backstory ?? ''}</textarea>
 					</div>
-					<div class="field full">
-						<label>Notes MJ (privées)</label>
-						<textarea name="dm_backstory" rows="3">{(editOwn as any).dm_backstory ?? ''}</textarea>
-					</div>
+					{#if data.isDM}
+						<div class="field full">
+							<label>Notes MJ (privées)</label>
+							<textarea name="dm_backstory" rows="3">{(editOwn as any).dm_backstory ?? ''}</textarea>
+						</div>
+					{/if}
 					<div class="field full">
 						<label>Image</label>
 						<ImageUpload
@@ -755,6 +774,28 @@
 	select option {
 		background: #1a1a1a;
 		color: #f0edea;
+	}
+	.stats-edit-grid {
+		display: grid;
+		grid-template-columns: repeat(6, 1fr);
+		gap: 0.5rem;
+	}
+	.stat-edit {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		text-align: center;
+	}
+	.stat-edit label {
+		font-family: 'Cinzel', serif;
+		font-size: 0.6rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: rgba(240, 237, 234, 0.5);
+	}
+	.stat-edit input {
+		text-align: center;
+		padding: 0.4rem 0.25rem;
 	}
 	.form-actions {
 		margin-top: 1.25rem;
