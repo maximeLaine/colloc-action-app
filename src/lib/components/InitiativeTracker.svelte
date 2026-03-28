@@ -361,4 +361,21 @@
 		border-color: #fca5a5;
 		color: #dc2626;
 	}
+
+	@media (max-width: 600px) {
+		.combatant-main {
+			flex-wrap: wrap;
+		}
+		.hp-bar {
+			width: 80px;
+			flex-grow: 1;
+		}
+		.hp-input {
+			min-height: 36px;
+		}
+		.condition-btn {
+			padding: 0.25rem 0.5rem;
+			min-height: 32px;
+		}
+	}
 </style>

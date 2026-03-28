@@ -1149,6 +1149,37 @@
 		color: #e05060;
 	}
 
+	@media (max-width: 768px) {
+		.hp-section {
+			min-width: 0;
+			width: 100%;
+		}
+		.combatant-row {
+			flex-wrap: wrap;
+			gap: 0.5rem;
+		}
+		.pj-kills-grid {
+			grid-template-columns: 1fr;
+		}
+		.monster-sheet {
+			top: auto;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			width: 100%;
+			max-width: 100%;
+			max-height: 70vh;
+			border-left: none;
+			border-top: 1px solid rgba(194, 55, 74, 0.3);
+			box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.6);
+		}
+		.two-col {
+			grid-template-columns: 1fr;
+		}
+		.ability-scores {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
 	@media (max-width: 600px) {
 		.form-grid {
 			grid-template-columns: 1fr;

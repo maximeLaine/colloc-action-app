@@ -280,4 +280,13 @@
 		font-size: 0.8rem;
 		color: rgba(240, 237, 234, 0.6);
 	}
+
+	@media (max-width: 600px) {
+		.lore-header {
+			padding: 0.6rem 0.85rem;
+		}
+		.att-list {
+			grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		}
+	}
 </style>
