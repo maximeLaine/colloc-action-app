@@ -30,7 +30,8 @@
 			{ href: '/pnj', label: '🎭 PNJ', show: true },
 			{ href: '/sessions', label: '📜 Sessions', show: true },
 			{ href: '/lore', label: '📚 Lore', show: true },
-			{ href: '/combat', label: '⚔️ Combat', show: true }
+			{ href: '/combat', label: '⚔️ Combat', show: true },
+			{ href: '/oracle', label: '📖 Oracle', show: isLoggedIn }
 		].filter((i) => i.show)
 	);
 
