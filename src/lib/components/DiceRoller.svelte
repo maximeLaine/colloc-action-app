@@ -224,4 +224,18 @@
 	.secret-badge {
 		font-size: 0.75rem;
 	}
+
+	@media (max-width: 480px) {
+		.history {
+			max-height: 200px;
+		}
+		.roll-entry {
+			flex-wrap: wrap;
+			gap: 0.4rem;
+		}
+		.quick-btn {
+			padding: 0.35rem 0.6rem;
+			min-height: 32px;
+		}
+	}
 </style>

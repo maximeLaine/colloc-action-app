@@ -5912,6 +5912,34 @@
 			grid-template-columns: 1fr;
 		}
 	}
+	@media (max-width: 768px) {
+		.stats-row {
+			grid-template-columns: repeat(3, 1fr);
+		}
+		.tabs {
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+		}
+		.two-col {
+			grid-template-columns: 1fr;
+		}
+		.combat-layout {
+			grid-template-columns: 1fr;
+		}
+		.ia-form-grid {
+			grid-template-columns: 1fr;
+		}
+		.invite-form-row {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.field-role {
+			max-width: 100%;
+		}
+		.player-grid {
+			grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		}
+	}
 	@media (max-width: 600px) {
 		.stats-row {
 			grid-template-columns: repeat(2, 1fr);
@@ -5923,6 +5951,14 @@
 			grid-template-columns: 1fr;
 		}
 		.form-grid2 {
+			grid-template-columns: 1fr;
+		}
+	}
+	@media (max-width: 480px) {
+		.stats-row {
+			grid-template-columns: repeat(2, 1fr);
+		}
+		.player-grid {
 			grid-template-columns: 1fr;
 		}
 	}

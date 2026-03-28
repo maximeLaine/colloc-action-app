@@ -605,5 +605,22 @@
 		.mobile-overlay {
 			display: flex;
 		}
+		:global(.page-header) {
+			padding: 1.5rem 0 1.25rem;
+			margin-bottom: 1.25rem;
+		}
+		:global(.page-header h1) {
+			font-size: clamp(1.6rem, 5vw, 2.4rem);
+		}
+	}
+
+	@media (max-width: 480px) {
+		.header-inner {
+			padding: 0 1rem;
+			gap: 1rem;
+		}
+		:global(.container) {
+			padding: 0 1rem;
+		}
 	}
 </style>

@@ -471,6 +471,14 @@
 		text-transform: uppercase;
 	}
 
+	@media (max-width: 768px) {
+		.modal-backdrop {
+			padding: 1rem;
+		}
+		.modal {
+			padding: 1.5rem;
+		}
+	}
 	@media (max-width: 600px) {
 		.modal-layout {
 			flex-direction: column;
