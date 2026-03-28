@@ -28,7 +28,9 @@
 <div class="container">
 	<div class="page-header">
 		<h1>📖 Oracle des Règles</h1>
-		<p class="subtitle">Pose une question sur les règles D&D 5e — l'oracle répond en contexte de campagne.</p>
+		<p class="subtitle">
+			Pose une question sur les règles D&D 5e — l'oracle répond en contexte de campagne.
+		</p>
 	</div>
 
 	<div class="oracle-card card">
