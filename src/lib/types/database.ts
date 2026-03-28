@@ -80,6 +80,7 @@ export interface Database {
 					xp_awarded: number | null;
 					campaign_id: string | null;
 					visibility: Visibility;
+					attachments: { name: string; url: string; type: 'image' | 'pdf' }[] | null;
 					created_at: string;
 					updated_at: string;
 				};
