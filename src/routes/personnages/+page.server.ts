@@ -1,5 +1,6 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
+import type { CharacterResource } from '$lib/types/database';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const { user } = await locals.safeGetSession();
@@ -61,6 +62,31 @@ export const actions: Actions = {
 			p_backstory: (form.get('backstory') as string) || null,
 			p_image_url: (form.get('image_url') as string) || null,
 			p_dm_backstory: (form.get('dm_backstory') as string) || null
+		});
+
+		if (error) return fail(500, { error: error.message });
+		return { success: true };
+	},
+
+	updateResources: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) redirect(303, '/login');
+
+		const form = await request.formData();
+		const charId = form.get('char_id') as string;
+		if (!charId) return fail(400, { error: 'ID manquant' });
+
+		let resources: CharacterResource[];
+		try {
+			resources = JSON.parse(form.get('resources') as string);
+		} catch {
+			return fail(400, { error: 'Format invalide' });
+		}
+
+		const { error } = await locals.supabase.rpc('player_update_resources', {
+			p_user_id: user.id,
+			p_char_id: charId,
+			p_resources: resources
 		});
 
 		if (error) return fail(500, { error: error.message });

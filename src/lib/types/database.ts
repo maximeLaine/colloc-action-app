@@ -33,6 +33,7 @@ export interface Database {
 					abilities: string[];
 					backstory: string | null;
 					image_url: string | null;
+					resources: CharacterResource[];
 					created_at: string;
 					updated_at: string;
 				};
@@ -195,6 +196,13 @@ export interface Database {
 			};
 		};
 	};
+}
+
+export interface CharacterResource {
+	label: string;
+	current: number;
+	max: number;
+	reset: 'long_rest' | 'short_rest' | 'manual';
 }
 
 export interface Attack {
