@@ -65,6 +65,21 @@ export const actions: Actions = {
 		});
 
 		if (error) return fail(500, { error: error.message });
+
+		const stats: Record<string, number> = {};
+		for (const key of ['for', 'dex', 'con', 'int', 'sag', 'cha']) {
+			const val = parseInt(form.get(`stats_${key}`) as string);
+			if (!isNaN(val)) stats[key] = val;
+		}
+		if (Object.keys(stats).length > 0) {
+			const { error: statsError } = await locals.supabase.rpc('player_update_character_stats', {
+				p_user_id: user.id,
+				p_char_id: charId,
+				p_stats: stats
+			});
+			if (statsError) return fail(500, { error: statsError.message });
+		}
+
 		return { success: true };
 	},
 
